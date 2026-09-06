@@ -2,7 +2,7 @@
   <img src="icon.png" alt="Aristotle POS Logo" width="110" height="110">
 </p>
 
-<h1 align="center"><a href="https://miezlearning.github.io/umkm-prototype/">Aristotle POS</a></h1>
+<h1 align="center"><a href="https://miezlearning.github.io/aristotle-pos/">Aristotle POS</a></h1>
 
 <p align="center">
   <strong>Sistem Kasir Pintar, Modern, dan Skalabel untuk UMKM & Retail F&B</strong><br>
@@ -10,15 +10,15 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/miezlearning/umkm-prototype/releases"><img src="https://img.shields.io/badge/Release-v1.2.24-10b981?style=for-the-badge&logo=android&logoColor=white" alt="Release Version"></a>
-  <a href="https://miezlearning.github.io/umkm-prototype/"><img src="https://img.shields.io/badge/Live_Demo-PWA_Ready-0284c7?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Demo"></a>
+  <a href="https://github.com/miezlearning/aristotle-pos/releases"><img src="https://img.shields.io/badge/Release-v1.2.24-10b981?style=for-the-badge&logo=android&logoColor=white" alt="Release Version"></a>
+  <a href="https://miezlearning.github.io/aristotle-pos/"><img src="https://img.shields.io/badge/Live_Demo-PWA_Ready-0284c7?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Demo"></a>
   <a href="Aristotle-POS.apk"><img src="https://img.shields.io/badge/Android_APK-Unduh_Aplikasi-f59e0b?style=for-the-badge&logo=android&logoColor=white" alt="Android APK"></a>
   <a href="js/firebase.js"><img src="https://img.shields.io/badge/Cloud_Sync-Firebase_Firestore-ffca28?style=for-the-badge&logo=firebase&logoColor=black" alt="Firebase Firestore"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-6366f1?style=for-the-badge" alt="MIT License"></a>
 </p>
 
 <p align="center">
-  <a href="https://miezlearning.github.io/umkm-prototype/">🚀 <b>Buka Web App (Live Demo)</b></a> &nbsp;•&nbsp;
+  <a href="https://miezlearning.github.io/aristotle-pos/">🚀 <b>Buka Web App (Live Demo)</b></a> &nbsp;•&nbsp;
   <a href="Aristotle-POS.apk">📱 <b>Unduh APK Android</b></a> &nbsp;•&nbsp;
   <a href="PANDUAN_EDUKASI_LANSIA.md">📖 <b>Panduan Ramah Lansia</b></a> &nbsp;•&nbsp;
   <a href="CHANGELOG.md">📜 <b>Riwayat Pembaruan</b></a>
@@ -110,7 +110,7 @@ Aristotle POS dibangun dengan prinsip *zero-overhead dependency* agar ringan, ce
 ### 1. Buka Langsung di Browser (Web PWA)
 Akses aplikasi melalui browser di ponsel, tablet, atau komputer:
 ```text
-https://miezlearning.github.io/umkm-prototype/
+https://miezlearning.github.io/aristotle-pos/
 ```
 > **Tip:** Tekan tombol **"Install App"** atau menu browser **"Tambahkan ke Layar Utama"** untuk menjadikannya aplikasi mandiri tanpa address bar.
 
@@ -124,8 +124,8 @@ https://miezlearning.github.io/umkm-prototype/
 Clone repositori ini dan jalankan web server lokal sederhana:
 ```bash
 # Clone repositori
-git clone https://github.com/miezlearning/umkm-prototype.git
-cd umkm-prototype
+git clone https://github.com/miezlearning/aristotle-pos.git
+cd aristotle-pos
 
 # Jalankan web server lokal (menggunakan Python)
 python -m http.server 8000
@@ -137,7 +137,7 @@ Buka browser di `http://localhost:8000`.
 ## ⚡ Portal Super Admin (Monitoring Multi-Cabang)
 
 Bagi pemilik bisnis atau franchise yang memiliki banyak cabang UMKM mitra:
-* **Akses Portal:** [`https://miezlearning.github.io/umkm-prototype/?view=superadmin`](https://miezlearning.github.io/umkm-prototype/?view=superadmin)
+* **Akses Portal:** [`https://miezlearning.github.io/aristotle-pos/?view=superadmin`](https://miezlearning.github.io/aristotle-pos/?view=superadmin)
 * **Fungsi Utama:**
   * Memantau akumulasi omzet harian & volume transaksi seluruh cabang secara terpusat.
   * Masuk ke antarmuka kasir toko mitra manapun tanpa input PIN (*One-Click Impersonate*).
