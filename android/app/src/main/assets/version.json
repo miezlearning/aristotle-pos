@@ -1,10 +1,10 @@
 {
-  "versionCode": 74,
-  "versionName": "1.2.26",
-  "apkUrl": "https://github.com/miezlearning/umkm-prototype/releases/download/v1.2.26/Aristotle-POS.apk",
+  "versionCode": 75,
+  "versionName": "1.2.27",
+  "apkUrl": "https://github.com/miezlearning/umkm-prototype/releases/download/v1.2.27/Aristotle-POS.apk",
   "changelog": [
-    "Standar industri struk kasir: sinkronisasi rincian harga add-on per baris dan kalkulator live harga menu",
-    "Transparansi perhitungan harga add-on pada keranjang dan nota fisik/thermal"
+    "Dukungan foto menu produk: upload, auto-kompresi canvas offline, dan kartu menu visual di katalog kasir",
+    "Sinkronisasi foto menu ke Cloud Firestore dan thumbnail tabel admin"
   ],
   "releaseDate": "2026-09-07"
 }

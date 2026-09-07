@@ -425,25 +425,47 @@ export function renderProducts() {
           </span>
         ` : ''}
 
-        <div class="flex items-start justify-between gap-1">
-          <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl ${hasQty ? 'bg-emerald-100 text-emerald-800' : (isReady ? 'bg-stone-100 text-stone-700' : 'bg-stone-200 text-stone-400')} flex items-center justify-center shrink-0 transition">
-            <span class="material-symbols-rounded text-xl sm:text-2xl">${product.icon || 'lunch_dining'}</span>
+        ${product.image ? `
+          <div class="relative w-full h-24 sm:h-28 rounded-xl overflow-hidden mb-2 bg-stone-100 shrink-0">
+            <img src="${product.image}" alt="${escapeHtml(product.name)}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" onerror="this.parentElement.style.display='none'">
+            <div class="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start">
+              <span class="text-[9px] sm:text-[10px] font-bold text-stone-800 capitalize px-2 py-0.5 rounded-md bg-white/90 backdrop-blur-xs shadow-xs">${escapeHtml(product.category)}</span>
+            </div>
+            <div class="absolute bottom-1.5 right-1.5 flex flex-col gap-1 items-end">
+              ${Array.isArray(product.addOns) && product.addOns.length > 0 ? `
+                <span class="text-[9px] font-extrabold text-amber-900 bg-amber-200/90 backdrop-blur-xs px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                  <span class="material-symbols-rounded text-[11px] text-amber-700">add_circle</span>
+                  <span>Add-on</span>
+                </span>
+              ` : ''}
+              ${product.trackStock && isReady ? `
+                <span class="text-[9px] font-extrabold text-emerald-900 bg-emerald-200/90 backdrop-blur-xs px-1.5 py-0.5 rounded-md shadow-xs">
+                  Sisa: ${product.stock}
+                </span>
+              ` : ''}
+            </div>
           </div>
-          <div class="flex flex-col items-end gap-1">
-            <span class="text-[10px] font-bold text-stone-500 capitalize px-2 py-0.5 rounded-lg bg-stone-100">${escapeHtml(product.category)}</span>
-            ${Array.isArray(product.addOns) && product.addOns.length > 0 ? `
-              <span class="text-[9px] font-extrabold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 flex items-center gap-0.5">
-                <span class="material-symbols-rounded text-[11px] text-amber-600">add_circle</span>
-                <span>Add-on</span>
-              </span>
-            ` : ''}
-            ${product.trackStock && isReady ? `
-              <span class="text-[9px] font-extrabold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                Sisa: ${product.stock}
-              </span>
-            ` : ''}
+        ` : `
+          <div class="flex items-start justify-between gap-1">
+            <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl ${hasQty ? 'bg-emerald-100 text-emerald-800' : (isReady ? 'bg-stone-100 text-stone-700' : 'bg-stone-200 text-stone-400')} flex items-center justify-center shrink-0 transition">
+              <span class="material-symbols-rounded text-xl sm:text-2xl">${product.icon || 'lunch_dining'}</span>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              <span class="text-[10px] font-bold text-stone-500 capitalize px-2 py-0.5 rounded-lg bg-stone-100">${escapeHtml(product.category)}</span>
+              ${Array.isArray(product.addOns) && product.addOns.length > 0 ? `
+                <span class="text-[9px] font-extrabold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 flex items-center gap-0.5">
+                  <span class="material-symbols-rounded text-[11px] text-amber-600">add_circle</span>
+                  <span>Add-on</span>
+                </span>
+              ` : ''}
+              ${product.trackStock && isReady ? `
+                <span class="text-[9px] font-extrabold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                  Sisa: ${product.stock}
+                </span>
+              ` : ''}
+            </div>
           </div>
-        </div>
+        `}
 
         <div class="mt-2.5">
           <h3 class="font-extrabold text-stone-900 text-xs sm:text-base leading-tight line-clamp-2 ${!isReady ? 'text-stone-500 line-through' : ''}">${escapeHtml(product.name)}</h3>

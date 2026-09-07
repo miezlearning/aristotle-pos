@@ -1,5 +1,5 @@
 import { state, saveProducts, saveQueues, saveHistory, saveExpenses, saveQrisPayload } from '../state.js';
-import { formatRp, escapeHtml, showToast, showConfirmDialog, playClick } from '../utils.js';
+import { formatRp, escapeHtml, showToast, showConfirmDialog, playClick, compressImageToDataUrl } from '../utils.js';
 import { renderProducts, renderCart } from './pos.js';
 import { syncSaveProduct, syncDeleteProduct, syncBatchDeleteProducts, syncClearAllProducts, forceUploadAllToCloud, syncSaveQrisPayload } from '../firebase.js';
 import { decodeQRFromImage, renderQRToContainer, parseQRISMetadata } from '../qris.js';
@@ -215,7 +215,11 @@ export function renderAdminTable() {
               class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-stone-300 cursor-pointer">
           </label>
 
-          <span class="material-symbols-rounded text-xl sm:text-2xl text-stone-950 p-2 sm:p-2.5 ${isReady ? 'bg-emerald-100/80' : 'bg-stone-200 text-stone-500'} rounded-2xl shrink-0 border border-emerald-200">${p.icon || 'lunch_dining'}</span>
+          ${p.image ? `
+            <img src="${p.image}" alt="${escapeHtml(p.name)}" class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl object-cover shrink-0 border border-stone-200 shadow-2xs" loading="lazy">
+          ` : `
+            <span class="material-symbols-rounded text-xl sm:text-2xl text-stone-950 p-2 sm:p-2.5 ${isReady ? 'bg-emerald-100/80' : 'bg-stone-200 text-stone-500'} rounded-2xl shrink-0 border border-emerald-200">${p.icon || 'lunch_dining'}</span>
+          `}
           
           <div class="truncate flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
@@ -335,6 +339,66 @@ export function collectProductAddOns() {
   return addOns;
 }
 
+// ================= FOTO MENU PRODUK =================
+let currentProductImage = '';
+
+export function triggerProductImageUpload() {
+  playClick('tap');
+  const input = document.getElementById('prodImageInput');
+  if (input) {
+    input.value = ''; // Reset agar event onchange tetap terpanggil jika upload file yang sama
+    input.click();
+  }
+}
+
+export function updateProductImagePreviewUI(imgUrl) {
+  const imgEl = document.getElementById('prodImagePreviewImg');
+  const placeholderEl = document.getElementById('prodImagePlaceholder');
+  const btnRemove = document.getElementById('btnRemoveProductImage');
+
+  if (imgUrl) {
+    if (imgEl) {
+      imgEl.src = imgUrl;
+      imgEl.classList.remove('hidden');
+    }
+    if (placeholderEl) placeholderEl.classList.add('hidden');
+    if (btnRemove) btnRemove.classList.remove('hidden');
+  } else {
+    if (imgEl) {
+      imgEl.src = '';
+      imgEl.classList.add('hidden');
+    }
+    if (placeholderEl) placeholderEl.classList.remove('hidden');
+    if (btnRemove) btnRemove.classList.add('hidden');
+  }
+}
+
+export async function handleProductImageFile(event) {
+  const file = event.target?.files?.[0];
+  if (!file) return;
+
+  try {
+    showToast('Mengompresi foto...', 'info', 1500);
+    const compressedDataUrl = await compressImageToDataUrl(file, 360, 0.75);
+    currentProductImage = compressedDataUrl;
+    updateProductImagePreviewUI(currentProductImage);
+    playClick('pop');
+    showToast('Foto berhasil dimuat & dioptimasi!', 'success', 2000);
+  } catch (err) {
+    console.error('Compress image error:', err);
+    showToast(err.message || 'Gagal memproses gambar', 'error');
+  }
+}
+
+export function removeProductImage() {
+  playClick('del');
+  currentProductImage = '';
+  updateProductImagePreviewUI('');
+  const input = document.getElementById('prodImageInput');
+  if (input) input.value = '';
+  showToast('Foto menu dihapus (kembali ke icon)', 'info', 2000);
+}
+
 export function openAddProductModal() {
   playClick('pop');
   const titleEl = document.getElementById('productModalTitle');
@@ -355,6 +419,9 @@ export function openAddProductModal() {
   if (iconEl) iconEl.value = 'lunch_dining';
   if (isAvailEl) isAvailEl.checked = true;
   if (stockEl) stockEl.value = '';
+  
+  currentProductImage = '';
+  updateProductImagePreviewUI('');
   renderProductAddOns([]);
   if (modal) modal.classList.remove('hidden');
 }
@@ -384,6 +451,9 @@ export function openEditProductModal(id) {
   if (stockEl) {
     stockEl.value = (p.trackStock && p.stock !== null && p.stock !== undefined) ? p.stock : '';
   }
+  
+  currentProductImage = p.image || '';
+  updateProductImagePreviewUI(currentProductImage);
   renderProductAddOns(p.addOns || []);
   if (modal) modal.classList.remove('hidden');
 }
@@ -427,6 +497,7 @@ export function saveProduct(e) {
         price, 
         category, 
         icon,
+        image: currentProductImage || '',
         isAvailable: finalAvailable,
         trackStock,
         stock,
@@ -441,6 +512,7 @@ export function saveProduct(e) {
       price,
       category,
       icon,
+      image: currentProductImage || '',
       isAvailable: finalAvailable,
       trackStock,
       stock,

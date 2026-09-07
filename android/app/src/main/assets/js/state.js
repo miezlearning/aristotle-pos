@@ -204,6 +204,7 @@ export function initState() {
       if (Array.isArray(state.products)) {
         state.products.forEach(p => {
           if (!Array.isArray(p.addOns)) p.addOns = [];
+          if (typeof p.image !== 'string') p.image = '';
         });
       }
     } catch (e) {

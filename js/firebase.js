@@ -233,6 +233,7 @@ export function setupRealtimeListeners() {
           price: Number(data.price) || 0,
           category: data.category || 'makanan',
           icon: data.icon || 'lunch_dining',
+          image: typeof data.image === 'string' ? data.image : '',
           isAvailable: data.isAvailable !== false,
           trackStock: !!data.trackStock,
           stock: data.trackStock ? (data.stock !== undefined && data.stock !== null ? Number(data.stock) : null) : null,
@@ -750,6 +751,7 @@ async function seedInitialProducts() {
         price: p.price,
         category: p.category,
         icon: p.icon || 'lunch_dining',
+        image: typeof p.image === 'string' ? p.image : '',
         isAvailable: p.isAvailable !== false,
         trackStock: !!p.trackStock,
         stock: p.trackStock ? (p.stock !== undefined && p.stock !== null ? Number(p.stock) : null) : null,
@@ -778,6 +780,7 @@ export async function syncSaveProduct(product) {
       price: product.price,
       category: product.category,
       icon: product.icon || 'lunch_dining',
+      image: typeof product.image === 'string' ? product.image : '',
       isAvailable: product.isAvailable !== false,
       trackStock: !!product.trackStock,
       stock: product.trackStock ? (product.stock !== undefined && product.stock !== null ? Number(product.stock) : null) : null,
@@ -1102,6 +1105,7 @@ export async function forceUploadAllToCloud() {
         price: p.price,
         category: p.category,
         icon: p.icon || 'lunch_dining',
+        image: typeof p.image === 'string' ? p.image : '',
         isAvailable: p.isAvailable !== false,
         trackStock: !!p.trackStock,
         stock: p.trackStock ? (p.stock !== undefined && p.stock !== null ? Number(p.stock) : null) : null,
@@ -1361,6 +1365,7 @@ export async function superAdminCreateStore(storeData, includeStarterMenu = true
           const pRef = doc(db, 'stores', cleanId, 'products', p.id);
           batch.set(pRef, {
             ...p,
+            image: typeof p.image === 'string' ? p.image : '',
             addOns: Array.isArray(p.addOns) ? p.addOns : [],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()

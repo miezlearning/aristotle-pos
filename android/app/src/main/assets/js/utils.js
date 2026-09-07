@@ -332,6 +332,69 @@ export async function hashSha256(str) {
   }
 }
 
+/**
+ * Kompresi gambar client-side menggunakan HTML5 Canvas
+ * Mengubah file gambar menjadi DataURL WebP / JPEG ringan (maks 360x360 px, ~15-30 KB)
+ * @param {File|Blob} file 
+ * @param {number} maxDimension
+ * @param {number} quality
+ * @returns {Promise<string>}
+ */
+export function compressImageToDataUrl(file, maxDimension = 360, quality = 0.75) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type || !file.type.startsWith('image/')) {
+      return reject(new Error('File yang dipilih bukan gambar valid.'));
+    }
+
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Gagal membaca file gambar.'));
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Gagal memproses gambar.'));
+      img.onload = () => {
+        let w = img.width;
+        let h = img.height;
+
+        // Scaling proporsional dengan maxDimension
+        if (w > maxDimension || h > maxDimension) {
+          if (w > h) {
+            h = Math.round((h * maxDimension) / w);
+            w = maxDimension;
+          } else {
+            w = Math.round((w * maxDimension) / h);
+            h = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+
+        // Latar belakang putih jika ada transparansi (misal PNG transparan)
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+
+        // Prioritaskan format webp, fallback ke jpeg jika webp tidak disupport
+        let dataUrl = '';
+        try {
+          dataUrl = canvas.toDataURL('image/webp', quality);
+          if (!dataUrl.startsWith('data:image/webp')) {
+            dataUrl = canvas.toDataURL('image/jpeg', quality);
+          }
+        } catch (_) {
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+
+        resolve(dataUrl);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 if (typeof window !== 'undefined') {
   window.showToast = showToast;
   window.showConfirmDialog = showConfirmDialog;
@@ -339,5 +402,7 @@ if (typeof window !== 'undefined') {
   window.playClick = playClick;
   window.playSuccessChime = playSuccessChime;
   window.hashSha256 = hashSha256;
+  window.compressImageToDataUrl = compressImageToDataUrl;
 }
+
 
