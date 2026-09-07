@@ -691,7 +691,10 @@ export function renderCart() {
           </div>
 
           <p class="text-[11px] font-bold text-stone-500 mt-0.5">
-            ${formatRp(unitPrice)} &times; ${item.qty} = <span class="text-emerald-800 font-black">${formatRp(subtotal)}</span>
+            ${hasAddOns ? `
+              <span class="text-stone-700 font-medium">${formatRp(p.price)}</span> + <span class="text-amber-800 font-black">Add-on ${formatRp(addOnTotal)}</span> = 
+            ` : ''}
+            <span class="text-stone-800 font-extrabold">${formatRp(unitPrice)}</span> &times; ${item.qty} = <span class="text-emerald-800 font-black text-xs sm:text-sm">${formatRp(subtotal)}</span>
           </p>
 
           ${hasAddOns ? `
@@ -814,7 +817,7 @@ export function openItemNoteModal(lineIdOrProductId) {
           <label class="flex items-center gap-2 p-2 rounded-xl bg-white border ${isChecked ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-300' : 'border-stone-200'} cursor-pointer hover:border-amber-300 transition text-xs font-bold text-stone-800 touch-target-large select-none">
             <input type="checkbox" name="itemAddOnCheckbox" value="${escapeHtml(ao.name)}" data-price="${ao.price || 0}" ${isChecked ? 'checked' : ''}
               class="w-4 h-4 accent-amber-600 rounded cursor-pointer shrink-0"
-              onchange="this.closest('label').classList.toggle('border-amber-400', this.checked); this.closest('label').classList.toggle('bg-amber-50/60', this.checked); this.closest('label').classList.toggle('ring-1', this.checked); this.closest('label').classList.toggle('ring-amber-300', this.checked);">
+              onchange="this.closest('label').classList.toggle('border-amber-400', this.checked); this.closest('label').classList.toggle('bg-amber-50/60', this.checked); this.closest('label').classList.toggle('ring-1', this.checked); this.closest('label').classList.toggle('ring-amber-300', this.checked); if (window.KasirApp && window.KasirApp.updateItemNoteLivePrice) window.KasirApp.updateItemNoteLivePrice();">
             <div class="flex flex-col min-w-0 flex-1 leading-tight">
               <span class="truncate font-bold">${escapeHtml(ao.name)}</span>
               <span class="text-[10px] text-amber-800 font-extrabold">${Number(ao.price) > 0 ? `+${formatRp(ao.price)}` : 'Gratis'}</span>
@@ -822,6 +825,7 @@ export function openItemNoteModal(lineIdOrProductId) {
           </label>
         `;
       }).join('');
+      updateItemNoteLivePrice();
     }
   } else {
     if (addOnSection) addOnSection.classList.add('hidden');
@@ -830,6 +834,33 @@ export function openItemNoteModal(lineIdOrProductId) {
 
   if (modal) modal.classList.remove('hidden');
   setTimeout(() => { if (inputEl) inputEl.focus(); }, 100);
+}
+
+export function updateItemNoteLivePrice() {
+  const prodIdEl = document.getElementById('itemNoteProductId');
+  const livePriceEl = document.getElementById('itemNoteLivePrice');
+  if (!prodIdEl || !livePriceEl) return;
+  const p = state.products.find(prod => prod.id === prodIdEl.value);
+  if (!p) return;
+
+  let addOnSum = 0;
+  let count = 0;
+  document.querySelectorAll('#itemNoteAddOnList input[name="itemAddOnCheckbox"]:checked').forEach(cb => {
+    addOnSum += (Number(cb.dataset.price) || 0);
+    count++;
+  });
+
+  const unitTotal = (p.price || 0) + addOnSum;
+  livePriceEl.innerHTML = `
+    <div class="flex items-center justify-between w-full">
+      <span class="text-[11px] text-amber-950 font-bold">
+        ${count > 0 ? `Harga Menu (${formatRp(p.price)}) + ${count} Add-on (${formatRp(addOnSum)})` : 'Total Harga per Porsi'}
+      </span>
+      <span class="text-xs sm:text-sm font-black text-emerald-900 bg-white/90 px-2 py-0.5 rounded-lg border border-amber-300">
+        = ${formatRp(unitTotal)}
+      </span>
+    </div>
+  `;
 }
 
 export function setItemNoteScope(scope, playSound = true) {

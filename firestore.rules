@@ -13,8 +13,8 @@ service cloud.firestore {
     // 2. Data Terisolasi Tiap Toko (Multi-Tenant Store Boundary)
     match /stores/{storeId} {
       
-      // Konfigurasi Profil & Auth
-      match /data/config {
+      // Konfigurasi Profil, Auth & Shared Data Toko (config, queues, dll)
+      match /data/{dataDoc} {
         allow read, write, delete: if true;
       }
       

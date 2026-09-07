@@ -188,30 +188,72 @@ export function generateReceiptPlainText(tx, customConfig = null) {
   // 3. Daftar Item (Contoh: 2x Kopi Susu   30.000)
   if (Array.isArray(tx.items)) {
     tx.items.forEach(item => {
-      const priceStr = formatRp(item.subtotal || (item.qty * item.price)).replace('Rp ', '');
       const itemName = cleanAscii(item.name || 'Item');
       const prefix = `${item.qty}x `;
+      const addOns = Array.isArray(item.addOns) ? item.addOns : [];
+      const addOnTotal = addOns.reduce((sum, ao) => sum + (Number(ao.price) || 0), 0);
+      const basePrice = (typeof item.basePrice === 'number') ? item.basePrice : Math.max(0, (Number(item.price) || 0) - addOnTotal);
+      const hasPricedAddons = addOns.some(ao => Number(ao.price) > 0);
 
-      if (itemStyle === 'detailed' && item.qty > 1) {
-        lines.push(`${prefix}${itemName}`);
-        const unitPriceStr = `@ ${formatRp(item.price).replace('Rp ', '')}`;
-        lines.push(padBetween(`   ${unitPriceStr}`, priceStr));
-      } else {
-        if ((prefix.length + itemName.length + priceStr.length + 1) <= width) {
-          lines.push(padBetween(`${prefix}${itemName}`, priceStr));
+      if (hasPricedAddons) {
+        const baseSubtotal = basePrice * item.qty;
+        const basePriceStr = formatRp(baseSubtotal).replace('Rp ', '');
+        
+        if (itemStyle === 'detailed' && item.qty > 1) {
+          lines.push(`${prefix}${itemName}`);
+          const unitPriceStr = `@ ${formatRp(basePrice).replace('Rp ', '')}`;
+          lines.push(padBetween(`   ${unitPriceStr}`, basePriceStr, width));
         } else {
-          lines.push(cleanAscii(`${prefix}${itemName}`));
-          lines.push(' '.repeat(Math.max(0, width - priceStr.length)) + priceStr);
+          if ((prefix.length + itemName.length + basePriceStr.length + 1) <= width) {
+            lines.push(padBetween(`${prefix}${itemName}`, basePriceStr, width));
+          } else {
+            lines.push(cleanAscii(`${prefix}${itemName}`));
+            lines.push(' '.repeat(Math.max(0, width - basePriceStr.length)) + basePriceStr);
+          }
+        }
+
+        addOns.forEach(ao => {
+          const aoUnit = Number(ao.price) || 0;
+          if (aoUnit > 0) {
+            const aoSubtotal = aoUnit * item.qty;
+            const aoPriceStr = formatRp(aoSubtotal).replace('Rp ', '');
+            const aoLabel = cleanAscii(`   + ${ao.name}${item.qty > 1 ? ` (${item.qty}x)` : ''}`);
+            if ((aoLabel.length + aoPriceStr.length + 1) <= width) {
+              lines.push(padBetween(aoLabel, aoPriceStr, width));
+            } else {
+              lines.push(aoLabel);
+              lines.push(' '.repeat(Math.max(0, width - aoPriceStr.length)) + aoPriceStr);
+            }
+          } else {
+            lines.push(`   + ${cleanAscii(ao.name)}`);
+          }
+        });
+      } else {
+        const lineTotal = item.subtotal || (item.qty * item.price);
+        const priceStr = formatRp(lineTotal).replace('Rp ', '');
+
+        if (itemStyle === 'detailed' && item.qty > 1) {
+          lines.push(`${prefix}${itemName}`);
+          const unitPriceStr = `@ ${formatRp(item.price).replace('Rp ', '')}`;
+          lines.push(padBetween(`   ${unitPriceStr}`, priceStr, width));
+        } else {
+          if ((prefix.length + itemName.length + priceStr.length + 1) <= width) {
+            lines.push(padBetween(`${prefix}${itemName}`, priceStr, width));
+          } else {
+            lines.push(cleanAscii(`${prefix}${itemName}`));
+            lines.push(' '.repeat(Math.max(0, width - priceStr.length)) + priceStr);
+          }
+        }
+
+        if (addOns.length > 0) {
+          addOns.forEach(ao => {
+            lines.push(`   + ${cleanAscii(ao.name)}`);
+          });
         }
       }
-      if (Array.isArray(item.addOns) && item.addOns.length > 0) {
-        item.addOns.forEach(ao => {
-          const aoPriceStr = Number(ao.price) > 0 ? ` (+${formatRp(ao.price).replace('Rp ', '')})` : '';
-          lines.push(`  + ${cleanAscii(ao.name)}${aoPriceStr}`);
-        });
-      }
+
       if (item.note) {
-        lines.push(`  * ${cleanAscii(item.note)}`);
+        lines.push(`   * ${cleanAscii(item.note)}`);
       }
     });
   }
@@ -373,30 +415,72 @@ export async function buildEscPosBytes(tx, kickDrawer = false) {
   // 6. Daftar Item (Contoh: 2x Kopi Susu   30.000)
   if (Array.isArray(tx.items)) {
     tx.items.forEach(item => {
-      const priceStr = formatRp(item.subtotal || (item.qty * item.price)).replace('Rp ', '');
       const itemName = cleanAscii(item.name || 'Item');
       const prefix = `${item.qty}x `;
+      const addOns = Array.isArray(item.addOns) ? item.addOns : [];
+      const addOnTotal = addOns.reduce((sum, ao) => sum + (Number(ao.price) || 0), 0);
+      const basePrice = (typeof item.basePrice === 'number') ? item.basePrice : Math.max(0, (Number(item.price) || 0) - addOnTotal);
+      const hasPricedAddons = addOns.some(ao => Number(ao.price) > 0);
 
-      if (itemStyle === 'detailed' && item.qty > 1) {
-        addText(`${prefix}${itemName}\n`);
-        const unitPriceStr = `@ ${formatRp(item.price).replace('Rp ', '')}`;
-        addText(padBetween(`   ${unitPriceStr}`, priceStr, width) + '\n');
-      } else {
-        if ((prefix.length + itemName.length + priceStr.length + 1) <= width) {
-          addText(padBetween(`${prefix}${itemName}`, priceStr, width) + '\n');
-        } else {
+      if (hasPricedAddons) {
+        const baseSubtotal = basePrice * item.qty;
+        const basePriceStr = formatRp(baseSubtotal).replace('Rp ', '');
+
+        if (itemStyle === 'detailed' && item.qty > 1) {
           addText(`${prefix}${itemName}\n`);
-          addText(' '.repeat(Math.max(0, width - priceStr.length)) + priceStr + '\n');
+          const unitPriceStr = `@ ${formatRp(basePrice).replace('Rp ', '')}`;
+          addText(padBetween(`   ${unitPriceStr}`, basePriceStr, width) + '\n');
+        } else {
+          if ((prefix.length + itemName.length + basePriceStr.length + 1) <= width) {
+            addText(padBetween(`${prefix}${itemName}`, basePriceStr, width) + '\n');
+          } else {
+            addText(`${prefix}${itemName}\n`);
+            addText(' '.repeat(Math.max(0, width - basePriceStr.length)) + basePriceStr + '\n');
+          }
+        }
+
+        addOns.forEach(ao => {
+          const aoUnit = Number(ao.price) || 0;
+          if (aoUnit > 0) {
+            const aoSubtotal = aoUnit * item.qty;
+            const aoPriceStr = formatRp(aoSubtotal).replace('Rp ', '');
+            const aoLabel = cleanAscii(`   + ${ao.name}${item.qty > 1 ? ` (${item.qty}x)` : ''}`);
+            if ((aoLabel.length + aoPriceStr.length + 1) <= width) {
+              addText(padBetween(aoLabel, aoPriceStr, width) + '\n');
+            } else {
+              addText(aoLabel + '\n');
+              addText(' '.repeat(Math.max(0, width - aoPriceStr.length)) + aoPriceStr + '\n');
+            }
+          } else {
+            addText(`   + ${cleanAscii(ao.name)}\n`);
+          }
+        });
+      } else {
+        const lineTotal = item.subtotal || (item.qty * item.price);
+        const priceStr = formatRp(lineTotal).replace('Rp ', '');
+
+        if (itemStyle === 'detailed' && item.qty > 1) {
+          addText(`${prefix}${itemName}\n`);
+          const unitPriceStr = `@ ${formatRp(item.price).replace('Rp ', '')}`;
+          addText(padBetween(`   ${unitPriceStr}`, priceStr, width) + '\n');
+        } else {
+          if ((prefix.length + itemName.length + priceStr.length + 1) <= width) {
+            addText(padBetween(`${prefix}${itemName}`, priceStr, width) + '\n');
+          } else {
+            addText(`${prefix}${itemName}\n`);
+            addText(' '.repeat(Math.max(0, width - priceStr.length)) + priceStr + '\n');
+          }
+        }
+
+        if (addOns.length > 0) {
+          addOns.forEach(ao => {
+            addText(`   + ${cleanAscii(ao.name)}\n`);
+          });
         }
       }
-      if (Array.isArray(item.addOns) && item.addOns.length > 0) {
-        item.addOns.forEach(ao => {
-          const aoPriceStr = Number(ao.price) > 0 ? ` (+${formatRp(ao.price).replace('Rp ', '')})` : '';
-          addText(`  + ${cleanAscii(ao.name)}${aoPriceStr}\n`);
-        });
-      }
+
       if (item.note) {
-        addText(`  * ${cleanAscii(item.note)}\n`);
+        addText(`   * ${cleanAscii(item.note)}\n`);
       }
     });
   }
@@ -1830,23 +1914,41 @@ export function renderPrintableReceiptArea(tx, cfg = null) {
 
   if (itemListEl && Array.isArray(tx.items)) {
     itemListEl.innerHTML = tx.items.map(item => {
-      const priceStr = formatRp(item.subtotal || (item.qty * item.price)).replace('Rp ', '');
-      const unitPriceStr = formatRp(item.price).replace('Rp ', '');
+      const addOns = Array.isArray(item.addOns) ? item.addOns : [];
+      const addOnTotal = addOns.reduce((sum, ao) => sum + (Number(ao.price) || 0), 0);
+      const basePrice = (typeof item.basePrice === 'number') ? item.basePrice : Math.max(0, (Number(item.price) || 0) - addOnTotal);
+      const hasPricedAddons = addOns.some(ao => Number(ao.price) > 0);
+      const baseSubtotal = (hasPricedAddons ? basePrice : (Number(item.price) || basePrice)) * item.qty;
+      const basePriceStr = formatRp(baseSubtotal).replace('Rp ', '');
       const hasDetail = itemStyle === 'detailed' && item.qty > 1;
+      const unitPriceStr = formatRp(hasPricedAddons ? basePrice : item.price).replace('Rp ', '');
 
       return `
         <div class="py-0.5 flex flex-col text-[10.5px] leading-tight">
           <div class="flex justify-between items-start gap-1">
             <span class="font-bold text-stone-900 break-words flex-1 text-left">${item.qty}x ${escapeHtml(item.name)}</span>
-            <span class="font-black text-stone-900 whitespace-nowrap text-right shrink-0">${priceStr}</span>
+            <span class="font-black text-stone-900 whitespace-nowrap text-right shrink-0">${basePriceStr}</span>
           </div>
           ${hasDetail ? `<div class="text-[9.5px] text-stone-500 pl-3">@ ${unitPriceStr}</div>` : ''}
-          ${Array.isArray(item.addOns) && item.addOns.length > 0 ? `
-            <div class="text-[9.5px] text-stone-600 pl-3">
-              ${item.addOns.map(ao => `+ ${escapeHtml(ao.name)}${Number(ao.price) > 0 ? ` (+${formatRp(ao.price).replace('Rp ', '')})` : ''}`).join(', ')}
+          ${hasPricedAddons ? `
+            <div class="flex flex-col pl-3 mt-0.5 gap-0.5">
+              ${addOns.map(ao => {
+                const aoUnit = Number(ao.price) || 0;
+                const aoSub = aoUnit * item.qty;
+                return `
+                  <div class="flex justify-between text-[9.5px] text-stone-700">
+                    <span>+ ${escapeHtml(ao.name)}${item.qty > 1 ? ` (${item.qty}x)` : ''}</span>
+                    <span class="font-semibold">${aoUnit > 0 ? formatRp(aoSub).replace('Rp ', '') : 'Gratis'}</span>
+                  </div>
+                `;
+              }).join('')}
             </div>
-          ` : ''}
-          ${item.note ? `<span class="text-[9px] text-stone-600 italic pl-3">* ${escapeHtml(item.note)}</span>` : ''}
+          ` : (addOns.length > 0 ? `
+            <div class="text-[9.5px] text-stone-600 pl-3">
+              ${addOns.map(ao => `+ ${escapeHtml(ao.name)}`).join(', ')}
+            </div>
+          ` : '')}
+          ${item.note ? `<span class="text-[9px] text-stone-600 italic pl-3 mt-0.5">* ${escapeHtml(item.note)}</span>` : ''}
         </div>
       `;
     }).join('');
@@ -2001,15 +2103,24 @@ function getSampleTxData() {
   let items = [];
 
   if (realProducts && realProducts.length >= 2) {
+    const hasAddonsOnFirst = Array.isArray(realProducts[0].addOns) && realProducts[0].addOns.length > 0;
+    const sampleAddon = hasAddonsOnFirst ? realProducts[0].addOns[0] : { name: 'Ekstra Topping', price: 3000 };
     items = [
-      { name: realProducts[0].name, price: realProducts[0].price, qty: 1, subtotal: realProducts[0].price },
-      { name: realProducts[1].name, price: realProducts[1].price, qty: 2, subtotal: realProducts[1].price * 2 }
+      { 
+        name: realProducts[0].name, 
+        basePrice: realProducts[0].price, 
+        price: realProducts[0].price + (Number(sampleAddon.price) || 0), 
+        qty: 1, 
+        subtotal: realProducts[0].price + (Number(sampleAddon.price) || 0),
+        addOns: [sampleAddon]
+      },
+      { name: realProducts[1].name, basePrice: realProducts[1].price, price: realProducts[1].price, qty: 2, subtotal: realProducts[1].price * 2 }
     ];
   } else {
     items = [
-      { name: 'Nasi Uduk Komplit', price: 14000, qty: 1, subtotal: 14000 },
-      { name: 'Ayam Geprek + Nasi', price: 17000, qty: 1, subtotal: 17000 },
-      { name: 'Es Teh Manis', price: 5000, qty: 2, subtotal: 10000 }
+      { name: 'Nasi Uduk Komplit', basePrice: 14000, price: 17000, qty: 1, subtotal: 17000, addOns: [{ name: 'Telur Balado', price: 3000 }] },
+      { name: 'Ayam Geprek + Nasi', basePrice: 17000, price: 17000, qty: 1, subtotal: 17000 },
+      { name: 'Es Teh Manis', basePrice: 5000, price: 5000, qty: 2, subtotal: 10000 }
     ];
   }
 

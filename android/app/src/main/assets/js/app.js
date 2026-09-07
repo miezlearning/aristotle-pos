@@ -1438,6 +1438,7 @@ const KasirApp = {
   appendQuickNote: pos.appendQuickNote,
   clearItemNote: pos.clearItemNote,
   saveItemNote: pos.saveItemNote,
+  updateItemNoteLivePrice: pos.updateItemNoteLivePrice,
 
   // Payment & QRIS
   openPaymentModal: payment.openPaymentModal,
