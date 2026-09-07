@@ -201,6 +201,11 @@ export function initState() {
   if (savedProducts) {
     try {
       state.products = JSON.parse(savedProducts);
+      if (Array.isArray(state.products)) {
+        state.products.forEach(p => {
+          if (!Array.isArray(p.addOns)) p.addOns = [];
+        });
+      }
     } catch (e) {
       state.products = [...DEFAULT_PRODUCTS];
     }

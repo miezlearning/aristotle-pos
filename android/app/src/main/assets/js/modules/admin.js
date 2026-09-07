@@ -296,7 +296,7 @@ export function addNewAddOnRow(name = '', price = '') {
   const container = document.getElementById('productAddOnsContainer');
   if (!container) return;
   const row = document.createElement('div');
-  row.className = 'flex items-center gap-1.5 bg-white p-1.5 rounded-xl border border-stone-200';
+  row.className = 'addon-row flex items-center gap-1.5 bg-white p-1.5 rounded-xl border border-stone-200';
   row.innerHTML = `
     <input type="text" placeholder="Nama Add-on (ex: Telur)" value="${escapeHtml(name)}"
       class="addon-name-input flex-1 px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs font-bold text-stone-900 focus:border-amber-500 focus:outline-none">
@@ -305,7 +305,7 @@ export function addNewAddOnRow(name = '', price = '') {
       <input type="number" placeholder="0" min="0" step="500" value="${price !== undefined && price !== '' ? price : ''}"
         class="addon-price-input w-20 px-2 py-1.5 rounded-lg border border-stone-300 text-xs font-black text-emerald-800 focus:border-amber-500 focus:outline-none">
     </div>
-    <button type="button" onclick="this.closest('div.flex').remove()"
+    <button type="button" onclick="this.closest('.addon-row').remove()"
       class="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer" title="Hapus Add-on">
       <span class="material-symbols-rounded text-base">delete</span>
     </button>
@@ -318,7 +318,7 @@ export function addNewAddOnRow(name = '', price = '') {
 export function collectProductAddOns() {
   const container = document.getElementById('productAddOnsContainer');
   if (!container) return [];
-  const rows = container.querySelectorAll('div.flex');
+  const rows = container.querySelectorAll('.addon-row');
   const addOns = [];
   rows.forEach((row, idx) => {
     const name = row.querySelector('.addon-name-input')?.value.trim();

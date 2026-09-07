@@ -753,6 +753,7 @@ async function seedInitialProducts() {
         isAvailable: p.isAvailable !== false,
         trackStock: !!p.trackStock,
         stock: p.trackStock ? (p.stock !== undefined && p.stock !== null ? Number(p.stock) : null) : null,
+        addOns: Array.isArray(p.addOns) ? p.addOns : [],
         updatedAt: new Date().toISOString()
       }, { merge: true });
     });
@@ -780,6 +781,7 @@ export async function syncSaveProduct(product) {
       isAvailable: product.isAvailable !== false,
       trackStock: !!product.trackStock,
       stock: product.trackStock ? (product.stock !== undefined && product.stock !== null ? Number(product.stock) : null) : null,
+      addOns: Array.isArray(product.addOns) ? product.addOns : [],
       updatedAt: new Date().toISOString()
     }, { merge: true });
   } catch (e) {
@@ -1103,6 +1105,7 @@ export async function forceUploadAllToCloud() {
         isAvailable: p.isAvailable !== false,
         trackStock: !!p.trackStock,
         stock: p.trackStock ? (p.stock !== undefined && p.stock !== null ? Number(p.stock) : null) : null,
+        addOns: Array.isArray(p.addOns) ? p.addOns : [],
         updatedAt: new Date().toISOString()
       }, { merge: true });
     });
@@ -1358,6 +1361,7 @@ export async function superAdminCreateStore(storeData, includeStarterMenu = true
           const pRef = doc(db, 'stores', cleanId, 'products', p.id);
           batch.set(pRef, {
             ...p,
+            addOns: Array.isArray(p.addOns) ? p.addOns : [],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           });

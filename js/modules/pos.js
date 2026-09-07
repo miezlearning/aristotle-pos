@@ -431,6 +431,12 @@ export function renderProducts() {
           </div>
           <div class="flex flex-col items-end gap-1">
             <span class="text-[10px] font-bold text-stone-500 capitalize px-2 py-0.5 rounded-lg bg-stone-100">${escapeHtml(product.category)}</span>
+            ${Array.isArray(product.addOns) && product.addOns.length > 0 ? `
+              <span class="text-[9px] font-extrabold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 flex items-center gap-0.5">
+                <span class="material-symbols-rounded text-[11px] text-amber-600">add_circle</span>
+                <span>Add-on</span>
+              </span>
+            ` : ''}
             ${product.trackStock && isReady ? `
               <span class="text-[9px] font-extrabold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
                 Sisa: ${product.stock}
@@ -451,13 +457,13 @@ export function renderProducts() {
               <span class="material-symbols-rounded text-base text-rose-500">block</span>
             </div>
           ` : (hasQty ? `
-            <div class="flex items-center justify-between gap-1.5 pt-0.5" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between gap-1 pt-0.5" onclick="event.stopPropagation()">
               <button onclick="window.KasirApp.updateCartQty('${product.id}', -1)"
                 class="w-8 h-8 rounded-xl ${qty === 1 ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100' : 'bg-white text-stone-800 border-emerald-300 hover:bg-stone-50'} border font-black text-base flex items-center justify-center transition active:scale-90 shadow-sm touch-target-large"
                 title="${qty === 1 ? 'Hapus menu dari pesanan' : 'Kurangi 1 porsi'}">
                 ${qty === 1 ? '<span class="material-symbols-rounded text-base">delete</span>' : '-'}
               </button>
-              <div class="flex flex-col items-center leading-none">
+              <div class="flex flex-col items-center leading-none px-0.5">
                 <span class="font-black text-emerald-950 text-xs sm:text-sm">${qty}</span>
                 <span class="text-[9px] font-bold text-stone-500">porsi</span>
               </div>
@@ -465,6 +471,11 @@ export function renderProducts() {
                 class="w-8 h-8 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-base flex items-center justify-center transition active:scale-90 shadow-sm touch-target-large"
                 title="Tambah 1 porsi">
                 +
+              </button>
+              <button type="button" onclick="window.KasirApp.openItemNoteModal('${product.id}')"
+                class="w-8 h-8 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 flex items-center justify-center transition active:scale-90 shadow-sm touch-target-large ml-0.5 cursor-pointer"
+                title="Catatan & Add-on">
+                <span class="material-symbols-rounded text-base text-amber-700">edit_note</span>
               </button>
             </div>
           ` : `
@@ -698,24 +709,29 @@ export function renderCart() {
           <div class="mt-1 flex items-center gap-1.5 flex-wrap">
             ${hasNote ? `
               <button type="button" onclick="window.KasirApp.openItemNoteModal('${item.lineId}')" 
-                class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200 transition text-left cursor-pointer">
-                <span class="material-symbols-rounded text-xs text-amber-700">edit_note</span>
+                class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-200 transition text-left cursor-pointer shadow-2xs">
+                <span class="material-symbols-rounded text-sm text-amber-700">edit_note</span>
                 <span class="truncate max-w-[140px] sm:max-w-[200px]">${escapeHtml(item.note)}</span>
               </button>
             ` : `
               <button type="button" onclick="window.KasirApp.openItemNoteModal('${item.lineId}')"
-                class="inline-flex items-center gap-0.5 text-[10px] font-bold text-stone-400 hover:text-emerald-700 hover:bg-emerald-50 px-1.5 py-0.5 rounded border border-transparent hover:border-emerald-200 transition cursor-pointer">
-                <span class="material-symbols-rounded text-xs">add_comment</span>
-                <span>+ Catatan / Topping</span>
+                class="inline-flex items-center gap-1 text-[10.5px] font-bold text-stone-500 hover:text-amber-900 bg-stone-50 hover:bg-amber-50 px-2 py-0.5 rounded-lg border border-stone-200 hover:border-amber-300 transition cursor-pointer">
+                <span class="material-symbols-rounded text-sm text-amber-600">note_add</span>
+                <span>Catatan / Add-on</span>
               </button>
             `}
           </div>
         </div>
 
         <div class="flex items-center gap-1 shrink-0 mt-0.5">
-          <button onclick="window.KasirApp.updateCartQty('${item.lineId}', -1)" class="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 font-black text-sm flex items-center justify-center touch-target-large transition cursor-pointer">-</button>
-          <span class="w-5 text-center font-black text-xs text-stone-800">${item.qty}</span>
-          <button onclick="window.KasirApp.updateCartQty('${item.lineId}', 1)" class="w-7 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm flex items-center justify-center touch-target-large shadow-sm transition cursor-pointer">+</button>
+          <button type="button" onclick="window.KasirApp.openItemNoteModal('${item.lineId}')"
+            class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg ${hasNote || hasAddOns ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 ring-1 ring-amber-400/40' : 'bg-stone-100 hover:bg-amber-50 hover:text-amber-700 text-stone-500 border border-stone-200'} flex items-center justify-center touch-target-large transition cursor-pointer active:scale-95 shadow-2xs"
+            title="${hasNote ? `Catatan: ${escapeHtml(item.note)}` : 'Tambah Catatan / Add-on'}">
+            <span class="material-symbols-rounded text-base sm:text-lg ${hasNote || hasAddOns ? 'text-amber-700' : 'text-stone-500'}">edit_note</span>
+          </button>
+          <button onclick="window.KasirApp.updateCartQty('${item.lineId}', -1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 font-black text-sm flex items-center justify-center touch-target-large transition cursor-pointer">-</button>
+          <span class="w-5 text-center font-black text-xs sm:text-sm text-stone-800">${item.qty}</span>
+          <button onclick="window.KasirApp.updateCartQty('${item.lineId}', 1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm flex items-center justify-center touch-target-large shadow-sm transition cursor-pointer">+</button>
         </div>
       </div>
     `;

@@ -1,9 +1,10 @@
 {
-  "versionCode": 72,
-  "versionName": "1.2.24",
-  "apkUrl": "https://github.com/miezlearning/umkm-prototype/releases/download/v1.2.24/Aristotle-POS.apk",
+  "versionCode": 73,
+  "versionName": "1.2.25",
+  "apkUrl": "https://github.com/miezlearning/umkm-prototype/releases/download/v1.2.25/Aristotle-POS.apk",
   "changelog": [
-    "Desain 2 kolom Pengaturan Printer & Struk dengan sticky live receipt preview di sisi kanan"
+    "Perbaikan sinkronisasi Firestore untuk menu Add-on",
+    "Peningkatan tombol catatan & add-on di kasir dengan icon yang jelas dan nyaman"
   ],
-  "releaseDate": "2026-09-04"
+  "releaseDate": "2026-09-07"
 }
