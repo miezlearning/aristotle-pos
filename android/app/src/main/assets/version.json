@@ -1,9 +1,9 @@
 {
-  "versionCode": 81,
-  "versionName": "1.2.33",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.33/Aristotle-POS.apk",
+  "versionCode": 82,
+  "versionName": "1.2.34",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.34/Aristotle-POS.apk",
   "changelog": [
-    "Integrasi sistem enterprise error telemetry & crash reporting otomatis ke Discord Webhook"
+    "Perbaikan anti-spam interaksi printer & deduplikasi toast error"
   ],
   "releaseDate": "2026-09-09"
 }

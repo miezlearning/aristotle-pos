@@ -1460,42 +1460,61 @@ async function tryKickDrawerViaLocalLan(overrideIp = null) {
   return false;
 }
 
+// Anti-spam concurrency guard untuk seluruh interaksi printer & laci kasir
+let isPrinterActionBusy = false;
+
 export async function kickCashDrawer(directOnly = false) {
   playClick('cash');
 
-  // 1. Jika diminta tes langsung atau terhubung ke printer lokal fisik (Device 1)
-  if (directOnly || isLocalPrinterReady()) {
-    const ok = await executeDirectLocalKickDrawer();
-    if (!ok && directOnly) {
-      showToast('Laci kasir belum terhubung di perangkat ini.', 'warning');
-    }
-    return ok;
+  if (isPrinterActionBusy) {
+    showToast('Perintah buka laci sedang diproses...', 'info', 1500);
+    return false;
   }
+  isPrinterActionBusy = true;
 
-  // 2. Jalur Utama: Coba via Wi-Fi Lokal / Hotspot
-  let hostIp = state.printerConfig?.localHostIp || localStorage.getItem('aristotle_local_host_ip');
-  if (!hostIp && detectHotspotConnection()) hostIp = '192.168.43.1';
-  if (hostIp) {
-    try {
-      const localOk = await tryKickDrawerViaLocalLan(hostIp);
-      if (localOk) {
-        showToast('Laci kasir berhasil dibuka.', 'success', 2500);
-        return true;
-      }
-    } catch (_) {}
-  }
-
-  // 3. Jalur Cadangan (Fallback): Cloud Drawer Relay
   try {
+    const role = getDevicePrinterMode();
+
+    // 1. Kasir Utama (Host) atau perangkat yang terhubung langsung ke hardware printer
+    if (directOnly || isLocalPrinterReady() || role === 'host') {
+      const ok = await executeDirectLocalKickDrawer();
+      if (!ok) {
+        showToast('Laci kasir belum terhubung di perangkat ini. Sambungkan printer Bluetooth/USB.', 'warning', 3000);
+      }
+      return ok;
+    }
+
+    // 2. HP Staf: Coba via Wi-Fi Lokal / Hotspot
+    let hostIp = state.printerConfig?.localHostIp || localStorage.getItem('aristotle_local_host_ip');
+    if (!hostIp && detectHotspotConnection()) hostIp = '192.168.43.1';
+    if (hostIp) {
+      try {
+        const localOk = await tryKickDrawerViaLocalLan(hostIp);
+        if (localOk) {
+          showToast('Laci kasir berhasil dibuka.', 'success', 2500);
+          return true;
+        }
+      } catch (_) {}
+    }
+
+    // Cek koneksi internet sebelum mencoba Cloud Relay
+    if (!navigator.onLine) {
+      showToast('Gagal: Perangkat kasir utama tidak terdeteksi di jaringan lokal.', 'warning', 3000);
+      return false;
+    }
+
+    // 3. Jalur Cadangan (Fallback): Cloud Drawer Relay
     showToast('Membuka laci kasir...', 'info', 2000);
     const jobId = await dispatchRemotePrintJob({ type: 'drawer' });
-    await waitForRemotePrintJob(jobId, 10000);
+    await waitForRemotePrintJob(jobId, 5000);
     showToast('Laci kasir berhasil dibuka.', 'success', 2500);
     return true;
   } catch (err) {
     console.warn('Remote drawer kick note:', err);
-    showToast('Gagal buka laci: ' + (err.message || 'Printer Kasir tidak merespons.'), 'warning', 4500);
+    showToast('Gagal buka laci: ' + (err.message || 'Printer Kasir tidak merespons.'), 'warning', 3500);
     return false;
+  } finally {
+    isPrinterActionBusy = false;
   }
 }
 
@@ -1514,8 +1533,10 @@ export async function printReceipt(tx, shouldKickDrawer = null, forceMethod = nu
     ? Boolean(shouldKickDrawer)
     : Boolean(cfg.autoKickDrawer !== false && isCash);
 
+  const role = getDevicePrinterMode();
+
   // 1. Kasir Utama yang terhubung ke printer fisik
-  if (isLocalPrinterReady()) {
+  if (isLocalPrinterReady() || role === 'host') {
     return await executeDirectLocalPrintReceipt(tx, resolvedKick, forceMethod);
   }
 
@@ -1539,6 +1560,12 @@ export async function printReceipt(tx, shouldKickDrawer = null, forceMethod = nu
     }
   }
 
+  // Cek koneksi sebelum fallback cloud
+  if (!navigator.onLine) {
+    showToast('Gagal cetak: Kasir utama tidak terdeteksi di jaringan lokal.', 'warning', 3000);
+    return false;
+  }
+
   // Jalur Cadangan: Cloud Relay Firebase
   try {
     showToast('Mengirim struk ke printer kasir...', 'info', 2000);
@@ -1548,11 +1575,11 @@ export async function printReceipt(tx, shouldKickDrawer = null, forceMethod = nu
       kickDrawer: resolvedKick,
       forceMethod: forceMethod
     });
-    await waitForRemotePrintJob(jobId, 12000);
+    await waitForRemotePrintJob(jobId, 7000);
     showToast('Struk berhasil dicetak.', 'success', 2500);
     return true;
   } catch (err) {
-    showToast('Gagal cetak: ' + (err.message || 'Kasir utama belum merespons.'), 'warning', 4000);
+    showToast('Gagal cetak: ' + (err.message || 'Kasir utama belum merespons.'), 'warning', 3500);
     return false;
   }
 }
@@ -1567,8 +1594,10 @@ export async function printKitchenTicket(tx, shouldKickDrawer = false) {
     return false;
   }
 
-  // 1. Jika perangkat ini terhubung ke printer lokal (Device 1)
-  if (isLocalPrinterReady()) {
+  const role = getDevicePrinterMode();
+
+  // 1. Jika perangkat ini Kasir Utama (Host) atau terhubung ke printer lokal (Device 1)
+  if (isLocalPrinterReady() || role === 'host') {
     return await executeDirectLocalKitchenTicket(tx, shouldKickDrawer);
   }
 
@@ -1591,16 +1620,21 @@ export async function printKitchenTicket(tx, shouldKickDrawer = false) {
     }
   }
 
+  // Cek koneksi sebelum fallback cloud
+  if (!navigator.onLine) {
+    showToast('Gagal: Kasir utama tidak terdeteksi di jaringan lokal.', 'warning', 3000);
+    return false;
+  }
+
   // 3. Jalur Cadangan (Fallback): Cloud Print Relay Firebase
   try {
-    showToast('Mengirim tiket dapur...', 'info', 2000);
+    showToast('Mengirim tiket dapur ke kasir utama...', 'info', 2000);
     const jobId = await dispatchRemotePrintJob({
       type: 'kitchen',
       tx: tx,
       kickDrawer: shouldKickDrawer
     });
-    showToast('Menunggu pencetakan tiket...', 'info', 2000);
-    await waitForRemotePrintJob(jobId, 15000);
+    await waitForRemotePrintJob(jobId, 7000);
     showToast('Tiket dapur berhasil dicetak.', 'success', 2500);
     return true;
   } catch (err) {
@@ -2236,6 +2270,12 @@ function getSampleTxData() {
  */
 export async function testPrintReceipt() {
   playClick('tap');
+  if (isPrinterActionBusy) {
+    showToast('Sedang memproses uji coba sebelumnya...', 'info', 1500);
+    return;
+  }
+  isPrinterActionBusy = true;
+
   try {
     const sampleTx = getSampleTxData();
     const role = getDevicePrinterMode();
@@ -2245,7 +2285,6 @@ export async function testPrintReceipt() {
     const shouldKick = autoKickFromModal !== undefined ? autoKickFromModal : cfgKick;
 
     if (role === 'pelayan') {
-      showToast('Mengirim tes struk ke Kasir Utama...', 'info', 2000);
       await printReceipt(sampleTx, shouldKick);
     } else {
       showToast('Menguji cetak struk kasir...', 'info', 2000);
@@ -2254,6 +2293,8 @@ export async function testPrintReceipt() {
   } catch (err) {
     console.error('Test receipt error:', err);
     showToast('Gagal tes struk: ' + (err.message || 'Kesalahan sistem'), 'error');
+  } finally {
+    isPrinterActionBusy = false;
   }
 }
 
@@ -2262,6 +2303,12 @@ export async function testPrintReceipt() {
  */
 export async function testPrintKitchenTicket() {
   playClick('tap');
+  if (isPrinterActionBusy) {
+    showToast('Sedang memproses uji coba sebelumnya...', 'info', 1500);
+    return;
+  }
+  isPrinterActionBusy = true;
+
   try {
     const sampleTx = getSampleTxData();
     const role = getDevicePrinterMode();
@@ -2271,7 +2318,6 @@ export async function testPrintKitchenTicket() {
     const shouldKick = autoKickFromModal !== undefined ? autoKickFromModal : cfgKick;
 
     if (role === 'pelayan') {
-      showToast('Mengirim tes tiket ke Kasir Utama...', 'info', 2000);
       await printKitchenTicket(sampleTx, shouldKick);
     } else {
       showToast('Menguji cetak tiket dapur...', 'info', 2000);
@@ -2280,6 +2326,8 @@ export async function testPrintKitchenTicket() {
   } catch (err) {
     console.error('Test kitchen ticket error:', err);
     showToast('Gagal tes tiket dapur: ' + (err.message || 'Kesalahan sistem'), 'error');
+  } finally {
+    isPrinterActionBusy = false;
   }
 }
 

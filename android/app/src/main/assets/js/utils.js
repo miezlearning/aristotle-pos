@@ -174,7 +174,20 @@ export function showToast(message, type = 'success', duration = 3000, action = n
     document.body.appendChild(container);
   }
 
+  // 1. Anti-Spam: Abaikan jika toast dengan pesan yang sama persis sedang aktif di layar
+  const existingSame = Array.from(container.children).find(el => el.dataset.toastMsg === message);
+  if (existingSame) {
+    return;
+  }
+
+  // 2. Batasi maksimal 2 toast di layar agar tidak menutupi antarmuka kasir
+  while (container.children.length >= 2) {
+    const oldest = container.firstElementChild;
+    if (oldest) oldest.remove();
+  }
+
   const toast = document.createElement('div');
+  toast.dataset.toastMsg = message;
 
   const config = {
     success: {
