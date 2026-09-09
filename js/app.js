@@ -65,20 +65,26 @@ export function switchView(viewName) {
   if (viewSuperAdmin) viewSuperAdmin.classList.add('hidden');
 
   // Reset Mobile Navigation Buttons
+  const navInactiveClass = 'flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-xl text-stone-500 hover:text-stone-800 font-bold text-xs touch-target-large transition active:scale-95';
+  const navActiveClass = 'flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-xl text-emerald-800 bg-emerald-50 font-black text-xs touch-target-large transition active:scale-95 shadow-2xs';
+
   [btnPosM, btnReportM, btnAdminM].forEach(b => {
-    if (b) {
-      b.className = 'flex flex-col items-center justify-center flex-1 py-1 text-stone-400 hover:text-stone-600 font-medium text-[11px] touch-target-large';
-    }
+    if (b) b.className = navInactiveClass;
   });
 
   const mobileNav = document.getElementById('mobileBottomNav') || document.querySelector('nav.lg\\:hidden') || document.querySelector('nav.md\\:hidden');
   const mainHeader = document.getElementById('mainAppHeader');
+  const mobileFloating = document.getElementById('mobileFloatingCart');
+
+  if (mobileFloating && viewName !== 'pos') {
+    mobileFloating.classList.add('translate-y-28', 'opacity-0', 'pointer-events-none');
+  }
 
   if (viewName === 'pos') {
     if (mainHeader) mainHeader.classList.remove('hidden');
     if (mobileNav) mobileNav.classList.remove('hidden');
     if (viewPos) viewPos.classList.remove('hidden');
-    if (btnPosM) btnPosM.className = 'flex flex-col items-center justify-center flex-1 py-1 text-emerald-700 font-black text-[11px] touch-target-large';
+    if (btnPosM) btnPosM.className = navActiveClass;
     pos.renderOrderQueueTabs();
     pos.renderProducts();
     pos.renderCart();
@@ -89,7 +95,7 @@ export function switchView(viewName) {
     if (mainHeader) mainHeader.classList.remove('hidden');
     if (mobileNav) mobileNav.classList.remove('hidden');
     if (viewAdmin) viewAdmin.classList.remove('hidden');
-    if (btnAdminM) btnAdminM.className = 'flex flex-col items-center justify-center flex-1 py-1 text-emerald-700 font-black text-[11px] touch-target-large';
+    if (btnAdminM) btnAdminM.className = navActiveClass;
     admin.renderAdminTable();
     if (state.storeId) {
       window.history.replaceState(null, '', `${window.location.pathname}?store=${encodeURIComponent(state.storeId)}`);
@@ -98,7 +104,7 @@ export function switchView(viewName) {
     if (mainHeader) mainHeader.classList.remove('hidden');
     if (mobileNav) mobileNav.classList.remove('hidden');
     if (viewReport) viewReport.classList.remove('hidden');
-    if (btnReportM) btnReportM.className = 'flex flex-col items-center justify-center flex-1 py-1 text-emerald-700 font-black text-[11px] touch-target-large';
+    if (btnReportM) btnReportM.className = navActiveClass;
     report.renderFinancialReport();
     if (state.storeId) {
       window.history.replaceState(null, '', `${window.location.pathname}?store=${encodeURIComponent(state.storeId)}`);
@@ -113,6 +119,32 @@ export function switchView(viewName) {
 
   // Update M3 Navigation Rail active destination
   updateM3NavRailUI(viewName);
+}
+
+export function handleSearchInput(e) {
+  const clearBtn = document.getElementById('clearSearchBtn');
+  const val = (e && e.target) ? e.target.value : (document.getElementById('searchInput')?.value || '');
+  if (clearBtn) {
+    if (val.trim().length > 0) {
+      clearBtn.classList.remove('hidden');
+    } else {
+      clearBtn.classList.add('hidden');
+    }
+  }
+  pos.renderProducts();
+}
+
+export function clearSearch() {
+  const searchInput = document.getElementById('searchInput');
+  const clearBtn = document.getElementById('clearSearchBtn');
+  if (searchInput) {
+    searchInput.value = '';
+    searchInput.focus();
+  }
+  if (clearBtn) {
+    clearBtn.classList.add('hidden');
+  }
+  pos.renderProducts();
 }
 
 /**
@@ -1425,6 +1457,8 @@ const KasirApp = {
   scrollQueueTabs: pos.scrollQueueTabs,
   handleQueueWheel: pos.handleQueueWheel,
   setCategory: pos.setCategory,
+  handleSearchInput,
+  clearSearch,
   renderProducts: pos.renderProducts,
   renderProductSkeletons: pos.renderProductSkeletons,
   addToCart: pos.addToCart,

@@ -324,14 +324,15 @@ export function deleteOrderQueue(queueId, event) {
 }
 
 // ================= CATEGORY & PRODUCT RENDERING =================
+// ================= CATEGORY & PRODUCT RENDERING =================
 export function syncCategoryPillsUI() {
   const current = state.currentCategory || 'all';
   document.querySelectorAll('.cat-pill').forEach(btn => {
-    btn.className = 'cat-pill py-2 px-1 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200 text-stone-800 transition flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 touch-target-large border border-stone-200';
+    btn.className = 'cat-pill py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-white hover:bg-stone-50 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/90 shadow-2xs shrink-0 whitespace-nowrap active:scale-95';
   });
   const activeBtn = document.getElementById(`cat-${current}`);
   if (activeBtn) {
-    activeBtn.className = 'cat-pill py-2 px-1 sm:px-4 rounded-xl font-black text-xs sm:text-sm text-center bg-emerald-700 text-white shadow-md transition flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 touch-target-large ring-2 ring-emerald-500/30';
+    activeBtn.className = 'cat-pill py-2 px-4 sm:px-4.5 rounded-xl font-black text-xs sm:text-sm text-center bg-stone-900 text-white shadow-md transition flex items-center justify-center gap-1.5 touch-target-large ring-2 ring-stone-900/20 border border-stone-900 shrink-0 whitespace-nowrap';
   }
 }
 
@@ -346,18 +347,49 @@ export function renderProductSkeletons(count = 8) {
   const grid = document.getElementById('productGrid');
   if (!grid) return;
   grid.innerHTML = Array(count).fill(0).map(() => `
-    <div class="bg-white border border-stone-200 rounded-2xl p-2.5 sm:p-4 flex flex-col justify-between h-40 animate-pulse shadow-sm">
-      <div class="flex items-start justify-between">
-        <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl skeleton-shimmer"></div>
-        <div class="w-14 h-4 rounded-lg skeleton-shimmer"></div>
+    <div class="bg-white border border-stone-200/80 rounded-2xl sm:rounded-3xl p-2.5 sm:p-3.5 flex flex-col justify-between h-56 animate-pulse shadow-sm">
+      <div class="w-full h-24 sm:h-28 rounded-xl sm:rounded-2xl skeleton-shimmer"></div>
+      <div class="space-y-2 mt-2.5">
+        <div class="w-3/4 h-4 rounded-lg skeleton-shimmer"></div>
+        <div class="w-1/2 h-5 rounded-lg skeleton-shimmer"></div>
       </div>
-      <div class="space-y-2 mt-2">
-        <div class="w-3/4 h-4 rounded skeleton-shimmer"></div>
-        <div class="w-1/2 h-5 rounded skeleton-shimmer"></div>
-      </div>
-      <div class="w-full h-3 rounded skeleton-shimmer mt-2 pt-1 border-t border-stone-100"></div>
+      <div class="w-full h-8 rounded-xl skeleton-shimmer mt-2.5"></div>
     </div>
   `).join('');
+}
+
+function getCategoryVisualConfig(category, icon) {
+  const cat = (category || '').toLowerCase().trim();
+  if (cat.includes('makan')) {
+    return {
+      gradClass: 'card-grad-makanan',
+      icon: icon || 'lunch_dining',
+      accentColor: 'text-amber-800'
+    };
+  } else if (cat.includes('minum')) {
+    return {
+      gradClass: 'card-grad-minuman',
+      icon: icon || 'local_cafe',
+      accentColor: 'text-teal-800'
+    };
+  } else if (cat.includes('camil') || cat.includes('snack') || cat.includes('kue')) {
+    return {
+      gradClass: 'card-grad-camilan',
+      icon: icon || 'bakery_dining',
+      accentColor: 'text-rose-800'
+    };
+  } else if (cat.includes('top') || cat.includes('ekstra') || cat.includes('tambah')) {
+    return {
+      gradClass: 'card-grad-topping',
+      icon: icon || 'add_circle',
+      accentColor: 'text-purple-800'
+    };
+  }
+  return {
+    gradClass: 'card-grad-default',
+    icon: icon || 'restaurant',
+    accentColor: 'text-stone-700'
+  };
 }
 
 export function renderProducts() {
@@ -396,9 +428,12 @@ export function renderProducts() {
 
   if (filtered.length === 0) {
     grid.innerHTML = `
-      <div class="col-span-full py-12 text-center text-stone-400 flex flex-col items-center justify-center gap-2 bg-white rounded-2xl border border-stone-200">
-        <span class="material-symbols-rounded text-5xl text-stone-300">search_off</span>
-        <p class="font-bold text-sm">Menu tidak ditemukan</p>
+      <div class="col-span-full py-14 text-center text-stone-400 flex flex-col items-center justify-center gap-2 bg-white rounded-3xl border border-stone-200/80 shadow-2xs">
+        <div class="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-400 mb-1">
+          <span class="material-symbols-rounded text-3xl">search_off</span>
+        </div>
+        <p class="font-extrabold text-stone-700 text-sm">Menu tidak ditemukan</p>
+        <p class="text-xs text-stone-400">Coba ubah kata kunci pencarian atau pilih kategori lain.</p>
       </div>
     `;
     return;
@@ -408,80 +443,84 @@ export function renderProducts() {
     const qty = currentCart[product.id] || 0;
     const hasQty = qty > 0;
     const isReady = product.isAvailable !== false && (!product.trackStock || (product.stock || 0) > 0);
+    const vis = getCategoryVisualConfig(product.category, product.icon);
 
     return `
       <div onclick="window.KasirApp.addToCart('${product.id}')" 
-        class="relative bg-white active:scale-[0.98] ${hasQty ? 'border-2 border-emerald-600 ring-2 ring-emerald-500/20 bg-emerald-50/20 shadow-md' : 'border border-stone-200 hover:border-emerald-300 shadow-sm'} ${!isReady ? 'opacity-65 bg-stone-50 cursor-not-allowed' : ''} rounded-2xl p-2.5 sm:p-4 flex flex-col justify-between transition touch-target-large">
+        class="pos-product-card relative bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex flex-col justify-between border ${hasQty ? 'pos-product-card-active' : 'border-stone-200/80 hover:border-emerald-300'} ${!isReady ? 'opacity-65 bg-stone-50/90 cursor-not-allowed' : 'cursor-pointer'} touch-target-large select-none">
         
         ${hasQty ? `
-          <span class="absolute -top-2 -right-2 bg-emerald-700 text-white font-black text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full shadow-md z-10">
+          <span class="absolute -top-2 -right-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow-md z-10 border-2 border-white">
             ${qty}x
           </span>
         ` : ''}
 
         ${!isReady ? `
-          <span class="absolute top-2 right-2 bg-rose-600 text-white font-black text-[10px] sm:text-xs px-2 py-0.5 rounded-full shadow-md z-10">
+          <span class="absolute top-2.5 right-2.5 bg-rose-600 text-white font-black text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full shadow-md z-10 border border-white">
             HABIS
           </span>
         ` : ''}
 
         ${product.image ? `
-          <div class="relative w-full h-24 sm:h-28 rounded-xl overflow-hidden mb-2 bg-stone-100 shrink-0">
+          <div class="relative w-full h-24 sm:h-28 rounded-xl sm:rounded-2xl overflow-hidden mb-2 bg-stone-100 shrink-0 shadow-2xs">
             <img src="${product.image}" alt="${escapeHtml(product.name)}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" onerror="this.parentElement.style.display='none'">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none"></div>
             <div class="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start">
-              <span class="text-[9px] sm:text-[10px] font-bold text-stone-800 capitalize px-2 py-0.5 rounded-md bg-white/90 backdrop-blur-xs shadow-xs">${escapeHtml(product.category)}</span>
+              <span class="text-[9px] sm:text-[10px] font-bold text-white capitalize px-2 py-0.5 rounded-lg bg-black/40 backdrop-blur-md border border-white/20">${escapeHtml(product.category)}</span>
             </div>
             <div class="absolute bottom-1.5 right-1.5 flex flex-col gap-1 items-end">
               ${Array.isArray(product.addOns) && product.addOns.length > 0 ? `
-                <span class="text-[9px] font-extrabold text-amber-900 bg-amber-200/90 backdrop-blur-xs px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
-                  <span class="material-symbols-rounded text-[11px] text-amber-700">add_circle</span>
+                <span class="text-[9px] font-extrabold text-amber-950 bg-amber-300/95 backdrop-blur-xs px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                  <span class="material-symbols-rounded text-[11px] text-amber-800">add_circle</span>
                   <span>Add-on</span>
                 </span>
               ` : ''}
               ${product.trackStock && isReady ? `
-                <span class="text-[9px] font-extrabold text-emerald-900 bg-emerald-200/90 backdrop-blur-xs px-1.5 py-0.5 rounded-md shadow-xs">
-                  Sisa: ${product.stock}
+                <span class="text-[9px] font-extrabold text-white bg-black/50 backdrop-blur-xs px-1.5 py-0.5 rounded-md border border-white/20">
+                  Sisa ${product.stock}
                 </span>
               ` : ''}
             </div>
           </div>
         ` : `
-          <div class="flex items-start justify-between gap-1">
-            <div class="w-9 h-9 sm:w-12 sm:h-12 rounded-xl ${hasQty ? 'bg-emerald-100 text-emerald-800' : (isReady ? 'bg-stone-100 text-stone-700' : 'bg-stone-200 text-stone-400')} flex items-center justify-center shrink-0 transition">
-              <span class="material-symbols-rounded text-xl sm:text-2xl">${product.icon || 'lunch_dining'}</span>
+          <div class="relative w-full h-24 sm:h-28 rounded-xl sm:rounded-2xl overflow-hidden mb-2 shrink-0 ${vis.gradClass} border border-black/[0.04] flex items-center justify-center shadow-2xs">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/75 backdrop-blur-xs shadow-xs flex items-center justify-center ${vis.accentColor} transition-transform group-hover:scale-110">
+              <span class="material-symbols-rounded text-2xl sm:text-3xl">${vis.icon}</span>
             </div>
-            <div class="flex flex-col items-end gap-1">
-              <span class="text-[10px] font-bold text-stone-500 capitalize px-2 py-0.5 rounded-lg bg-stone-100">${escapeHtml(product.category)}</span>
+            <div class="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start">
+              <span class="text-[9px] sm:text-[10px] font-bold capitalize px-2 py-0.5 rounded-lg bg-white/85 backdrop-blur-xs text-stone-700 shadow-2xs border border-white/40">${escapeHtml(product.category)}</span>
+            </div>
+            <div class="absolute bottom-1.5 right-1.5 flex flex-col gap-1 items-end">
               ${Array.isArray(product.addOns) && product.addOns.length > 0 ? `
-                <span class="text-[9px] font-extrabold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 flex items-center gap-0.5">
-                  <span class="material-symbols-rounded text-[11px] text-amber-600">add_circle</span>
+                <span class="text-[9px] font-extrabold text-amber-950 bg-amber-200/90 backdrop-blur-xs px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                  <span class="material-symbols-rounded text-[11px] text-amber-800">add_circle</span>
                   <span>Add-on</span>
                 </span>
               ` : ''}
               ${product.trackStock && isReady ? `
-                <span class="text-[9px] font-extrabold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                  Sisa: ${product.stock}
+                <span class="text-[9px] font-extrabold text-emerald-900 bg-white/85 backdrop-blur-xs px-1.5 py-0.5 rounded-md shadow-2xs">
+                  Sisa ${product.stock}
                 </span>
               ` : ''}
             </div>
           </div>
         `}
 
-        <div class="mt-2.5">
-          <h3 class="font-extrabold text-stone-900 text-xs sm:text-base leading-tight line-clamp-2 ${!isReady ? 'text-stone-500 line-through' : ''}">${escapeHtml(product.name)}</h3>
-          <p class="font-black ${isReady ? 'text-emerald-700' : 'text-stone-400'} text-sm sm:text-lg mt-0.5">${formatRp(product.price)}</p>
+        <div class="flex-1 flex flex-col justify-start">
+          <h3 class="font-extrabold text-stone-900 text-xs sm:text-sm leading-snug line-clamp-2 ${!isReady ? 'text-stone-400 line-through' : ''}">${escapeHtml(product.name)}</h3>
+          <p class="font-black ${isReady ? 'text-emerald-700' : 'text-stone-400'} text-sm sm:text-base mt-1 tracking-tight">${formatRp(product.price)}</p>
         </div>
 
-        <div class="mt-2 pt-1.5 border-t ${hasQty ? 'border-emerald-200/80' : 'border-stone-100'}">
+        <div class="mt-2.5 pt-2 border-t ${hasQty ? 'border-emerald-200/70' : 'border-stone-100'}">
           ${!isReady ? `
-            <div class="flex items-center justify-between text-[11px] font-extrabold text-rose-500">
+            <div class="flex items-center justify-between text-[11px] font-extrabold text-rose-500 py-1">
               <span class="font-black text-rose-600">Stok Kosong</span>
               <span class="material-symbols-rounded text-base text-rose-500">block</span>
             </div>
           ` : (hasQty ? `
             <div class="flex items-center justify-between gap-1 pt-0.5" onclick="event.stopPropagation()">
               <button onclick="window.KasirApp.updateCartQty('${product.id}', -1)"
-                class="w-8 h-8 rounded-xl ${qty === 1 ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100' : 'bg-white text-stone-800 border-emerald-300 hover:bg-stone-50'} border font-black text-base flex items-center justify-center transition active:scale-90 shadow-sm touch-target-large"
+                class="w-8 h-8 rounded-xl ${qty === 1 ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100' : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'} border font-black text-base flex items-center justify-center transition active:scale-90 shadow-2xs touch-target-large"
                 title="${qty === 1 ? 'Hapus menu dari pesanan' : 'Kurangi 1 porsi'}">
                 ${qty === 1 ? '<span class="material-symbols-rounded text-base">delete</span>' : '-'}
               </button>
@@ -490,21 +529,22 @@ export function renderProducts() {
                 <span class="text-[9px] font-bold text-stone-500">porsi</span>
               </div>
               <button onclick="window.KasirApp.updateCartQty('${product.id}', 1)"
-                class="w-8 h-8 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-base flex items-center justify-center transition active:scale-90 shadow-sm touch-target-large"
+                class="w-8 h-8 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-base flex items-center justify-center transition active:scale-90 shadow-xs touch-target-large"
                 title="Tambah 1 porsi">
                 +
               </button>
               <button type="button" onclick="window.KasirApp.openItemNoteModal('${product.id}')"
-                class="w-8 h-8 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 flex items-center justify-center transition active:scale-90 shadow-sm touch-target-large ml-0.5 cursor-pointer"
+                class="w-8 h-8 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 flex items-center justify-center transition active:scale-90 shadow-2xs touch-target-large ml-0.5 cursor-pointer"
                 title="Catatan & Add-on">
                 <span class="material-symbols-rounded text-base text-amber-700">edit_note</span>
               </button>
             </div>
           ` : `
-            <div class="flex items-center justify-between text-[11px] font-extrabold text-stone-500">
+            <button type="button"
+              class="w-full py-1.5 px-2.5 rounded-xl bg-stone-50 hover:bg-emerald-50 text-stone-700 hover:text-emerald-800 border border-stone-200/80 hover:border-emerald-300 flex items-center justify-between text-[11px] sm:text-xs font-bold transition active:scale-95 shadow-2xs">
               <span>+ Tambah</span>
               <span class="material-symbols-rounded text-base text-emerald-600">add_circle</span>
-            </div>
+            </button>
           `)}
         </div>
       </div>

@@ -1,9 +1,9 @@
 {
-  "versionCode": 79,
-  "versionName": "1.2.31",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.31/Aristotle-POS.apk",
+  "versionCode": 80,
+  "versionName": "1.2.32",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.32/Aristotle-POS.apk",
   "changelog": [
-    "Arsitektur POS industri: runtime 100% lokal offline instan 0ms, eliminasi split-brain origin, debounced queue sync, hardware acceleration, dan throttling presence"
+    "Redesain UI/UX standar eksekutif modern (Thematic cards, floating quick-checkout bar, modern header & dock)"
   ],
   "releaseDate": "2026-09-09"
 }

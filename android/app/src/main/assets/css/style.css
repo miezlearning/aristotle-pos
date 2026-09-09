@@ -376,4 +376,81 @@ div[id$="Modal"]:not(.hidden) > div,
   cursor: default;
 }
 
+/* ==================== EXECUTIVE POS DESIGN SYSTEM (v1.2.32) ==================== */
+
+/* Category Thematic Visual Gradients for Menu Cards without Images */
+.card-grad-makanan {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 60%, #fed7aa 100%);
+  color: #9a3412;
+}
+
+.card-grad-minuman {
+  background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 60%, #99f6e4 100%);
+  color: #115e59;
+}
+
+.card-grad-camilan {
+  background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 60%, #fecdd3 100%);
+  color: #9f1239;
+}
+
+.card-grad-topping {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 60%, #e9d5ff 100%);
+  color: #6b21a8;
+}
+
+.card-grad-default {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 60%, #e2e8f0 100%);
+  color: #334155;
+}
+
+/* Modern POS Card Elevation & Tactile Touch */
+.pos-product-card {
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease, border-color 0.18s ease;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+}
+
+.pos-product-card:active {
+  transform: scale(0.975);
+}
+
+@media (hover: hover) {
+  .pos-product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08), 0 6px 8px -4px rgba(0, 0, 0, 0.04);
+  }
+}
+
+/* In-Cart Glowing Accent */
+.pos-product-card-active {
+  border-color: #059669 !important;
+  background-color: rgba(236, 253, 245, 0.45) !important;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.25), 0 8px 16px -4px rgba(5, 150, 105, 0.12) !important;
+}
+
+/* Floating Quick-Checkout Bar on Mobile */
+#mobileFloatingCartBar {
+  animation: floatBarSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes floatBarSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Active Nav Pill in Bottom Dock */
+.bottom-nav-active-pill {
+  background: #047857;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px -2px rgba(4, 120, 87, 0.35);
+  transform: translateY(-1px);
+}
+
+
 
