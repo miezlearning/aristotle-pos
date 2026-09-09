@@ -1600,6 +1600,8 @@ const KasirApp = {
 
 // Expose to window for inline onclick HTML handlers
 window.KasirApp = KasirApp;
+window.openPrinterConfigModal = printer.openPrinterConfigModal;
+window.closePrinterConfigModal = printer.closePrinterConfigModal;
 
 // Auto-bind window shortcuts for standard HTML event handlers
 Object.keys(KasirApp).forEach(key => {

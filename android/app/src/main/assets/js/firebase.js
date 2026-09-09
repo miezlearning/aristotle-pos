@@ -1604,4 +1604,23 @@ export function listenToHostPresence(callback) {
   }
 }
 
+/**
+ * Ambil status keberadaan Host Kasir secara langsung (one-shot direct fetch)
+ */
+export async function fetchHostPresenceDirect() {
+  if (!db) return null;
+  const storeId = getStoreId();
+  if (!storeId) return null;
+  try {
+    const docRef = doc(db, 'stores', storeId, 'config', 'host_presence');
+    const snap = await getDoc(docRef);
+    if (snap && snap.exists()) {
+      return snap.data();
+    }
+  } catch (e) {
+    console.warn('Fetch host presence direct note:', e.message);
+  }
+  return null;
+}
+
 

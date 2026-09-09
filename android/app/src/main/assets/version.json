@@ -1,10 +1,9 @@
 {
-  "versionCode": 76,
-  "versionName": "1.2.28",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.28/Aristotle-POS.apk",
+  "versionCode": 77,
+  "versionName": "1.2.29",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.29/Aristotle-POS.apk",
   "changelog": [
-    "Migrasi endpoint aplikasi dan URL repositori ke aristotle-pos",
-    "Sinkronisasi auto-updater dan live production webview"
+    "Perbaikan koneksi Hotspot multi-device, penanganan gateway DHCP, eliminasi lag reconnect, stabilitas modal printer, dan proteksi crash pergantian peran kasir"
   ],
   "releaseDate": "2026-09-09"
 }

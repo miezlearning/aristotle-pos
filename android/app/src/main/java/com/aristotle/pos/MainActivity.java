@@ -18,7 +18,9 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
+import java.net.InetSocketAddress;
 import android.os.Build;
 import android.os.Bundle;
 import java.io.BufferedReader;
@@ -670,6 +672,21 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @JavascriptInterface
+        public String getWifiGatewayIp() {
+            return MainActivity.this.getWifiGatewayIp();
+        }
+
+        @JavascriptInterface
+        public boolean probeLocalHost(String ip, int port, int timeoutMs) {
+            return MainActivity.this.probeLocalHost(ip, port, timeoutMs);
+        }
+
+        @JavascriptInterface
+        public String sendLocalHttpRequest(String urlStr, String method, String jsonPayload, String posToken, int timeoutMs) {
+            return MainActivity.this.sendLocalHttpRequest(urlStr, method, jsonPayload, posToken, timeoutMs);
+        }
+
+        @JavascriptInterface
         public int getLocalServerPort() {
             return LOCAL_SERVER_PORT;
         }
@@ -751,18 +768,23 @@ public class MainActivity extends AppCompatActivity {
                 targetDevice = pairedDevices.iterator().next();
             }
 
-            Log.d(TAG, "Membuka koneksi persistent Bluetooth ke: " + targetDevice.getName());
-            bluetoothAdapter.cancelDiscovery();
+            try {
+                Log.d(TAG, "Membuka koneksi persistent Bluetooth ke: " + targetDevice.getName());
+                bluetoothAdapter.cancelDiscovery();
 
-            BluetoothSocket socket = targetDevice.createRfcommSocketToServiceRecord(SPP_UUID);
-            socket.connect();
+                BluetoothSocket socket = targetDevice.createRfcommSocketToServiceRecord(SPP_UUID);
+                socket.connect();
 
-            activeSocket = socket;
-            activeOutputStream = socket.getOutputStream();
-            connectedDeviceAddress = targetDevice.getAddress();
-            Log.d(TAG, "Koneksi Bluetooth aktif dan standby (Zero Delay Ready)!");
+                activeSocket = socket;
+                activeOutputStream = socket.getOutputStream();
+                connectedDeviceAddress = targetDevice.getAddress();
+                Log.d(TAG, "Koneksi Bluetooth aktif dan standby (Zero Delay Ready)!");
 
-            return activeOutputStream;
+                return activeOutputStream;
+            } catch (SecurityException se) {
+                Log.e(TAG, "Izin Bluetooth ditolak saat koneksi: " + se.getMessage());
+                throw new IOException("Izin Bluetooth belum aktif di pengaturan perangkat: " + se.getMessage());
+            }
         }
     }
 
@@ -1241,6 +1263,77 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception ignored) {}
 
         return "192.168.43.1";
+    }
+
+    public String getWifiGatewayIp() {
+        try {
+            WifiManager wm = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            if (wm != null) {
+                DhcpInfo dhcp = wm.getDhcpInfo();
+                if (dhcp != null && dhcp.gateway != 0) {
+                    String gateway = android.text.format.Formatter.formatIpAddress(dhcp.gateway);
+                    if (gateway != null && !gateway.equals("0.0.0.0") && !gateway.startsWith("127.")) {
+                        return gateway;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "getWifiGatewayIp note: " + e.getMessage());
+        }
+        return "";
+    }
+
+    public boolean probeLocalHost(String ip, int port, int timeoutMs) {
+        if (ip == null || ip.trim().isEmpty()) return false;
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(ip.trim(), port), Math.max(250, Math.min(timeoutMs, 2500)));
+            return socket.isConnected();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public String sendLocalHttpRequest(String urlStr, String method, String jsonPayload, String posToken, int timeoutMs) {
+        HttpURLConnection conn = null;
+        try {
+            URL url = new URL(urlStr);
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod(method != null ? method.toUpperCase() : "GET");
+            conn.setConnectTimeout(Math.max(400, Math.min(timeoutMs, 4000)));
+            conn.setReadTimeout(Math.max(400, Math.min(timeoutMs, 4000)));
+            if (posToken != null && !posToken.isEmpty()) {
+                conn.setRequestProperty("X-POS-Token", posToken);
+            }
+            conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+            conn.setRequestProperty("Accept", "application/json");
+
+            if ("POST".equalsIgnoreCase(method) && jsonPayload != null) {
+                conn.setDoOutput(true);
+                byte[] bytes = jsonPayload.getBytes("UTF-8");
+                conn.setFixedLengthStreamingMode(bytes.length);
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(bytes);
+                    os.flush();
+                }
+            }
+
+            int code = conn.getResponseCode();
+            InputStream is = (code >= 200 && code < 400) ? conn.getInputStream() : conn.getErrorStream();
+            if (is == null) return "{\"status\":\"error\",\"code\":" + code + "}";
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return "{\"status\":\"error\",\"message\":\"" + e.getMessage() + "\"}";
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
     }
 
     @Override
