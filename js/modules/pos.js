@@ -19,13 +19,13 @@ export function renderOrderQueueTabs() {
     let badgeStyle = '';
 
     if (isActive) {
-      tabStyle = 'bg-emerald-700 text-white font-black shadow-md ring-2 ring-emerald-400 active-queue-tab scale-[1.02]';
-      badgeStyle = 'bg-white text-emerald-950 font-black shadow-sm';
+      tabStyle = 'bg-emerald-700 text-white font-black shadow-xs ring-1 ring-emerald-400 active-queue-tab';
+      badgeStyle = 'bg-white text-emerald-950 font-black shadow-2xs';
     } else if (itemCount > 0) {
-      tabStyle = 'bg-emerald-50 text-emerald-950 hover:bg-emerald-100 font-extrabold border border-emerald-300 shadow-sm';
+      tabStyle = 'bg-emerald-50 text-emerald-950 hover:bg-emerald-100 font-extrabold border border-emerald-300 shadow-2xs';
       badgeStyle = 'bg-emerald-700 text-white font-black';
     } else {
-      tabStyle = 'bg-stone-100 text-stone-800 hover:bg-stone-200 font-extrabold border border-stone-300';
+      tabStyle = 'bg-stone-100 text-stone-800 hover:bg-stone-200 font-extrabold border border-stone-200';
       badgeStyle = 'bg-stone-200 text-stone-800 font-bold';
     }
 
@@ -447,16 +447,19 @@ export function renderProducts() {
 
     return `
       <div onclick="window.KasirApp.addToCart('${product.id}')" 
-        class="pos-product-card m3-ripple-surface relative bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex flex-col justify-between border ${hasQty ? 'pos-product-card-active' : 'border-stone-200/80 hover:border-emerald-300'} ${!isReady ? 'opacity-65 bg-stone-50/90 cursor-not-allowed' : 'cursor-pointer'} touch-target-large select-none">
+        class="pos-product-card relative bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex flex-col justify-between border ${hasQty ? 'pos-product-card-active' : 'border-stone-200/80 hover:border-emerald-300'} ${!isReady ? 'opacity-65 bg-stone-50/90 cursor-not-allowed' : 'cursor-pointer'} touch-target-large select-none">
         
+        <!-- Ripple Host Container: clips ripple ink strictly within card boundaries -->
+        <div class="m3-ripple-container absolute inset-0 rounded-2xl sm:rounded-3xl overflow-hidden pointer-events-none"></div>
+
         ${hasQty ? `
-          <span class="absolute -top-2 -right-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow-md z-10 border-2 border-white m3-badge-pop">
+          <span class="absolute -top-2 -right-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow-md z-20 border-2 border-white m3-badge-pop">
             ${qty}x
           </span>
         ` : ''}
 
         ${!isReady ? `
-          <span class="absolute top-2.5 right-2.5 bg-rose-600 text-white font-black text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full shadow-md z-10 border border-white">
+          <span class="absolute top-2.5 right-2.5 bg-rose-600 text-white font-black text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full shadow-md z-20 border border-white">
             HABIS
           </span>
         ` : ''}
@@ -518,32 +521,34 @@ export function renderProducts() {
               <span class="material-symbols-rounded text-base text-rose-500">block</span>
             </div>
           ` : (hasQty ? `
-            <div class="flex items-center justify-between gap-1 pt-0.5" onclick="event.stopPropagation()">
-              <button onclick="window.KasirApp.updateCartQty('${product.id}', -1)"
-                class="w-8 h-8 rounded-xl ${qty === 1 ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100' : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'} border font-black text-base flex items-center justify-center transition active:scale-90 shadow-2xs touch-target-large"
-                title="${qty === 1 ? 'Hapus menu dari pesanan' : 'Kurangi 1 porsi'}">
-                ${qty === 1 ? '<span class="material-symbols-rounded text-base">delete</span>' : '-'}
-              </button>
-              <div class="flex flex-col items-center leading-none px-0.5">
-                <span class="font-black text-emerald-950 text-xs sm:text-sm">${qty}</span>
-                <span class="text-[9px] font-bold text-stone-500">porsi</span>
+            <div class="flex items-center gap-1.5 pt-0.5" onclick="event.stopPropagation()">
+              <div class="flex-1 bg-stone-100/90 rounded-xl p-0.5 flex items-center justify-between border border-stone-200/70">
+                <button onclick="window.KasirApp.updateCartQty('${product.id}', -1)"
+                  class="w-7 h-7 rounded-lg ${qty === 1 ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' : 'bg-white text-stone-700 hover:bg-stone-50'} shadow-2xs font-black text-sm flex items-center justify-center transition active:scale-90 cursor-pointer"
+                  title="${qty === 1 ? 'Hapus dari pesanan' : 'Kurangi 1 porsi'}">
+                  ${qty === 1 ? '<span class="material-symbols-rounded text-sm">delete</span>' : '<span class="material-symbols-rounded text-sm">remove</span>'}
+                </button>
+                <div class="flex flex-col items-center leading-none px-1 select-none">
+                  <span class="font-black text-stone-900 text-xs">${qty}</span>
+                  <span class="text-[8px] font-extrabold text-stone-500 uppercase tracking-tighter">porsi</span>
+                </div>
+                <button onclick="window.KasirApp.updateCartQty('${product.id}', 1)"
+                  class="w-7 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs font-black text-sm flex items-center justify-center transition active:scale-90 cursor-pointer"
+                  title="Tambah 1 porsi">
+                  <span class="material-symbols-rounded text-sm">add</span>
+                </button>
               </div>
-              <button onclick="window.KasirApp.updateCartQty('${product.id}', 1)"
-                class="w-8 h-8 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-base flex items-center justify-center transition active:scale-90 shadow-xs touch-target-large"
-                title="Tambah 1 porsi">
-                +
-              </button>
               <button type="button" onclick="window.KasirApp.openItemNoteModal('${product.id}')"
-                class="w-8 h-8 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 flex items-center justify-center transition active:scale-90 shadow-2xs touch-target-large ml-0.5 cursor-pointer"
+                class="w-8 h-8 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 flex items-center justify-center transition active:scale-90 shadow-2xs shrink-0 cursor-pointer"
                 title="Catatan & Add-on">
                 <span class="material-symbols-rounded text-base text-amber-700">edit_note</span>
               </button>
             </div>
           ` : `
             <button type="button"
-              class="w-full py-1.5 px-2.5 rounded-xl bg-stone-50 hover:bg-emerald-50 text-stone-700 hover:text-emerald-800 border border-stone-200/80 hover:border-emerald-300 flex items-center justify-between text-[11px] sm:text-xs font-bold transition active:scale-95 shadow-2xs">
+              class="w-full py-1.5 px-2.5 rounded-xl bg-stone-100/80 hover:bg-emerald-50 text-stone-700 hover:text-emerald-800 border border-stone-200/80 hover:border-emerald-300 flex items-center justify-between text-xs font-bold transition active:scale-95 shadow-2xs">
               <span>+ Tambah</span>
-              <span class="material-symbols-rounded text-base text-emerald-600">add_circle</span>
+              <span class="material-symbols-rounded text-base text-emerald-600">add</span>
             </button>
           `)}
         </div>
@@ -704,16 +709,16 @@ export function renderCart() {
 
   if (mobileHeaderBtn) {
     if (hasItems) {
-      mobileHeaderBtn.className = 'relative px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white flex items-center gap-1.5 touch-target-large shadow-sm active:scale-95 transition';
+      mobileHeaderBtn.className = 'relative px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white flex items-center gap-1 active:scale-95 transition shrink-0 shadow-2xs';
       if (mobileHeaderTotal) {
         mobileHeaderTotal.className = 'text-xs font-black text-white';
-        mobileHeaderTotal.innerText = formatRp(total);
+        mobileHeaderTotal.innerText = `${count}`;
       }
     } else {
-      mobileHeaderBtn.className = 'relative px-3.5 py-2 rounded-xl bg-stone-100 text-stone-500 border border-stone-200 flex items-center gap-1.5 touch-target-large active:scale-95 transition';
+      mobileHeaderBtn.className = 'relative px-2.5 py-1.5 rounded-xl bg-stone-100 text-stone-500 border border-stone-200/80 flex items-center gap-1 active:scale-95 transition shrink-0 shadow-2xs';
       if (mobileHeaderTotal) {
         mobileHeaderTotal.className = 'text-xs font-bold text-stone-500';
-        mobileHeaderTotal.innerText = 'Rp 0';
+        mobileHeaderTotal.innerText = '0';
       }
     }
   }
@@ -721,7 +726,7 @@ export function renderCart() {
   if (mobileFloating) {
     if (hasItems) {
       const cur = getActiveQueue();
-      mobilePillCount.innerText = `${cur ? cur.name : 'Pesanan'} (${count} Item)`;
+      if (mobilePillCount) mobilePillCount.innerText = `${count} Item • ${cur ? cur.name : 'Pesanan'}`;
       if (mobilePillTotal) mobilePillTotal.innerText = formatRp(total);
       mobileFloating.classList.remove('translate-y-28', 'opacity-0', 'pointer-events-none');
     } else {

@@ -453,13 +453,22 @@ export function initM3RippleSystem() {
     // Picu getaran taktil ringan M3
     triggerHaptic('light');
 
+    // Tentukan wadah gelombang ripple
+    // Jika target adalah pos-product-card, arahkan ripple ke .m3-ripple-container agar kartu tetap overflow-visible
+    let rippleHost = target;
+    const innerContainer = target.querySelector('.m3-ripple-container');
+    if (innerContainer) {
+      rippleHost = innerContainer;
+    } else {
+      target.classList.add('m3-ripple-surface');
+    }
+
     // Buat lingkaran gelombang ripple
-    const rect = target.getBoundingClientRect();
+    const rect = rippleHost.getBoundingClientRect();
     const size = Math.max(rect.width, rect.height) * 1.5;
     const x = (e.clientX || (e.touches && e.touches[0]?.clientX) || (rect.left + rect.width / 2)) - rect.left - size / 2;
     const y = (e.clientY || (e.touches && e.touches[0]?.clientY) || (rect.top + rect.height / 2)) - rect.top - size / 2;
 
-    target.classList.add('m3-ripple-surface');
     const wave = document.createElement('span');
     const isDarkBg = target.classList.contains('bg-stone-900') || target.classList.contains('bg-emerald-700') || target.classList.contains('bg-stone-950') || target.classList.contains('text-white');
     wave.className = `m3-ripple-wave ${isDarkBg ? 'm3-ripple-wave-dark' : ''}`;
@@ -468,7 +477,7 @@ export function initM3RippleSystem() {
     wave.style.left = `${x}px`;
     wave.style.top = `${y}px`;
 
-    target.appendChild(wave);
+    rippleHost.appendChild(wave);
     setTimeout(() => {
       try { wave.remove(); } catch (_) {}
     }, 450);

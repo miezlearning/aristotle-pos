@@ -1,12 +1,9 @@
 {
-  "versionCode": 88,
-  "versionName": "1.2.40",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.40/Aristotle-POS.apk",
+  "versionCode": 89,
+  "versionName": "1.2.41",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.41/Aristotle-POS.apk",
   "changelog": [
-    "Implementasi Google Material Design 3 Expressive Motion System",
-    "State Layer & Radial Ink Ripple khas M3 pada seluruh kartu produk & tombol",
-    "Kurva fisika resmi M3: Emphasized Decelerate untuk dialog & bottom sheet",
-    "Integrasi getaran mikro M3 Micro-Haptics pada HP Android & browser"
+    "Perapian layout POS: perbaiki badge terpotong, stepper M3 rapi, dan eliminasi overflow header & floating bar"
   ],
   "releaseDate": "2026-09-09"
 }

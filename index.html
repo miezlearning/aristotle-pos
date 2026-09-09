@@ -236,19 +236,19 @@
 
     <!-- TOP APP BAR -->
     <header id="mainAppHeader"
-      class="bg-white text-stone-900 shadow-sm sticky top-0 z-20 px-3 py-2 sm:px-5 sm:py-2.5 border-b border-stone-200">
-      <div class="w-full flex items-center justify-between gap-3">
+      class="bg-white text-stone-900 shadow-xs sticky top-0 z-20 px-2.5 py-2 sm:px-5 sm:py-2.5 border-b border-stone-200/80">
+      <div class="w-full flex items-center justify-between gap-1.5 sm:gap-3">
 
         <!-- 1. MOBILE ONLY (< md): Store Profile Capsule + Store Title (Multi-tap 3x opens Super Admin) -->
-        <div class="md:hidden flex items-center gap-2 shrink-0 min-w-0">
+        <div class="md:hidden flex items-center gap-1.5 min-w-0 flex-1 pr-1">
           <button id="mobileStoreProfileBtn" type="button" onclick="window.KasirApp.handleBrandLogoClick(event)"
-            class="flex items-center gap-2 px-2.5 py-1.5 rounded-2xl bg-stone-100 hover:bg-stone-200/80 border border-stone-200/80 shadow-2xs transition active:scale-95 touch-target-large cursor-pointer min-w-0"
+            class="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200/80 border border-stone-200/80 shadow-2xs transition active:scale-95 touch-target-large cursor-pointer min-w-0 max-w-full"
             title="Klik untuk Info Toko / Hubungkan Perangkat (3x untuk Super Admin)">
-            <div class="relative w-6 h-6 rounded-lg overflow-hidden bg-white p-0.5 border border-stone-200/60 shrink-0">
+            <div class="relative w-5 h-5 rounded-md overflow-hidden bg-white p-0.5 border border-stone-200/60 shrink-0">
               <img src="icon-192.png" alt="Aristotle POS" class="w-full h-full object-contain">
               <span id="mobileStoreSyncDot" class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-white animate-pulse"></span>
             </div>
-            <span id="mobileAppHeaderStoreTitle" class="text-xs font-black tracking-tight text-stone-900 truncate max-w-[130px] sm:max-w-[180px]">Toko Saya</span>
+            <span id="mobileAppHeaderStoreTitle" class="text-xs font-black tracking-tight text-stone-900 truncate">Kedai Usaha Mami</span>
             <span class="material-symbols-rounded text-sm text-stone-400 shrink-0">unfold_more</span>
           </button>
           <button id="mobileStoreTitleBtn" type="button" onclick="window.KasirApp.handleBrandLogoClick(event)" class="hidden"></button>
@@ -287,31 +287,31 @@
         </div>
 
         <!-- Right Side on Mobile (< md): Quick Essential Actions (Shift, Printer, Cart) -->
-        <div class="md:hidden flex items-center gap-2 shrink-0">
+        <div class="md:hidden flex items-center gap-1.5 shrink-0">
           <button id="mobileHeaderShiftBtn" type="button" onclick="window.KasirApp.handleShiftHeaderClick()"
-            class="w-9 h-9 rounded-2xl bg-stone-100 hover:bg-stone-200/80 text-stone-700 flex items-center justify-center border border-stone-200/80 shadow-2xs transition active:scale-90 touch-target-large relative shrink-0"
+            class="w-8 h-8 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center border border-stone-200/80 shadow-2xs transition active:scale-90 relative shrink-0"
             title="Shift Kasir">
-            <span id="mobileHeaderShiftDot" class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span class="material-symbols-rounded text-lg text-emerald-700">schedule</span>
+            <span id="mobileHeaderShiftDot" class="hidden absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="material-symbols-rounded text-base text-emerald-700">schedule</span>
           </button>
           <button id="mobileHeaderPrinterBtn" type="button" onclick="window.KasirApp.openPrinterConfigModal()"
-            class="w-9 h-9 rounded-2xl bg-stone-100 hover:bg-stone-200/80 text-stone-700 flex items-center justify-center border border-stone-200/80 shadow-2xs transition active:scale-90 touch-target-large relative shrink-0"
+            class="w-8 h-8 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center border border-stone-200/80 shadow-2xs transition active:scale-90 relative shrink-0"
             title="Status Printer">
-            <span id="mobileHeaderPrinterDot" class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-stone-400"></span>
-            <span class="material-symbols-rounded text-lg text-stone-600">print</span>
+            <span id="mobileHeaderPrinterDot" class="absolute top-1 right-1 w-2 h-2 rounded-full bg-stone-400"></span>
+            <span class="material-symbols-rounded text-base text-stone-600">print</span>
           </button>
           <button id="mobileHeaderCartBtn" type="button" onclick="toggleMobileCartDrawer()"
-            class="relative px-3 py-1.5 rounded-2xl bg-stone-100 hover:bg-stone-200/80 text-stone-700 border border-stone-200/80 flex items-center gap-1.5 touch-target-large active:scale-95 transition shrink-0 shadow-2xs"
+            class="relative px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200/80 flex items-center gap-1 active:scale-95 transition shrink-0 shadow-2xs"
             title="Keranjang">
-            <span class="material-symbols-rounded text-lg text-stone-600">shopping_cart</span>
-            <span id="mobileHeaderCartTotal" class="text-xs font-black">Rp 0</span>
+            <span class="material-symbols-rounded text-base text-stone-600">shopping_cart</span>
+            <span id="mobileHeaderCartTotal" class="text-xs font-black">0</span>
           </button>
         </div>
       </div>
     </header>
 
     <!-- MAIN CONTAINER -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-2.5 sm:p-4 lg:p-5 flex flex-col pb-24 md:pb-5">
+    <main class="flex-1 max-w-7xl w-full mx-auto p-2.5 sm:p-4 lg:p-5 flex flex-col pb-36 sm:pb-40 md:pb-6">
 
       <!-- ==================== SCREEN 1: MAIN POS ==================== -->
       <div id="viewPos" class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4">
@@ -321,11 +321,11 @@
 
         <!-- Multi-Order / Antrian Tabs (NO OVERLAY, SCROLL NAVIGATION & DEDICATED NEW QUEUE BUTTON) -->
         <div
-          class="bg-white p-2 sm:p-2.5 rounded-2xl shadow-sm border border-stone-200 flex items-center gap-1.5 overflow-hidden">
+          class="bg-white p-1.5 sm:p-2 rounded-2xl shadow-xs border border-stone-200/80 flex items-center gap-1.5 overflow-hidden">
 
-          <!-- Scroll Left Button -->
+          <!-- Scroll Left Button (hidden on mobile, visible on desktop) -->
           <button onclick="window.KasirApp.scrollQueueTabs('left')"
-            class="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition shrink-0 flex items-center justify-center touch-target-large"
+            class="hidden md:flex w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition shrink-0 items-center justify-center touch-target-large cursor-pointer"
             title="Geser antrian ke kiri">
             <span class="material-symbols-rounded text-lg">chevron_left</span>
           </button>
@@ -336,9 +336,9 @@
             <!-- Dynamic Antrian Tabs -->
           </div>
 
-          <!-- Scroll Right Button -->
+          <!-- Scroll Right Button (hidden on mobile, visible on desktop) -->
           <button onclick="window.KasirApp.scrollQueueTabs('right')"
-            class="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition shrink-0 flex items-center justify-center touch-target-large"
+            class="hidden md:flex w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition shrink-0 items-center justify-center touch-target-large cursor-pointer"
             title="Geser antrian ke kanan">
             <span class="material-symbols-rounded text-lg">chevron_right</span>
           </button>
@@ -348,7 +348,7 @@
 
           <!-- Add Queue Button (Fixed Right without overlapping tabs) -->
           <button onclick="addNewOrderQueue()"
-            class="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-extrabold text-xs flex items-center gap-1 border border-emerald-300 shrink-0 touch-target-large transition active:scale-95 shadow-sm">
+            class="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-extrabold text-xs flex items-center gap-1 border border-emerald-300/80 shrink-0 touch-target-large transition active:scale-95 shadow-2xs cursor-pointer">
             <span class="material-symbols-rounded text-base text-emerald-700">add</span>
             <span class="hidden sm:inline">Antrian Baru</span>
             <span class="sm:hidden">Baru</span>
@@ -356,31 +356,31 @@
         </div>
 
         <!-- Category Tabs & Executive Search Command Bar -->
-        <div class="bg-white p-2.5 sm:p-3 rounded-2xl sm:rounded-3xl shadow-xs border border-stone-200/80 flex flex-col gap-2.5">
+        <div class="bg-white p-2 sm:p-2.5 rounded-2xl shadow-xs border border-stone-200/80 flex flex-col gap-2">
           <div class="flex items-center gap-1.5 overflow-x-auto custom-scroll w-full py-0.5 scroll-smooth">
             <button onclick="setCategory('all')" id="cat-all"
-              class="cat-pill shrink-0 py-2 px-4 rounded-xl font-black text-xs sm:text-sm text-center bg-stone-900 text-white shadow-md transition flex items-center justify-center gap-1.5 touch-target-large ring-2 ring-stone-900/20 border border-stone-900 whitespace-nowrap">
-              <span class="material-symbols-rounded text-base sm:text-lg">apps</span>
+              class="cat-pill shrink-0 py-1.5 px-3 rounded-xl font-black text-xs text-center bg-stone-900 text-white shadow-xs transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-900 whitespace-nowrap">
+              <span class="material-symbols-rounded text-base">apps</span>
               <span>Semua</span>
             </button>
             <button onclick="setCategory('makanan')" id="cat-makanan"
-              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-white hover:bg-stone-50 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/90 shadow-2xs whitespace-nowrap">
-              <span class="material-symbols-rounded text-base sm:text-lg">lunch_dining</span>
+              class="cat-pill shrink-0 py-1.5 px-3 rounded-xl font-bold text-xs text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap">
+              <span class="material-symbols-rounded text-base">lunch_dining</span>
               <span>Makanan</span>
             </button>
             <button onclick="setCategory('minuman')" id="cat-minuman"
-              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-white hover:bg-stone-50 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/90 shadow-2xs whitespace-nowrap">
-              <span class="material-symbols-rounded text-base sm:text-lg">local_cafe</span>
+              class="cat-pill shrink-0 py-1.5 px-3 rounded-xl font-bold text-xs text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap">
+              <span class="material-symbols-rounded text-base">local_cafe</span>
               <span>Minuman</span>
             </button>
             <button onclick="setCategory('camilan')" id="cat-camilan"
-              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-white hover:bg-stone-50 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/90 shadow-2xs whitespace-nowrap">
-              <span class="material-symbols-rounded text-base sm:text-lg">bakery_dining</span>
+              class="cat-pill shrink-0 py-1.5 px-3 rounded-xl font-bold text-xs text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap">
+              <span class="material-symbols-rounded text-base">bakery_dining</span>
               <span>Camilan</span>
             </button>
             <button onclick="setCategory('topping')" id="cat-topping"
-              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-white hover:bg-stone-50 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/90 shadow-2xs whitespace-nowrap">
-              <span class="material-symbols-rounded text-base sm:text-lg">add_circle</span>
+              class="cat-pill shrink-0 py-1.5 px-3 rounded-xl font-bold text-xs text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap">
+              <span class="material-symbols-rounded text-base">add_circle</span>
               <span>Topping</span>
             </button>
           </div>
@@ -390,7 +390,7 @@
             <span
               class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-lg pointer-events-none">search</span>
             <input type="text" id="searchInput" oninput="window.KasirApp.handleSearchInput(event)" placeholder="Cari nama menu..."
-              class="w-full pl-9 pr-9 py-2 text-xs sm:text-sm rounded-xl border border-stone-200/90 focus:border-stone-900 focus:bg-white focus:outline-none bg-stone-50 font-medium transition placeholder:text-stone-400">
+              class="w-full pl-9 pr-9 py-1.5 text-xs sm:text-sm rounded-xl border border-stone-200/90 focus:border-stone-900 focus:bg-white focus:outline-none bg-stone-50 font-medium transition placeholder:text-stone-400">
             <button type="button" id="clearSearchBtn" onclick="window.KasirApp.clearSearch()"
               class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-stone-200 hover:bg-stone-300 text-stone-600 flex items-center justify-center transition active:scale-90"
               title="Hapus pencarian">
@@ -399,68 +399,64 @@
           </div>
         </div>
 
-        <!-- Product Grid -->
-        <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 auto-rows-max">
-          <!-- Dynamic Products -->
+        <!-- PRODUCT CATALOG GRID -->
+        <div id="productGrid"
+          class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3">
+          <!-- Dynamic Products List -->
         </div>
       </section>
 
-      <!-- RIGHT COLUMN (TABLET & DESKTOP): PERMANENT CART WORKSTATION -->
-      <section
-        class="hidden md:flex md:col-span-5 lg:col-span-5 xl:col-span-4 flex-col bg-white rounded-3xl shadow-lg border border-stone-200 p-3.5 lg:p-4 xl:p-5 h-[calc(100vh-80px)] sticky top-16 lg:top-20">
-
-        <!-- Cart Header -->
-        <div class="flex items-center justify-between pb-3 border-b border-stone-200">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <div
-              class="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center shrink-0">
-              <span class="material-symbols-rounded text-2xl text-emerald-700">receipt_long</span>
-            </div>
-            <div class="truncate">
-              <div class="flex items-center gap-1.5">
-                <h2
-                  class="text-base lg:text-lg font-black text-stone-900 cursor-pointer hover:text-emerald-700 flex items-center gap-1 truncate"
-                  onclick="promptRenameQueue()" title="Klik untuk ubah nama antrian/meja">
-                  <span id="currentOrderTitle" class="truncate">Pesanan #1</span>
-                  <span class="material-symbols-rounded text-sm text-stone-400 shrink-0">edit</span>
-                </h2>
+      <!-- RIGHT COLUMN: DESKTOP ORDER CART -->
+      <section class="hidden md:flex md:col-span-5 lg:col-span-5 xl:col-span-4 flex-col">
+        <div
+          class="bg-white rounded-2xl sm:rounded-3xl shadow-xs border border-stone-200/80 flex flex-col flex-1 sticky top-20 overflow-hidden max-h-[calc(100vh-6rem)]">
+          <div class="p-3.5 border-b border-stone-100 flex items-center justify-between">
+            <div class="flex items-center gap-2 min-w-0">
+              <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center shrink-0">
+                <span class="material-symbols-rounded text-lg">receipt_long</span>
               </div>
-              <span class="text-[10px] lg:text-[11px] text-stone-400 font-medium cursor-pointer hover:underline" onclick="promptRenameQueue()">Tap untuk ganti nama/meja</span>
+              <div class="truncate">
+                <h3 class="text-sm font-black text-stone-900 cursor-pointer flex items-center gap-1 truncate"
+                  onclick="promptRenameQueue()">
+                  <span id="currentOrderTitle" class="truncate">Pesanan #1</span>
+                  <span class="material-symbols-rounded text-xs text-stone-400 shrink-0">edit</span>
+                </h3>
+                <span class="text-[10.5px] text-stone-400 font-medium cursor-pointer" onclick="promptRenameQueue()">Tap untuk ganti nama/meja</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button onclick="deleteCurrentActiveQueue()"
+                class="w-7 h-7 rounded-lg hover:bg-rose-50 text-stone-400 hover:text-rose-600 flex items-center justify-center transition"
+                title="Hapus antrian ini">
+                <span class="material-symbols-rounded text-base">delete</span>
+              </button>
+              <button onclick="confirmClearCart()"
+                class="w-7 h-7 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-stone-700 flex items-center justify-center transition"
+                title="Kosongkan keranjang">
+                <span class="material-symbols-rounded text-base">remove_shopping_cart</span>
+              </button>
             </div>
           </div>
-          <div class="flex items-center gap-1 shrink-0">
-            <button onclick="deleteCurrentActiveQueue()"
-              class="p-2 rounded-xl bg-stone-100 hover:bg-red-50 text-stone-500 hover:text-red-600 transition touch-target-large flex items-center justify-center border border-stone-200"
-              title="Tutup antrian ini">
-              <span class="material-symbols-rounded text-base">close</span>
-            </button>
-          </div>
-        </div>
 
-        <!-- Cart Item List -->
-        <div id="cartItemsList" class="flex-1 overflow-y-auto custom-scroll my-3 divide-y divide-stone-100">
-          <!-- Rendered via JS -->
-        </div>
-
-        <!-- Bottom Total & Action Container -->
-        <div class="pt-3 border-t-2 border-stone-100 flex flex-col gap-2.5 lg:gap-3">
-          <div
-            class="bg-gradient-to-br from-emerald-50 via-orange-50/40 to-emerald-50 border-2 border-emerald-300/80 rounded-2xl p-3 lg:p-3.5 flex flex-col shadow-inner">
-            <span class="text-[10px] lg:text-xs font-black tracking-wider text-emerald-950 uppercase">TOTAL BAYAR</span>
-            <span id="cartTotalDisplay" class="text-2xl lg:text-3xl xl:text-4xl font-black text-stone-950 tracking-tight">Rp
-              0</span>
+          <!-- Cart Items Scroll List -->
+          <div id="cartItemsList" class="flex-1 overflow-y-auto p-3 flex flex-col gap-2 custom-scroll divide-y divide-stone-100">
+            <!-- Dynamic Cart Items -->
           </div>
 
-          <div class="grid grid-cols-3 gap-2">
-            <button onclick="confirmClearCart()"
-              class="col-span-1 py-2.5 lg:py-3 px-2 rounded-2xl bg-red-50 hover:bg-red-100 text-red-600 font-bold flex flex-col items-center justify-center gap-1 border border-red-200 transition touch-target-large">
-              <span class="material-symbols-rounded text-lg lg:text-xl">delete_sweep</span>
-              <span class="text-[11px] lg:text-xs">Kosongkan</span>
-            </button>
+          <!-- Cart Summary & Checkout Action -->
+          <div class="p-3.5 border-t border-stone-100 bg-stone-50/70 flex flex-col gap-2.5">
+            <div class="flex items-center justify-between text-xs font-bold text-stone-600">
+              <span>Total Item:</span>
+              <span id="cartCountBadge" class="font-extrabold text-stone-900">0 item</span>
+            </div>
+            <div class="flex items-center justify-between text-base font-black text-stone-900">
+              <span>Total:</span>
+              <span id="cartTotalDisplay" class="text-emerald-700 text-lg">Rp 0</span>
+            </div>
             <button id="btnCheckout" onclick="openPaymentModal()" disabled
-              class="col-span-2 py-2.5 lg:py-3 px-3 lg:px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed text-stone-950 font-black text-base lg:text-lg flex items-center justify-center gap-1.5 lg:gap-2 shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition touch-target-large">
-              <span class="material-symbols-rounded text-xl lg:text-2xl">payments</span>
-              <span>BAYAR</span>
+              class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:pointer-events-none text-white font-black text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 active:scale-98 transition">
+              <span>PROSES BAYAR</span>
+              <span class="material-symbols-rounded text-lg">arrow_forward</span>
             </button>
           </div>
         </div>
@@ -469,28 +465,29 @@
 
     <!-- ==================== MOBILE FLOATING QUICK-CHECKOUT BAR ==================== -->
     <div id="mobileFloatingCart"
-      class="md:hidden fixed bottom-16 left-3 right-3 z-35 transition-all duration-300 translate-y-28 opacity-0 pointer-events-none">
+      class="md:hidden fixed bottom-16 left-2.5 right-2.5 z-35 transition-all duration-300 translate-y-28 opacity-0 pointer-events-none">
       <div
-        class="bg-stone-900/95 backdrop-blur-xl text-white rounded-2xl sm:rounded-3xl shadow-[0_12px_36px_rgba(0,0,0,0.35)] p-2.5 sm:p-3 flex items-center justify-between border border-white/10 ring-1 ring-emerald-500/30">
-        <div onclick="toggleMobileCartDrawer()" class="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0 pr-2 active:opacity-80 transition">
+        class="bg-stone-900/95 backdrop-blur-xl text-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.35)] p-2 sm:p-2.5 flex items-center justify-between border border-white/10 ring-1 ring-emerald-500/30 gap-2">
+        <div onclick="toggleMobileCartDrawer()" class="flex items-center gap-2 cursor-pointer flex-1 min-w-0 active:opacity-80 transition">
           <div
-            class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-black flex items-center justify-center shrink-0 shadow-sm shadow-emerald-500/25">
-            <span class="material-symbols-rounded text-2xl">point_of_sale</span>
+            class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-black flex items-center justify-center shrink-0 shadow-xs">
+            <span class="material-symbols-rounded text-xl">point_of_sale</span>
           </div>
-          <div class="truncate">
-            <span id="mobilePillCount" class="text-[11px] text-stone-300 font-extrabold block leading-none">0 Item</span>
+          <div class="min-w-0 flex-1">
+            <span id="mobilePillCount" class="text-[10.5px] text-emerald-400 font-extrabold truncate block leading-none">0 Item</span>
             <span id="mobilePillTotal"
-              class="text-base font-black tracking-tight leading-tight block mt-0.5 text-white">Rp 0</span>
+              class="text-sm sm:text-base font-black tracking-tight leading-tight block mt-0.5 text-white truncate">Rp 0</span>
           </div>
         </div>
 
-        <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-1.5 shrink-0">
           <button onclick="toggleMobileCartDrawer()"
-            class="px-3 py-2 rounded-xl bg-stone-800/90 hover:bg-stone-700 text-stone-200 border border-stone-700/80 font-extrabold text-xs touch-target-large active:scale-95 transition">
-            Lihat Struk
+            class="w-9 h-9 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 border border-stone-700/80 flex items-center justify-center active:scale-90 transition shadow-2xs shrink-0"
+            title="Lihat Keranjang">
+            <span class="material-symbols-rounded text-lg">receipt_long</span>
           </button>
           <button onclick="openPaymentModal()"
-            class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs sm:text-sm flex items-center gap-1.5 shadow-md shadow-emerald-500/20 touch-target-large active:scale-95 transition">
+            class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-stone-950 font-black text-xs sm:text-sm flex items-center gap-1 shadow-md shadow-emerald-500/20 active:scale-95 transition shrink-0">
             <span>BAYAR</span>
             <span class="material-symbols-rounded text-base font-black">arrow_forward</span>
           </button>
@@ -3910,7 +3907,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.40</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.41</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -4070,7 +4067,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.40</span>
+    <span id="appVersionBadge" class="hidden">v1.2.41</span>
   </div>
 
   <!-- Main JavaScript App Module -->

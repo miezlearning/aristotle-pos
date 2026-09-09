@@ -1,12 +1,9 @@
-# Aristotle POS v1.2.40 Release Notes
+# Aristotle POS v1.2.41 Release Notes
 
 **Tanggal Rilis:** 2026-09-09
 
 ### Catatan Pembaruan:
-- Implementasi Google Material Design 3 Expressive Motion System
-- State Layer & Radial Ink Ripple khas M3 pada seluruh kartu produk & tombol
-- Kurva fisika resmi M3: Emphasized Decelerate untuk dialog & bottom sheet
-- Integrasi getaran mikro M3 Micro-Haptics pada HP Android & browser
+- Perapian layout POS: perbaiki badge terpotong, stepper M3 rapi, dan eliminasi overflow header & floating bar
 
 ---
 *Pembaruan ini dapat diunduh dan dipasang langsung dari dalam aplikasi (In-App Auto-Updater).*

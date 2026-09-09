@@ -450,7 +450,20 @@ div[id$="Modal"]:not(.hidden) > div,
   }
 }
 
-/* In-Cart Glowing Accent */
+/* In-Cart Glowing Accent & Overflow Protection */
+.pos-product-card {
+  position: relative;
+  overflow: visible !important;
+}
+
+.m3-ripple-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
 .pos-product-card-active {
   border-color: #059669 !important;
   background-color: rgba(236, 253, 245, 0.45) !important;
