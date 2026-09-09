@@ -25,6 +25,121 @@ let bluetoothCharacteristic = null;
 let serialPort = null;
 let serialWriter = null;
 
+// Listener hasil print & drawer asinkron dari Native Android Bridge (Zero UI Freeze)
+if (typeof window !== 'undefined') {
+  window.__onNativePrintResult = function(callbackId, success, errorMsg) {
+    if (window.__nativePrintCallbacks && typeof window.__nativePrintCallbacks[callbackId] === 'function') {
+      window.__nativePrintCallbacks[callbackId](success, errorMsg);
+    }
+  };
+
+  // Pulihkan printer Bluetooth yang dipilih saat startup APK
+  try {
+    const savedPrinterCfg = localStorage.getItem('aristotle_printer_config');
+    if (savedPrinterCfg) {
+      const parsed = JSON.parse(savedPrinterCfg);
+      if (parsed?.bluetoothAddress && window.AndroidBridge && typeof window.AndroidBridge.setPreferredPrinter === 'function') {
+        window.AndroidBridge.setPreferredPrinter(parsed.bluetoothAddress);
+      }
+    }
+  } catch (_) {}
+}
+
+/**
+ * Kirim data raw ke printer Bluetooth Native (Android APK) secara asinkron tanpa memblokir UI
+ */
+export function sendNativeBluetoothDataAsync(bytes) {
+  return new Promise((resolve) => {
+    if (!window.AndroidBridge) return resolve(false);
+
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const b64 = window.btoa(binary);
+
+    if (typeof window.AndroidBridge.printBluetoothAsync === 'function') {
+      const callbackId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+      window.__nativePrintCallbacks = window.__nativePrintCallbacks || {};
+      const timer = setTimeout(() => {
+        delete window.__nativePrintCallbacks[callbackId];
+        resolve(false);
+      }, 8000);
+
+      window.__nativePrintCallbacks[callbackId] = (success, errorMsg) => {
+        clearTimeout(timer);
+        delete window.__nativePrintCallbacks[callbackId];
+        resolve(Boolean(success));
+      };
+
+      try {
+        window.AndroidBridge.printBluetoothAsync(b64, callbackId);
+      } catch (err) {
+        clearTimeout(timer);
+        delete window.__nativePrintCallbacks[callbackId];
+        console.warn('AndroidBridge printBluetoothAsync failed, fallback sync:', err);
+        try {
+          resolve(window.AndroidBridge.printBluetooth(b64));
+        } catch (_) {
+          resolve(false);
+        }
+      }
+    } else if (typeof window.AndroidBridge.printBluetooth === 'function') {
+      try {
+        resolve(window.AndroidBridge.printBluetooth(b64));
+      } catch (e) {
+        resolve(false);
+      }
+    } else {
+      resolve(false);
+    }
+  });
+}
+
+/**
+ * Buka laci kasir native secara asinkron tanpa memblokir UI
+ */
+export function sendNativeKickDrawerAsync() {
+  return new Promise((resolve) => {
+    if (!window.AndroidBridge) return resolve(false);
+
+    if (typeof window.AndroidBridge.kickDrawerAsync === 'function') {
+      const callbackId = 'kd_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+      window.__nativePrintCallbacks = window.__nativePrintCallbacks || {};
+      const timer = setTimeout(() => {
+        delete window.__nativePrintCallbacks[callbackId];
+        resolve(false);
+      }, 5000);
+
+      window.__nativePrintCallbacks[callbackId] = (success) => {
+        clearTimeout(timer);
+        delete window.__nativePrintCallbacks[callbackId];
+        resolve(Boolean(success));
+      };
+
+      try {
+        window.AndroidBridge.kickDrawerAsync(callbackId);
+      } catch (err) {
+        clearTimeout(timer);
+        delete window.__nativePrintCallbacks[callbackId];
+        try {
+          resolve(window.AndroidBridge.kickDrawer());
+        } catch (_) {
+          resolve(false);
+        }
+      }
+    } else if (typeof window.AndroidBridge.kickDrawer === 'function') {
+      try {
+        resolve(window.AndroidBridge.kickDrawer());
+      } catch (e) {
+        resolve(false);
+      }
+    } else {
+      resolve(false);
+    }
+  });
+}
+
 /**
  * Konversi Gambar Base64 menjadi Byte Array ESC/POS Raster (GS v 0)
  * Menghasilkan cetakan logo monokrom tajam pada printer thermal 58mm
@@ -743,11 +858,156 @@ export function closeBluetoothTroubleshootModal() {
   if (modal) modal.classList.add('hidden');
 }
 
+// ==================== BLUETOOTH PRINTER PICKER (NATIVE ANDROID APK) ====================
+
 /**
- * Koneksi ke Printer Thermal via Web Bluetooth API (Dilengkapi Diagnostik Izin Otomatis)
+ * Tampilkan modal pemilihan perangkat printer Bluetooth (Native Android APK)
+ */
+export function openNativeBluetoothDevicePickerModal(devices = []) {
+  let modal = document.getElementById('nativeBtPickerModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'nativeBtPickerModal';
+    modal.className = 'fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4';
+    document.body.appendChild(modal);
+  }
+
+  const selectedAddr = state.printerConfig?.bluetoothAddress || '';
+
+  const listHtml = (devices && devices.length > 0) ? devices.map(d => {
+    const isSelected = selectedAddr && (selectedAddr.toLowerCase() === (d.address || '').toLowerCase());
+    return `
+      <div onclick="KasirApp.selectNativeBluetoothPrinter('${escapeHtml(d.address)}', '${escapeHtml(d.name || 'Printer')}')"
+        class="flex items-center justify-between p-3.5 rounded-2xl border ${isSelected ? 'border-emerald-500 bg-emerald-50/80 shadow-xs ring-2 ring-emerald-500/20' : 'border-stone-200 bg-white hover:bg-stone-50'} cursor-pointer active:scale-[0.98] transition">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl ${isSelected ? 'bg-emerald-600 text-white' : 'bg-stone-100 text-stone-700'} flex items-center justify-center shadow-2xs">
+            <span class="material-symbols-rounded text-xl">print</span>
+          </div>
+          <div>
+            <div class="font-extrabold text-stone-900 text-sm flex items-center gap-1.5">
+              <span>${escapeHtml(d.name || 'Printer Bluetooth')}</span>
+              ${isSelected ? '<span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900">Aktif</span>' : ''}
+            </div>
+            <div class="text-xs text-stone-500 font-mono mt-0.5">${escapeHtml(d.address)}</div>
+          </div>
+        </div>
+        <span class="material-symbols-rounded ${isSelected ? 'text-emerald-600 font-bold' : 'text-stone-400'}">
+          ${isSelected ? 'check_circle' : 'chevron_right'}
+        </span>
+      </div>
+    `;
+  }).join('') : `
+    <div class="text-center py-6 text-stone-500 text-sm">
+      Tidak ada perangkat yang ditemukan.
+    </div>
+  `;
+
+  modal.innerHTML = `
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[85vh]">
+      <div class="p-4 bg-amber-500 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-rounded text-2xl">bluetooth</span>
+          <div>
+            <h3 class="font-black text-base leading-tight">Pilih Printer Bluetooth</h3>
+            <p class="text-xs text-amber-100">Perangkat yang sudah di-pair di HP</p>
+          </div>
+        </div>
+        <button type="button" onclick="KasirApp.closeNativeBluetoothDevicePickerModal()"
+          class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition">
+          <span class="material-symbols-rounded text-lg">close</span>
+        </button>
+      </div>
+
+      <div class="p-4 overflow-y-auto flex flex-col gap-2.5 flex-1">
+        <p class="text-xs text-stone-600 mb-1">
+          Ketuk printer thermal kasir Anda untuk menghubungkan:
+        </p>
+        ${listHtml}
+      </div>
+
+      <div class="p-4 bg-stone-50 border-t border-stone-200 flex flex-col gap-2">
+        <button type="button" onclick="KasirApp.openDeviceBluetoothSettings()"
+          class="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-stone-100 border border-stone-300 text-stone-800 font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition">
+          <span class="material-symbols-rounded text-base text-blue-600">settings_bluetooth</span>
+          <span>Buka Pengaturan Bluetooth HP (Pair Baru)</span>
+        </button>
+        <button type="button" onclick="KasirApp.closeNativeBluetoothDevicePickerModal()"
+          class="w-full py-2.5 rounded-xl bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold text-xs transition">
+          Tutup
+        </button>
+      </div>
+    </div>
+  `;
+
+  modal.classList.remove('hidden');
+}
+
+export function closeNativeBluetoothDevicePickerModal() {
+  const modal = document.getElementById('nativeBtPickerModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+export function selectNativeBluetoothPrinter(address, name) {
+  if (window.AndroidBridge && typeof window.AndroidBridge.setPreferredPrinter === 'function') {
+    window.AndroidBridge.setPreferredPrinter(address);
+  }
+  if (!state.printerConfig) state.printerConfig = {};
+  state.printerConfig.bluetoothAddress = address;
+  state.printerConfig.bluetoothName = name;
+  savePrinterConfig(state.printerConfig);
+  syncSavePrinterConfig(state.printerConfig);
+
+  updatePrinterStatusBadge('bluetooth', name);
+  closeNativeBluetoothDevicePickerModal();
+  showToast(`Printer kasir disetel: ${name}`, 'success', 3000);
+}
+
+export function openDeviceBluetoothSettings() {
+  if (window.AndroidBridge && typeof window.AndroidBridge.openBluetoothSettings === 'function') {
+    window.AndroidBridge.openBluetoothSettings();
+  } else {
+    showToast('Buka Pengaturan HP > Bluetooth untuk menyandingkan printer baru.', 'info', 4000);
+  }
+}
+
+export function openNativeBluetoothPairingHelpModal() {
+  openBluetoothTroubleshootModal({
+    title: 'Belum Ada Printer Bluetooth di HP',
+    message: 'HP ini belum memiliki printer thermal yang dipasangkan (paired) di Bluetooth sistem.',
+    steps: [
+      'Nyalakan printer thermal kasir Anda (pastikan lampu indikator menyala).',
+      'Buka Pengaturan HP > Bluetooth > Nyalakan Bluetooth.',
+      'Pindai & ketuk nama printer kasir Anda (misal: RPP02N, VSC, POS-58, dll).',
+      'Masukkan PIN Bluetooth jika diminta (biasanya 0000 atau 1234).',
+      'Setelah printer terpasang di HP, kembali ke kasir dan klik "Sambung Bluetooth" lagi.'
+    ]
+  });
+}
+
+/**
+ * Koneksi ke Printer Thermal via Web Bluetooth API atau Native Android Bridge
  */
 export async function connectBluetoothPrinter() {
-  // 1. Cek dukungan browser
+  // 0. Jalur Utama APK Android Native
+  if (window.AndroidBridge && typeof window.AndroidBridge.getPairedDevices === 'function') {
+    try {
+      showToast('Memeriksa printer Bluetooth HP...', 'info', 1200);
+      const devicesJson = window.AndroidBridge.getPairedDevices();
+      const devices = JSON.parse(devicesJson || '[]');
+      if (!devices || devices.length === 0) {
+        openNativeBluetoothPairingHelpModal();
+        return false;
+      }
+      openNativeBluetoothDevicePickerModal(devices);
+      return true;
+    } catch (e) {
+      console.warn('Gagal memuat perangkat Bluetooth native:', e);
+      showToast('Gagal memuat daftar perangkat Bluetooth HP', 'error');
+      return false;
+    }
+  }
+
+  // 1. Cek dukungan Web Bluetooth browser
   if (!navigator.bluetooth) {
     const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     if (!isSecure) {
@@ -1082,16 +1342,20 @@ export function isLocalPrinterReady() {
  * Eksekusi Langsung Buka Laci Kasir secara lokal (hardware direct)
  */
 export async function executeDirectLocalKickDrawer() {
-  // 0. Jalur Utama APK Native
-  if (window.AndroidBridge && typeof window.AndroidBridge.kickDrawer === 'function') {
+  // 0. Jalur Utama APK Native (Bebas Dialog, Zero Freeze)
+  if (window.AndroidBridge) {
     try {
-      const ok = window.AndroidBridge.kickDrawer();
+      const ok = await sendNativeKickDrawerAsync();
       if (ok) {
         showToast('Laci kasir terbuka!', 'success');
         return true;
+      } else {
+        showToast('Gagal membuka laci: Printer Bluetooth tidak merespons.', 'warning', 3000);
+        return false;
       }
     } catch (e) {
       console.warn('Native Android kick error:', e);
+      return false;
     }
   }
 
@@ -1099,7 +1363,7 @@ export async function executeDirectLocalKickDrawer() {
   const cfg = state.printerConfig || {};
   const method = (modalMethod && !document.getElementById('printerConfigModal')?.classList.contains('hidden') ? modalMethod : cfg.printMethod) || 'browser';
 
-  // 1. Mode RawBT
+  // 1. Mode RawBT (Khusus browser eksternal yang diinstal RawBT)
   if (method === 'rawbt') {
     try {
       const bytes = buildOpenDrawerBytes();
@@ -1162,20 +1426,22 @@ export async function executeDirectLocalPrintReceipt(tx, shouldKickDrawer, force
 
   renderPrintableReceiptArea(tx, cfg);
 
-  // 0. Jalur Utama APK Native (Bebas Dialog, Bebas RawBT, Zero Delay)
-  if (window.AndroidBridge && typeof window.AndroidBridge.printBluetooth === 'function') {
+  // 0. Jalur Utama APK Native (Bebas Dialog, Bebas RawBT, Zero UI Freeze)
+  if (window.AndroidBridge) {
     try {
       const bytes = await buildEscPosBytes(tx, shouldKickDrawer);
-      let binary = '';
-      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-      const b64 = window.btoa(binary);
-      const ok = window.AndroidBridge.printBluetooth(b64);
+      const ok = await sendNativeBluetoothDataAsync(bytes);
       if (ok) {
         showToast('Struk tercetak!', 'success');
         return true;
+      } else {
+        showToast('Gagal mencetak: Printer Bluetooth tidak merespons. Pastikan printer hidup & terhubung.', 'error', 4000);
+        return false;
       }
     } catch (e) {
       console.warn('Native Android Bluetooth print error:', e);
+      showToast('Gagal mencetak: ' + (e.message || 'Kesalahan printer'), 'error', 4000);
+      return false;
     }
   }
 
@@ -1235,17 +1501,21 @@ export async function executeDirectLocalKitchenTicket(tx, shouldKickDrawer = fal
   const cfg = state.printerConfig || {};
   const method = cfg.printMethod || 'browser';
 
-  // 1. Android APK Native
-  if (window.AndroidBridge && typeof window.AndroidBridge.printBluetooth === 'function') {
+  // 1. Android APK Native (Bebas Dialog, Zero UI Freeze)
+  if (window.AndroidBridge) {
     try {
-      let binary = '';
-      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-      if (window.AndroidBridge.printBluetooth(window.btoa(binary))) {
+      const ok = await sendNativeBluetoothDataAsync(bytes);
+      if (ok) {
         showToast('Tiket dapur tercetak!', 'success');
         return true;
+      } else {
+        showToast('Gagal mencetak tiket dapur: Printer tidak merespons.', 'error', 3500);
+        return false;
       }
     } catch (e) {
       console.warn('Android kitchen print note:', e);
+      showToast('Gagal mencetak tiket dapur: ' + (e.message || 'Printer error'), 'error', 3500);
+      return false;
     }
   }
 
@@ -1271,7 +1541,7 @@ export async function executeDirectLocalKitchenTicket(tx, shouldKickDrawer = fal
     }
   }
 
-  // 4. RawBT
+  // 4. RawBT (Hanya untuk browser luar)
   if (method === 'rawbt') {
     try {
       let binary = '';
@@ -3409,20 +3679,22 @@ export async function printShiftZReport(shiftSummary) {
   showToast('Menyiapkan struk Laporan Z...', 'info');
   renderPrintableShiftZReport(shiftSummary);
 
-  // 1. Coba cetak ke native Android Service jika di aplikasi APK
-  if (window.AndroidBridge && typeof window.AndroidBridge.printBluetooth === 'function') {
+  // 1. Coba cetak ke native Android Service jika di aplikasi APK (Asinkron & Bebas Freeze)
+  if (window.AndroidBridge) {
     try {
       const bytes = await buildShiftZReportEscPosBytes(shiftSummary);
-      let binary = '';
-      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-      const b64 = window.btoa(binary);
-      const ok = window.AndroidBridge.printBluetooth(b64);
+      const ok = await sendNativeBluetoothDataAsync(bytes);
       if (ok) {
         showToast('Laporan Z berhasil dicetak!', 'success');
         return true;
+      } else {
+        showToast('Gagal cetak Laporan Z: Printer Bluetooth tidak merespons.', 'error', 3500);
+        return false;
       }
     } catch (e) {
       console.warn('Native Android Bluetooth print Z-Report error:', e);
+      showToast('Gagal cetak Laporan Z: ' + (e.message || 'Kesalahan printer'), 'error', 3500);
+      return false;
     }
   }
 

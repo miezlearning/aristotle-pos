@@ -1,9 +1,12 @@
 {
-  "versionCode": 83,
-  "versionName": "1.2.35",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.35/Aristotle-POS.apk",
+  "versionCode": 84,
+  "versionName": "1.2.36",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.36/Aristotle-POS.apk",
   "changelog": [
-    "Perbaikan fatal startup deadlock Bluetooth & eliminasi auto-reload WebView"
+    "Perbaikan fatal ERR_UNKNOWN_URL_SCHEME pada pencetakan thermal dan laci kasir",
+    "Pencetakan Bluetooth asinkron berbasis Promise (eliminasi total UI freeze)",
+    "Koneksi multi-tier Bluetooth SPP & Reflection Port 1 untuk printer thermal kasir",
+    "Fitur pemilih perangkat printer Bluetooth native langsung dari dalam aplikasi"
   ],
   "releaseDate": "2026-09-09"
 }

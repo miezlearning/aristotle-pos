@@ -64,12 +64,14 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -89,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private BluetoothAdapter bluetoothAdapter;
     private String preferredPrinterAddress = null;
+    private String lastPrintErrorMessage = "";
 
     // Persistent Bluetooth Socket & Output Stream for Instant Zero-Delay Printing
     private BluetoothSocket activeSocket = null;
@@ -167,7 +170,6 @@ public class MainActivity extends AppCompatActivity {
                         startActivity(waIntent);
                         return true;
                     } catch (Exception e) {
-                        // Fallback jika com.whatsapp tidak ada (misal WhatsApp Business atau browser)
                         try {
                             Intent genericIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                             genericIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -193,20 +195,57 @@ public class MainActivity extends AppCompatActivity {
                     return true;
                 }
 
-                // 4. Custom Intent Android (misal intent://)
-                if (url.startsWith("intent://")) {
+                // 4. Custom Intent Android (intent:... atau intent://...)
+                if (url.startsWith("intent:")) {
                     try {
                         Intent intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(intent);
-                        return true;
+                        PackageManager pm = getPackageManager();
+                        if (pm != null && intent.resolveActivity(pm) != null) {
+                            startActivity(intent);
+                        } else {
+                            String fallbackUrl = intent.getStringExtra("browser_fallback_url");
+                            if (fallbackUrl != null && !fallbackUrl.isEmpty()) {
+                                Intent fallbackIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(fallbackUrl));
+                                fallbackIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(fallbackIntent);
+                            } else {
+                                String pkg = intent.getPackage();
+                                if (pkg != null && !pkg.isEmpty()) {
+                                    try {
+                                        Intent marketIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + pkg));
+                                        marketIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                        startActivity(marketIntent);
+                                    } catch (Exception eMarket) {
+                                        Intent webMarket = new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + pkg));
+                                        webMarket.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                        startActivity(webMarket);
+                                    }
+                                } else {
+                                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "Aplikasi eksternal pendukung tidak ditemukan.", Toast.LENGTH_SHORT).show());
+                                }
+                            }
+                        }
                     } catch (Exception e) {
                         Log.e(TAG, "Gagal memproses intent: " + url, e);
+                    }
+                    // KRUSIAL: Selalu kembalikan true agar WebView TIDAK PERNAH memuat URL intent ke dalam frame web internal (mencegah net::ERR_UNKNOWN_URL_SCHEME)
+                    return true;
+                }
+
+                // 5. Market / Play Store Link
+                if (url.startsWith("market://")) {
+                    try {
+                        Intent marketIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        marketIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(marketIntent);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Gagal membuka Play Store: " + url, e);
                     }
                     return true;
                 }
 
-                // 5. Tautan website luar lainnya -> Buka di browser eksternal Android (Chrome)
+                // 6. Tautan website luar lainnya (http://, https://) -> Buka di browser eksternal Android
                 try {
                     Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                     browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -216,15 +255,23 @@ public class MainActivity extends AppCompatActivity {
                     Log.e(TAG, "Gagal membuka browser luar untuk: " + url, e);
                 }
 
-                return false;
+                // Jangan izinkan WebView memuat skema kustom asing apa pun secara internal
+                return true;
             }
 
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 super.onReceivedError(view, request, error);
-                // Hanya beralih ke aset lokal jika request adalah halaman utama (MainFrame) dan BUKAN aset lokal
+                // Pulihkan tampilan jika terjadi error pada main frame
                 if (request != null && request.isForMainFrame()) {
                     String reqUrl = request.getUrl() != null ? request.getUrl().toString() : "";
+                    // Cegah halaman error ERR_UNKNOWN_URL_SCHEME atau skema asing yang merusak layar POS
+                    if (reqUrl.startsWith("intent:") || reqUrl.startsWith("market:") ||
+                        (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && error != null && error.getErrorCode() == WebViewClient.ERROR_UNSUPPORTED_SCHEME)) {
+                        Log.w(TAG, "Mencegah layar error skema URL asing, memulihkan ke aset lokal...");
+                        view.loadUrl(OFFLINE_FALLBACK_URL);
+                        return;
+                    }
                     if (reqUrl.startsWith("http") && !reqUrl.contains("android_asset")) {
                         Log.w(TAG, "Gagal memuat URL cloud utama, beralih ke aset offline internal...");
                         view.loadUrl(OFFLINE_FALLBACK_URL);
@@ -235,6 +282,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
                 // Abaikan error sub-resource (CDN, font, analytics, dll) agar WebView tidak reload sendiri
+                if (failingUrl != null && failingUrl.startsWith("intent:")) {
+                    view.loadUrl(OFFLINE_FALLBACK_URL);
+                    return;
+                }
                 if (failingUrl != null && PRODUCTION_URL.equalsIgnoreCase(failingUrl)) {
                     Log.w(TAG, "Gagal koneksi internet ke URL cloud produksi, beralih ke offline.");
                     view.loadUrl(OFFLINE_FALLBACK_URL);
@@ -518,7 +569,7 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public String getAppVersion() {
-            return "1.1.3 (Aristotle POS)";
+            return getAppVersionName() + " (Aristotle POS)";
         }
 
         @JavascriptInterface
@@ -531,7 +582,7 @@ public class MainActivity extends AppCompatActivity {
                     return pInfo.versionCode;
                 }
             } catch (Exception e) {
-                return 5;
+                return 84;
             }
         }
 
@@ -541,7 +592,7 @@ public class MainActivity extends AppCompatActivity {
                 PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
                 return pInfo.versionName;
             } catch (Exception e) {
-                return "1.1.3";
+                return "1.2.36";
             }
         }
 
@@ -652,8 +703,45 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @JavascriptInterface
+        public void printBluetoothAsync(final String base64Data, final String callbackId) {
+            printExecutor.execute(() -> {
+                if (base64Data == null || base64Data.isEmpty()) {
+                    notifyPrintResult(callbackId, false, "Data struk kosong");
+                    return;
+                }
+                try {
+                    byte[] bytes = Base64.decode(base64Data, Base64.DEFAULT);
+                    boolean ok = sendRawBytesToPrinter(bytes);
+                    notifyPrintResult(callbackId, ok, ok ? "" : lastPrintErrorMessage);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error async printBluetooth: " + e.getMessage(), e);
+                    notifyPrintResult(callbackId, false, e.getMessage());
+                }
+            });
+        }
+
+        @JavascriptInterface
         public boolean kickDrawer() {
             return MainActivity.this.kickDrawer();
+        }
+
+        @JavascriptInterface
+        public void kickDrawerAsync(final String callbackId) {
+            printExecutor.execute(() -> {
+                boolean ok = MainActivity.this.kickDrawer();
+                notifyPrintResult(callbackId, ok, ok ? "" : lastPrintErrorMessage);
+            });
+        }
+
+        @JavascriptInterface
+        public void openBluetoothSettings() {
+            try {
+                Intent intent = new Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+            } catch (Exception e) {
+                Log.e(TAG, "Gagal membuka pengaturan Bluetooth: " + e.getMessage());
+            }
         }
 
         @JavascriptInterface
@@ -695,6 +783,18 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void notifyPrintResult(final String callbackId, final boolean success, final String errorMsg) {
+        runOnUiThread(() -> {
+            if (webView != null && callbackId != null && !callbackId.isEmpty()) {
+                String safeMsg = (errorMsg != null ? errorMsg : "").replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ");
+                webView.evaluateJavascript(
+                    "window.__onNativePrintResult && window.__onNativePrintResult('" + callbackId + "', " + success + ", '" + safeMsg + "');",
+                    null
+                );
+            }
+        });
+    }
+
     public boolean kickDrawer() {
         byte[] drawerPulse = new byte[] {
             // 1. ESC p Pin 2 (m = 0, t1 = 30 * 2ms = 60ms, t2 = 125 * 2ms = 250ms)
@@ -715,6 +815,38 @@ public class MainActivity extends AppCompatActivity {
         return sendRawBytesToPrinter(drawerPulse);
     }
 
+    private BluetoothSocket connectSocketWithTimeout(final BluetoothSocket socket, int timeoutMs) throws IOException {
+        if (socket == null) throw new IOException("Socket Bluetooth null");
+        final AtomicBoolean connected = new AtomicBoolean(false);
+        final Throwable[] error = new Throwable[1];
+
+        Thread t = new Thread(() -> {
+            try {
+                socket.connect();
+                connected.set(true);
+            } catch (Throwable e) {
+                error[0] = e;
+            }
+        });
+        t.start();
+        try {
+            t.join(timeoutMs);
+        } catch (InterruptedException ignored) {}
+
+        if (connected.get()) {
+            return socket;
+        }
+
+        try { socket.close(); } catch (Exception ignored) {}
+
+        if (error[0] instanceof IOException) {
+            throw (IOException) error[0];
+        } else if (error[0] != null) {
+            throw new IOException(error[0].getMessage());
+        }
+        throw new IOException("Koneksi ke printer timeout (" + (timeoutMs / 1000) + " detik). Pastikan printer menyala.");
+    }
+
     private OutputStream getOrConnectPrinter() throws IOException {
         synchronized (socketLock) {
             // 1. Jika socket sudah aktif terhubung, gunakan langsung (ZERO DELAY!)
@@ -729,53 +861,106 @@ public class MainActivity extends AppCompatActivity {
             throw new IOException("Bluetooth adapter mati atau tidak tersedia.");
         }
 
-        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+        Set<BluetoothDevice> pairedDevices = null;
+        try {
+            pairedDevices = bluetoothAdapter.getBondedDevices();
+        } catch (SecurityException se) {
+            throw new IOException("Izin Bluetooth belum diizinkan di Pengaturan HP: " + se.getMessage());
+        }
+
         if (pairedDevices == null || pairedDevices.isEmpty()) {
             throw new IOException("Belum ada printer Bluetooth yang di-pair di HP.");
         }
 
         BluetoothDevice targetDevice = null;
-        for (BluetoothDevice dev : pairedDevices) {
-            String name = dev.getName();
-            String addr = dev.getAddress();
-            if (preferredPrinterAddress != null && preferredPrinterAddress.equalsIgnoreCase(addr)) {
-                targetDevice = dev;
-                break;
-            }
-            if (name != null) {
-                String lower = name.toLowerCase();
-                if (lower.contains("rpp02") || lower.contains("vsc") || lower.contains("pos") ||
-                    lower.contains("thermal") || lower.contains("58") || lower.contains("printer") ||
-                    lower.contains("mpt") || lower.contains("zj")) {
+        // Prioritaskan printer yang dipilih oleh pengguna di aplikasi
+        if (preferredPrinterAddress != null && !preferredPrinterAddress.isEmpty()) {
+            for (BluetoothDevice dev : pairedDevices) {
+                if (preferredPrinterAddress.equalsIgnoreCase(dev.getAddress())) {
                     targetDevice = dev;
                     break;
                 }
             }
         }
 
+        // Jika belum ada pilihan spesifik, deteksi nama printer thermal yang umum
+        if (targetDevice == null) {
+            for (BluetoothDevice dev : pairedDevices) {
+                String name = dev.getName();
+                if (name != null) {
+                    String lower = name.toLowerCase();
+                    if (lower.contains("rpp02") || lower.contains("vsc") || lower.contains("pos") ||
+                        lower.contains("thermal") || lower.contains("58") || lower.contains("80") ||
+                        lower.contains("printer") || lower.contains("mpt") || lower.contains("zj") ||
+                        lower.contains("inner") || lower.contains("bt") || lower.contains("panda") ||
+                        lower.contains("kassen") || lower.contains("iware") || lower.contains("eppos") ||
+                        lower.contains("bellav") || lower.contains("goojprt")) {
+                        targetDevice = dev;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Fallback: perangkat pertama yang ter-pair
         if (targetDevice == null) {
             targetDevice = pairedDevices.iterator().next();
         }
 
+        Log.d(TAG, "Membuka koneksi persistent Bluetooth ke: " + targetDevice.getName() + " (" + targetDevice.getAddress() + ")");
         try {
-            Log.d(TAG, "Membuka koneksi persistent Bluetooth ke: " + targetDevice.getName());
-            bluetoothAdapter.cancelDiscovery();
-
-            BluetoothSocket socket = targetDevice.createRfcommSocketToServiceRecord(SPP_UUID);
-            // Connect di luar socketLock agar tidak memblokir WebView / UI thread
-            socket.connect();
-
-            synchronized (socketLock) {
-                closeActiveSocket();
-                activeSocket = socket;
-                activeOutputStream = socket.getOutputStream();
-                connectedDeviceAddress = targetDevice.getAddress();
-                Log.d(TAG, "Koneksi Bluetooth aktif dan standby (Zero Delay Ready)!");
-                return activeOutputStream;
+            if (bluetoothAdapter.isDiscovering()) {
+                bluetoothAdapter.cancelDiscovery();
             }
-        } catch (SecurityException se) {
-            Log.e(TAG, "Izin Bluetooth ditolak saat koneksi: " + se.getMessage());
-            throw new IOException("Izin Bluetooth belum aktif di pengaturan perangkat: " + se.getMessage());
+        } catch (SecurityException ignored) {}
+
+        BluetoothSocket socket = null;
+        IOException lastEx = null;
+
+        // Tier 1: Standar SPP UUID
+        try {
+            BluetoothSocket s1 = targetDevice.createRfcommSocketToServiceRecord(SPP_UUID);
+            socket = connectSocketWithTimeout(s1, 3500);
+        } catch (Exception e1) {
+            Log.w(TAG, "Tier 1 SPP UUID connect gagal: " + e1.getMessage() + ". Mencoba Tier 2 (Reflection Port 1)...");
+            lastEx = (e1 instanceof IOException) ? (IOException) e1 : new IOException(e1.getMessage());
+        }
+
+        // Tier 2: Refleksi createRfcommSocket port 1 (Solusi universal printer kasir RPP02 / VSC / Panda / ZJ)
+        if (socket == null) {
+            try {
+                Method m = targetDevice.getClass().getMethod("createRfcommSocket", new Class[]{int.class});
+                BluetoothSocket s2 = (BluetoothSocket) m.invoke(targetDevice, 1);
+                socket = connectSocketWithTimeout(s2, 3500);
+            } catch (Exception e2) {
+                Log.w(TAG, "Tier 2 Reflection Port 1 gagal: " + e2.getMessage() + ". Mencoba Tier 3 (Insecure)...");
+                lastEx = (e2 instanceof IOException) ? (IOException) e2 : new IOException(e2.getMessage());
+            }
+        }
+
+        // Tier 3: Refleksi createInsecureRfcommSocket port 1
+        if (socket == null) {
+            try {
+                Method mInsecure = targetDevice.getClass().getMethod("createInsecureRfcommSocket", new Class[]{int.class});
+                BluetoothSocket s3 = (BluetoothSocket) mInsecure.invoke(targetDevice, 1);
+                socket = connectSocketWithTimeout(s3, 3500);
+            } catch (Exception e3) {
+                Log.e(TAG, "Tier 3 Insecure Port 1 gagal: " + e3.getMessage());
+                lastEx = (e3 instanceof IOException) ? (IOException) e3 : new IOException(e3.getMessage());
+            }
+        }
+
+        if (socket == null) {
+            throw (lastEx != null ? lastEx : new IOException("Gagal menghubungkan ke printer " + targetDevice.getName()));
+        }
+
+        synchronized (socketLock) {
+            closeActiveSocket();
+            activeSocket = socket;
+            activeOutputStream = socket.getOutputStream();
+            connectedDeviceAddress = targetDevice.getAddress();
+            Log.d(TAG, "Koneksi Bluetooth aktif dan standby (Zero Delay Ready) ke " + targetDevice.getName());
+            return activeOutputStream;
         }
     }
 
@@ -794,40 +979,44 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean sendRawBytesToPrinter(byte[] data) {
-        synchronized (socketLock) {
-            if (bluetoothAdapter == null) {
-                runOnUiThread(() -> Toast.makeText(this, "Perangkat tidak memiliki adapter Bluetooth.", Toast.LENGTH_SHORT).show());
-                return false;
-            }
-            if (!bluetoothAdapter.isEnabled()) {
-                runOnUiThread(() -> Toast.makeText(this, "Bluetooth HP sedang mati. Mohon nyalakan Bluetooth.", Toast.LENGTH_SHORT).show());
-                return false;
-            }
+        if (bluetoothAdapter == null) {
+            lastPrintErrorMessage = "Perangkat tidak memiliki adapter Bluetooth.";
+            runOnUiThread(() -> Toast.makeText(this, lastPrintErrorMessage, Toast.LENGTH_SHORT).show());
+            return false;
+        }
+        if (!bluetoothAdapter.isEnabled()) {
+            lastPrintErrorMessage = "Bluetooth HP sedang mati. Mohon nyalakan Bluetooth.";
+            runOnUiThread(() -> Toast.makeText(this, lastPrintErrorMessage, Toast.LENGTH_SHORT).show());
+            return false;
+        }
 
+        try {
+            // Gunakan socket persistent (Zero Delay) dengan chunking proteksi buffer
+            OutputStream out = getOrConnectPrinter();
+            writeDataChunked(out, data);
+            Log.d(TAG, "Semua " + data.length + " bytes berhasil dikirim ke printer secara tuntas!");
+            lastPrintErrorMessage = "";
+            return true;
+        } catch (IOException e) {
+            Log.w(TAG, "Socket terputus/gagal, mencoba 1x auto-reconnect: " + e.getMessage());
+            closeActiveSocket();
             try {
-                // Gunakan socket persistent (Zero Delay) dengan chunking proteksi buffer
-                OutputStream out = getOrConnectPrinter();
-                writeDataChunked(out, data);
-                Log.d(TAG, "Semua " + data.length + " bytes berhasil dikirim ke printer secara tuntas!");
+                OutputStream freshOut = getOrConnectPrinter();
+                writeDataChunked(freshOut, data);
+                Log.d(TAG, "Data terkirim tuntas setelah auto-reconnect!");
+                lastPrintErrorMessage = "";
                 return true;
-            } catch (IOException e) {
-                Log.w(TAG, "Socket terputus, mencoba auto-reconnect: " + e.getMessage());
-                closeActiveSocket();
-                try {
-                    OutputStream freshOut = getOrConnectPrinter();
-                    writeDataChunked(freshOut, data);
-                    Log.d(TAG, "Data terkirim tuntas setelah auto-reconnect!");
-                    return true;
-                } catch (Exception retryErr) {
-                    Log.e(TAG, "Gagal koneksi printer: " + retryErr.getMessage());
-                    runOnUiThread(() -> Toast.makeText(this, "Gagal menghubungkan ke printer: " + retryErr.getMessage(), Toast.LENGTH_SHORT).show());
-                    return false;
-                }
-            } catch (SecurityException se) {
-                Log.e(TAG, "Izin Bluetooth ditolak: " + se.getMessage());
-                runOnUiThread(() -> Toast.makeText(this, "Izin Bluetooth belum diberikan di Pengaturan Aplikasi.", Toast.LENGTH_SHORT).show());
+            } catch (Exception retryErr) {
+                lastPrintErrorMessage = "Gagal menghubungkan ke printer: " + retryErr.getMessage();
+                Log.e(TAG, lastPrintErrorMessage);
+                runOnUiThread(() -> Toast.makeText(this, lastPrintErrorMessage, Toast.LENGTH_SHORT).show());
                 return false;
             }
+        } catch (SecurityException se) {
+            lastPrintErrorMessage = "Izin Bluetooth belum diberikan di Pengaturan Aplikasi.";
+            Log.e(TAG, "Izin Bluetooth ditolak: " + se.getMessage());
+            runOnUiThread(() -> Toast.makeText(this, lastPrintErrorMessage, Toast.LENGTH_SHORT).show());
+            return false;
         }
     }
 
