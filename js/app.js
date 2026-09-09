@@ -23,6 +23,10 @@ import * as superadmin from './modules/superadmin.js';
 import * as printer from './modules/printer.js';
 import * as updater from './modules/updater.js';
 import * as shift from './modules/shift.js';
+import { initErrorTelemetry, sendTelemetryToDiscord } from './modules/telemetry.js';
+
+// Activate Enterprise Crash Telemetry Watchdog
+initErrorTelemetry();
 import { 
   initFirebaseSync, 
   setRemoteUpdateCallback, 
@@ -1459,6 +1463,7 @@ const KasirApp = {
   setCategory: pos.setCategory,
   handleSearchInput,
   clearSearch,
+  reportErrorToDiscord: sendTelemetryToDiscord,
   renderProducts: pos.renderProducts,
   renderProductSkeletons: pos.renderProductSkeletons,
   addToCart: pos.addToCart,

@@ -81,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String PRODUCTION_URL = "https://miezlearning.github.io/aristotle-pos/";
     private static final String OFFLINE_FALLBACK_URL = "file:///android_asset/index.html";
+    private static final String DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1547145982947491941/tJFIxfrErcDXb1_N3Hd3BlIznMTX33DB-O6WhjxNILb0JinDVwpmdxPh6dt4Uk0HJgZg";
 
     // Standard Serial Port Profile (SPP) UUID for Classic Bluetooth Thermal Printers
     private static final UUID SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
@@ -103,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setupCrashTelemetry();
 
         webView = new WebView(this);
         setContentView(webView);
@@ -512,6 +514,13 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public boolean isNativeApp() {
             return true;
+        }
+
+        @JavascriptInterface
+        public void reportErrorToDiscord(String title, String message, String stack) {
+            printExecutor.execute(() -> {
+                sendCustomErrorToDiscord(title, message, stack);
+            });
         }
 
         @JavascriptInterface
@@ -1334,6 +1343,139 @@ public class MainActivity extends AppCompatActivity {
                 conn.disconnect();
             }
         }
+    }
+
+    private void setupCrashTelemetry() {
+        Thread.UncaughtExceptionHandler defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            sendNativeCrashToDiscord(thread, throwable);
+            if (defaultHandler != null) {
+                defaultHandler.uncaughtException(thread, throwable);
+            }
+        });
+    }
+
+    private void sendNativeCrashToDiscord(Thread thread, Throwable throwable) {
+        try {
+            Thread reporter = new Thread(() -> {
+                try {
+                    JSONObject embed = new JSONObject();
+                    embed.put("title", "💥 [Aristotle POS] Native Android Fatal Crash");
+                    embed.put("description", "**Fatal Exception:**\n```\n" + (throwable.getMessage() != null ? throwable.getMessage() : throwable.toString()) + "\n```");
+                    embed.put("color", 0xDC2626); // Crimson Red
+
+                    JSONArray fields = new JSONArray();
+
+                    JSONObject f1 = new JSONObject();
+                    f1.put("name", "📱 Perangkat & Brand");
+                    f1.put("value", Build.MANUFACTURER + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ", SDK " + Build.VERSION.SDK_INT + ")");
+                    f1.put("inline", true);
+                    fields.put(f1);
+
+                    JSONObject f2 = new JSONObject();
+                    f2.put("name", "🧵 Thread");
+                    f2.put("value", thread.getName() + " (ID: " + thread.getId() + ")");
+                    f2.put("inline", true);
+                    fields.put(f2);
+
+                    java.io.StringWriter sw = new java.io.StringWriter();
+                    java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+                    throwable.printStackTrace(pw);
+                    String stackStr = sw.toString();
+                    if (stackStr.length() > 900) {
+                        stackStr = stackStr.substring(0, 880) + "\n... [truncated]";
+                    }
+
+                    JSONObject f3 = new JSONObject();
+                    f3.put("name", "📋 Native Stack Trace");
+                    f3.put("value", "```java\n" + stackStr + "\n```");
+                    f3.put("inline", false);
+                    fields.put(f3);
+
+                    embed.put("fields", fields);
+                    
+                    JSONObject footer = new JSONObject();
+                    footer.put("text", "Aristotle POS Native Crash Watchdog");
+                    embed.put("footer", footer);
+
+                    JSONObject payload = new JSONObject();
+                    payload.put("username", "Aristotle POS Native Watchdog");
+                    payload.put("avatar_url", "https://miezlearning.github.io/aristotle-pos/icon-192.png");
+                    JSONArray embeds = new JSONArray();
+                    embeds.put(embed);
+                    payload.put("embeds", embeds);
+
+                    URL url = new URL(DISCORD_WEBHOOK_URL);
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("POST");
+                    conn.setRequestProperty("Content-Type", "application/json");
+                    conn.setDoOutput(true);
+                    conn.setConnectTimeout(3000);
+                    conn.setReadTimeout(3000);
+
+                    byte[] outputBytes = payload.toString().getBytes("UTF-8");
+                    conn.getOutputStream().write(outputBytes);
+                    conn.getOutputStream().flush();
+                    conn.getOutputStream().close();
+                    conn.getResponseCode();
+                    conn.disconnect();
+                } catch (Exception ignored) {}
+            });
+            reporter.start();
+            reporter.join(2500);
+        } catch (Exception ignored) {}
+    }
+
+    private void sendCustomErrorToDiscord(String title, String message, String stack) {
+        try {
+            JSONObject embed = new JSONObject();
+            embed.put("title", "🚨 [Aristotle POS] " + (title != null ? title : "Hardware / Native Event"));
+            embed.put("description", "```\n" + (message != null ? message : "No detail") + "\n```");
+            embed.put("color", 0xF59E0B); // Amber
+
+            JSONArray fields = new JSONArray();
+            JSONObject f1 = new JSONObject();
+            f1.put("name", "📱 Perangkat");
+            f1.put("value", Build.MANUFACTURER + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ")");
+            f1.put("inline", true);
+            fields.put(f1);
+
+            if (stack != null && !stack.isEmpty()) {
+                JSONObject f2 = new JSONObject();
+                f2.put("name", "📋 Detail");
+                String s = stack.length() > 900 ? stack.substring(0, 880) + "..." : stack;
+                f2.put("value", "```\n" + s + "\n```");
+                f2.put("inline", false);
+                fields.put(f2);
+            }
+            embed.put("fields", fields);
+
+            JSONObject footer = new JSONObject();
+            footer.put("text", "Aristotle POS Watchdog Telemetry");
+            embed.put("footer", footer);
+
+            JSONObject payload = new JSONObject();
+            payload.put("username", "Aristotle POS Watchdog");
+            payload.put("avatar_url", "https://miezlearning.github.io/aristotle-pos/icon-192.png");
+            JSONArray embeds = new JSONArray();
+            embeds.put(embed);
+            payload.put("embeds", embeds);
+
+            URL url = new URL(DISCORD_WEBHOOK_URL);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(3000);
+
+            byte[] outputBytes = payload.toString().getBytes("UTF-8");
+            conn.getOutputStream().write(outputBytes);
+            conn.getOutputStream().flush();
+            conn.getOutputStream().close();
+            conn.getResponseCode();
+            conn.disconnect();
+        } catch (Exception ignored) {}
     }
 
     @Override

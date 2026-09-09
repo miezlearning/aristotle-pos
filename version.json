@@ -1,9 +1,9 @@
 {
-  "versionCode": 80,
-  "versionName": "1.2.32",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.32/Aristotle-POS.apk",
+  "versionCode": 81,
+  "versionName": "1.2.33",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.33/Aristotle-POS.apk",
   "changelog": [
-    "Redesain UI/UX standar eksekutif modern (Thematic cards, floating quick-checkout bar, modern header & dock)"
+    "Integrasi sistem enterprise error telemetry & crash reporting otomatis ke Discord Webhook"
   ],
   "releaseDate": "2026-09-09"
 }
