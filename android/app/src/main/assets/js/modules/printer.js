@@ -1612,6 +1612,15 @@ export async function printKitchenTicket(tx, shouldKickDrawer = false) {
 
 // ================= CLOUD REMOTE PRINT LISTENER (DAEMON HOST) =================
 let remotePrintUnsubscribe = null;
+let hostPrintJobQueue = Promise.resolve();
+
+function enqueueHostPrintTask(taskFn) {
+  const next = hostPrintJobQueue.then(() => taskFn()).catch(err => {
+    console.warn('Host print queue task error:', err);
+  });
+  hostPrintJobQueue = next;
+  return next;
+}
 
 /**
  * Aktifkan listener di background untuk memproses tugas cetak dari perangkat lain di toko
@@ -1629,35 +1638,37 @@ export function setupRemotePrintHostListener() {
   }
 
   console.log('Mengaktifkan Remote Print Host Listener untuk toko:', state.storeId);
-  remotePrintUnsubscribe = listenToRemotePrintJobs(async (job) => {
+  remotePrintUnsubscribe = listenToRemotePrintJobs((job) => {
     if (!job || job.status !== 'pending') return;
 
-    console.log('Menerima tugas cetak dari pelayan:', job.createdByName, job);
-    await updateRemotePrintJobStatus(job.id, 'processing');
+    enqueueHostPrintTask(async () => {
+      console.log('Menerima tugas cetak dari pelayan (terantre):', job.createdByName, job);
+      await updateRemotePrintJobStatus(job.id, 'processing');
 
-    try {
-      if (job.type === 'receipt' && job.tx) {
-        const cfg = state.printerConfig || {};
-        const isCash = job.tx.method === 'TUNAI';
-        const shouldKick = job.kickDrawer !== undefined ? Boolean(job.kickDrawer) : Boolean(cfg.autoKickDrawer !== false && isCash);
-        await executeDirectLocalPrintReceipt(job.tx, shouldKick, job.forceMethod);
-        showToast(`Mencetak struk dari [${job.createdByName || 'Staf'}]`, 'info', 3000);
-      } else if (job.type === 'kitchen' && job.tx) {
-        const cfg = state.printerConfig || {};
-        const isCash = job.tx.method === 'TUNAI';
-        const shouldKick = job.kickDrawer !== undefined ? Boolean(job.kickDrawer) : Boolean(cfg.autoKickDrawer !== false && isCash);
-        await executeDirectLocalKitchenTicket(job.tx, shouldKick);
-        showToast(`Mencetak tiket dapur dari [${job.createdByName || 'Staf'}]`, 'info', 3000);
-      } else if (job.type === 'drawer') {
-        await executeDirectLocalKickDrawer();
-        showToast(`Membuka laci kasir atas perintah [${job.createdByName || 'Staf'}]`, 'info', 3000);
+      try {
+        if (job.type === 'receipt' && job.tx) {
+          const cfg = state.printerConfig || {};
+          const isCash = job.tx.method === 'TUNAI';
+          const shouldKick = job.kickDrawer !== undefined ? Boolean(job.kickDrawer) : Boolean(cfg.autoKickDrawer !== false && isCash);
+          await executeDirectLocalPrintReceipt(job.tx, shouldKick, job.forceMethod);
+          showToast(`Mencetak struk dari [${job.createdByName || 'Staf'}]`, 'info', 3000);
+        } else if (job.type === 'kitchen' && job.tx) {
+          const cfg = state.printerConfig || {};
+          const isCash = job.tx.method === 'TUNAI';
+          const shouldKick = job.kickDrawer !== undefined ? Boolean(job.kickDrawer) : Boolean(cfg.autoKickDrawer !== false && isCash);
+          await executeDirectLocalKitchenTicket(job.tx, shouldKick);
+          showToast(`Mencetak tiket dapur dari [${job.createdByName || 'Staf'}]`, 'info', 3000);
+        } else if (job.type === 'drawer') {
+          await executeDirectLocalKickDrawer();
+          showToast(`Membuka laci kasir atas perintah [${job.createdByName || 'Staf'}]`, 'info', 3000);
+        }
+
+        await updateRemotePrintJobStatus(job.id, 'completed');
+      } catch (err) {
+        console.error('Eksekusi remote print job gagal:', err);
+        await updateRemotePrintJobStatus(job.id, 'failed', { error: err.message || 'Gagal cetak' });
       }
-
-      await updateRemotePrintJobStatus(job.id, 'completed');
-    } catch (err) {
-      console.error('Eksekusi remote print job gagal:', err);
-      await updateRemotePrintJobStatus(job.id, 'failed', { error: err.message || 'Gagal cetak' });
-    }
+    });
   });
 }
 

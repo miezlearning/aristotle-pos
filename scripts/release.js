@@ -118,7 +118,7 @@ if (fs.existsSync(assetsDir)) {
     }
   });
 
-  ['js', 'css'].forEach(dir => {
+  ['js', 'css', 'fonts'].forEach(dir => {
     const srcDir = path.resolve(dir);
     const destDir = path.join(assetsDir, dir);
     if (fs.existsSync(srcDir)) {

@@ -803,38 +803,40 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean sendRawBytesToPrinter(byte[] data) {
-        if (bluetoothAdapter == null) {
-            runOnUiThread(() -> Toast.makeText(this, "Perangkat tidak memiliki adapter Bluetooth.", Toast.LENGTH_SHORT).show());
-            return false;
-        }
-        if (!bluetoothAdapter.isEnabled()) {
-            runOnUiThread(() -> Toast.makeText(this, "Bluetooth HP sedang mati. Mohon nyalakan Bluetooth.", Toast.LENGTH_SHORT).show());
-            return false;
-        }
-
-        try {
-            // Gunakan socket persistent (Zero Delay) dengan chunking proteksi buffer
-            OutputStream out = getOrConnectPrinter();
-            writeDataChunked(out, data);
-            Log.d(TAG, "Semua " + data.length + " bytes berhasil dikirim ke printer secara tuntas!");
-            return true;
-        } catch (IOException e) {
-            Log.w(TAG, "Socket terputus, mencoba auto-reconnect: " + e.getMessage());
-            closeActiveSocket();
-            try {
-                OutputStream freshOut = getOrConnectPrinter();
-                writeDataChunked(freshOut, data);
-                Log.d(TAG, "Data terkirim tuntas setelah auto-reconnect!");
-                return true;
-            } catch (Exception retryErr) {
-                Log.e(TAG, "Gagal koneksi printer: " + retryErr.getMessage());
-                runOnUiThread(() -> Toast.makeText(this, "Gagal menghubungkan ke printer: " + retryErr.getMessage(), Toast.LENGTH_SHORT).show());
+        synchronized (socketLock) {
+            if (bluetoothAdapter == null) {
+                runOnUiThread(() -> Toast.makeText(this, "Perangkat tidak memiliki adapter Bluetooth.", Toast.LENGTH_SHORT).show());
                 return false;
             }
-        } catch (SecurityException se) {
-            Log.e(TAG, "Izin Bluetooth ditolak: " + se.getMessage());
-            runOnUiThread(() -> Toast.makeText(this, "Izin Bluetooth belum diberikan di Pengaturan Aplikasi.", Toast.LENGTH_SHORT).show());
-            return false;
+            if (!bluetoothAdapter.isEnabled()) {
+                runOnUiThread(() -> Toast.makeText(this, "Bluetooth HP sedang mati. Mohon nyalakan Bluetooth.", Toast.LENGTH_SHORT).show());
+                return false;
+            }
+
+            try {
+                // Gunakan socket persistent (Zero Delay) dengan chunking proteksi buffer
+                OutputStream out = getOrConnectPrinter();
+                writeDataChunked(out, data);
+                Log.d(TAG, "Semua " + data.length + " bytes berhasil dikirim ke printer secara tuntas!");
+                return true;
+            } catch (IOException e) {
+                Log.w(TAG, "Socket terputus, mencoba auto-reconnect: " + e.getMessage());
+                closeActiveSocket();
+                try {
+                    OutputStream freshOut = getOrConnectPrinter();
+                    writeDataChunked(freshOut, data);
+                    Log.d(TAG, "Data terkirim tuntas setelah auto-reconnect!");
+                    return true;
+                } catch (Exception retryErr) {
+                    Log.e(TAG, "Gagal koneksi printer: " + retryErr.getMessage());
+                    runOnUiThread(() -> Toast.makeText(this, "Gagal menghubungkan ke printer: " + retryErr.getMessage(), Toast.LENGTH_SHORT).show());
+                    return false;
+                }
+            } catch (SecurityException se) {
+                Log.e(TAG, "Izin Bluetooth ditolak: " + se.getMessage());
+                runOnUiThread(() -> Toast.makeText(this, "Izin Bluetooth belum diberikan di Pengaturan Aplikasi.", Toast.LENGTH_SHORT).show());
+                return false;
+            }
         }
     }
 

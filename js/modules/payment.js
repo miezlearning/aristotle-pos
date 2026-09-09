@@ -432,177 +432,193 @@ export function updateChangeDisplay() {
   }
 }
 
+let isCompletingTransaction = false;
+
 export function completeTransaction() {
+  if (isCompletingTransaction) return;
+
   const finalPayable = getFinalPayableTotal();
   if (finalPayable < 0) return;
 
   const isQris = paymentMethod === 'qris';
   if (!isQris && cashGiven < finalPayable) return;
 
-  const activeQueue = getActiveQueue();
-  const rawItems = activeQueue ? getQueueLineItems(activeQueue) : [];
-  
-  // Hitung nomor antrian harian otomatis (Reset ke 01 setiap hari baru)
-  const todayStr = new Date().toDateString();
-  const todayTxCount = (state.transactions || []).filter(t => new Date(t.date).toDateString() === todayStr).length + 1;
-  const queueNoFormatted = String(todayTxCount).padStart(2, '0');
-  
-  let queueName = queueNoFormatted;
-  if (activeQueue && activeQueue.name && !activeQueue.name.toLowerCase().includes('pesanan')) {
-    queueName = `${queueNoFormatted} (${activeQueue.name})`;
-  }
+  isCompletingTransaction = true;
+  const finishBtn = document.getElementById('btnFinishPayment');
+  if (finishBtn) finishBtn.disabled = true;
 
-  const orderItems = rawItems.map(it => {
-    const p = state.products.find(prod => prod.id === it.productId);
-    const validAddOns = Array.isArray(it.addOns) ? it.addOns.map(ao => ({
-      name: String(ao.name || '').trim(),
-      price: Number(ao.price) || 0
-    })) : [];
-    const addOnTotal = validAddOns.reduce((sum, ao) => sum + ao.price, 0);
-    const basePrice = p ? p.price : 0;
-    const finalUnitPrice = basePrice + addOnTotal;
+  try {
+    const activeQueue = getActiveQueue();
+    const rawItems = activeQueue ? getQueueLineItems(activeQueue) : [];
+    
+    // Hitung nomor antrian harian otomatis (Reset ke 01 setiap hari baru)
+    const todayStr = new Date().toDateString();
+    const todayTxCount = (state.transactions || []).filter(t => new Date(t.date).toDateString() === todayStr).length + 1;
+    const queueNoFormatted = String(todayTxCount).padStart(2, '0');
+    
+    let queueName = queueNoFormatted;
+    if (activeQueue && activeQueue.name && !activeQueue.name.toLowerCase().includes('pesanan')) {
+      queueName = `${queueNoFormatted} (${activeQueue.name})`;
+    }
 
-    return {
-      id: it.productId,
-      lineId: it.lineId,
-      name: p ? p.name : 'Item',
-      basePrice: basePrice,
-      price: finalUnitPrice,
-      qty: it.qty,
-      subtotal: finalUnitPrice * it.qty,
-      note: it.note || '',
-      addOns: validAddOns
-    };
-  });
+    const orderItems = rawItems.map(it => {
+      const p = state.products.find(prod => prod.id === it.productId);
+      const validAddOns = Array.isArray(it.addOns) ? it.addOns.map(ao => ({
+        name: String(ao.name || '').trim(),
+        price: Number(ao.price) || 0
+      })) : [];
+      const addOnTotal = validAddOns.reduce((sum, ao) => sum + ao.price, 0);
+      const basePrice = p ? p.price : 0;
+      const finalUnitPrice = basePrice + addOnTotal;
 
-  // Validasi Integritas Harga & Transaksi: Pastikan item & harga cocok 100% dengan master katalog
-  let verifiedRawSubtotal = 0;
-  for (const item of orderItems) {
-    const masterProd = state.products.find(prod => prod.id === item.id);
-    if (!masterProd || typeof masterProd.price !== 'number' || masterProd.price < 0 || item.qty <= 0) {
-      showToast('Peringatan: Data produk tidak valid. Transaksi dibatalkan demi keamanan.', 'error', 4000);
+      return {
+        id: it.productId,
+        lineId: it.lineId,
+        name: p ? p.name : 'Item',
+        basePrice: basePrice,
+        price: finalUnitPrice,
+        qty: it.qty,
+        subtotal: finalUnitPrice * it.qty,
+        note: it.note || '',
+        addOns: validAddOns
+      };
+    });
+
+    // Validasi Integritas Harga & Transaksi: Pastikan item & harga cocok 100% dengan master katalog
+    let verifiedRawSubtotal = 0;
+    for (const item of orderItems) {
+      const masterProd = state.products.find(prod => prod.id === item.id);
+      if (!masterProd || typeof masterProd.price !== 'number' || masterProd.price < 0 || item.qty <= 0) {
+        showToast('Peringatan: Data produk tidak valid. Transaksi dibatalkan demi keamanan.', 'error', 4000);
+        return;
+      }
+      const addOnTotal = (item.addOns || []).reduce((sum, ao) => sum + (Number(ao.price) || 0), 0);
+      item.basePrice = masterProd.price;
+      item.price = masterProd.price + addOnTotal;
+      item.subtotal = item.price * item.qty;
+      verifiedRawSubtotal += item.subtotal;
+    }
+
+    if (verifiedRawSubtotal <= 0) {
+      showToast('Total transaksi tidak valid.', 'error');
       return;
     }
-    const addOnTotal = (item.addOns || []).reduce((sum, ao) => sum + (Number(ao.price) || 0), 0);
-    item.basePrice = masterProd.price;
-    item.price = masterProd.price + addOnTotal;
-    item.subtotal = item.price * item.qty;
-    verifiedRawSubtotal += item.subtotal;
-  }
 
-  if (verifiedRawSubtotal <= 0) {
-    showToast('Total transaksi tidak valid.', 'error');
-    return;
-  }
-
-  // Hitung diskon secara presisi terhadap verifiedRawSubtotal
-  let finalVerifiedTotal = verifiedRawSubtotal;
-  let txDiscount = null;
-  if (activeDiscount) {
-    let discAmt = 0;
-    if (activeDiscount.type === 'percent') {
-      discAmt = Math.round((verifiedRawSubtotal * activeDiscount.value) / 100);
-    } else {
-      discAmt = Math.min(activeDiscount.value, verifiedRawSubtotal);
-    }
-    discAmt = Math.max(0, Math.min(discAmt, verifiedRawSubtotal));
-    finalVerifiedTotal = Math.max(0, verifiedRawSubtotal - discAmt);
-    txDiscount = {
-      type: activeDiscount.type,
-      value: activeDiscount.value,
-      amount: discAmt
-    };
-  }
-
-  const finalCash = isQris ? finalVerifiedTotal : cashGiven;
-  const finalChange = isQris ? 0 : (cashGiven - finalVerifiedTotal);
-
-  const newTx = {
-    id: 'TX-' + Date.now(),
-    date: new Date().toISOString(),
-    orderName: queueName,
-    method: isQris ? 'QRIS' : 'TUNAI',
-    items: orderItems,
-    subtotal: verifiedRawSubtotal,
-    discount: txDiscount,
-    total: finalVerifiedTotal,
-    cashGiven: finalCash,
-    change: finalChange,
-    contributions: (!isQris && cashContributions.length > 1) ? cashContributions : null
-  };
-
-  state.transactions.unshift(newTx);
-  saveHistory();
-  syncAddTransaction(newTx);
-
-  // Auto decrement stock for tracked items
-  let hasStockUpdate = false;
-  orderItems.forEach(item => {
-    const prod = state.products.find(p => p.id === item.id);
-    if (prod && prod.trackStock) {
-      prod.stock = Math.max(0, (prod.stock || 0) - item.qty);
-      if (prod.stock === 0) {
-        prod.isAvailable = false;
+    // Hitung diskon secara presisi terhadap verifiedRawSubtotal
+    let finalVerifiedTotal = verifiedRawSubtotal;
+    let txDiscount = null;
+    if (activeDiscount) {
+      let discAmt = 0;
+      if (activeDiscount.type === 'percent') {
+        discAmt = Math.round((verifiedRawSubtotal * activeDiscount.value) / 100);
+      } else {
+        discAmt = Math.min(activeDiscount.value, verifiedRawSubtotal);
       }
-      syncSaveProduct(prod);
-      hasStockUpdate = true;
+      discAmt = Math.max(0, Math.min(discAmt, verifiedRawSubtotal));
+      finalVerifiedTotal = Math.max(0, verifiedRawSubtotal - discAmt);
+      txDiscount = {
+        type: activeDiscount.type,
+        value: activeDiscount.value,
+        amount: discAmt
+      };
     }
-  });
-  if (hasStockUpdate) {
-    saveProducts();
-  }
 
-  showReceipt(newTx);
-  playSuccessChime();
+    const finalCash = isQris ? finalVerifiedTotal : cashGiven;
+    const finalChange = isQris ? 0 : (cashGiven - finalVerifiedTotal);
 
-  // 1. Auto-Print Struk Kasir / Tiket Dapur & Buka Laci Kasir
-  const printerCfg = state.printerConfig || {};
-  const isCash = !isQris;
-  const shouldKick = Boolean(printerCfg.autoKickDrawer !== false && isCash);
+    const newTx = {
+      id: 'TX-' + Date.now(),
+      date: new Date().toISOString(),
+      orderName: queueName,
+      method: isQris ? 'QRIS' : 'TUNAI',
+      items: orderItems,
+      subtotal: verifiedRawSubtotal,
+      discount: txDiscount,
+      total: finalVerifiedTotal,
+      cashGiven: finalCash,
+      change: finalChange,
+      contributions: (!isQris && cashContributions.length > 1) ? cashContributions : null
+    };
 
-  if (printerCfg.autoPrintKitchen && printerCfg.autoPrint) {
-    setTimeout(() => {
-      printKitchenTicket(newTx, false);
+    state.transactions.unshift(newTx);
+    saveHistory();
+    syncAddTransaction(newTx);
+
+    // Auto decrement stock for tracked items
+    let hasStockUpdate = false;
+    orderItems.forEach(item => {
+      const prod = state.products.find(p => p.id === item.id);
+      if (prod && prod.trackStock) {
+        prod.stock = Math.max(0, (prod.stock || 0) - item.qty);
+        if (prod.stock === 0) {
+          prod.isAvailable = false;
+        }
+        syncSaveProduct(prod);
+        hasStockUpdate = true;
+      }
+    });
+    if (hasStockUpdate) {
+      saveProducts();
+    }
+
+    showReceipt(newTx);
+    playSuccessChime();
+
+    // 1. Auto-Print Struk Kasir / Tiket Dapur & Buka Laci Kasir
+    const printerCfg = state.printerConfig || {};
+    const isCash = !isQris;
+    const shouldKick = Boolean(printerCfg.autoKickDrawer !== false && isCash);
+
+    if (printerCfg.autoPrintKitchen && printerCfg.autoPrint) {
+      setTimeout(() => {
+        printKitchenTicket(newTx, false);
+        setTimeout(() => {
+          printReceipt(newTx, shouldKick);
+        }, 700);
+      }, 300);
+    } else if (printerCfg.autoPrintKitchen) {
+      setTimeout(() => {
+        printKitchenTicket(newTx, shouldKick);
+        if (shouldKick) {
+          setTimeout(() => kickCashDrawer(), 500);
+        }
+      }, 300);
+    } else if (printerCfg.autoPrint) {
       setTimeout(() => {
         printReceipt(newTx, shouldKick);
-      }, 700);
-    }, 300);
-  } else if (printerCfg.autoPrintKitchen) {
-    setTimeout(() => {
-      printKitchenTicket(newTx, shouldKick);
-      if (shouldKick) {
-        setTimeout(() => kickCashDrawer(), 500);
-      }
-    }, 300);
-  } else if (printerCfg.autoPrint) {
-    setTimeout(() => {
-      printReceipt(newTx, shouldKick);
-    }, 300);
-  } else if (shouldKick) {
-    // Jika tidak mencetak otomatis, picu buka laci langsung saat bayar tunai
-    setTimeout(() => {
-      kickCashDrawer();
-    }, 300);
-  }
+      }, 300);
+    } else if (shouldKick) {
+      // Jika tidak mencetak otomatis, picu buka laci langsung saat bayar tunai
+      setTimeout(() => {
+        kickCashDrawer();
+      }, 300);
+    }
 
-  if (state.orderQueues.length > 1) {
-    state.orderQueues = state.orderQueues.filter(q => q.id !== state.activeQueueId);
-    state.activeQueueId = state.orderQueues[0].id;
-  } else {
-    // Jika hanya 1 antrian, kosongkan keranjang dan kembalikan namanya menjadi 'Pesanan #1'
-    state.orderQueues[0].cart = {};
-    state.orderQueues[0].notes = {};
-    state.orderQueues[0].name = 'Pesanan #1';
-  }
+    if (state.orderQueues.length > 1) {
+      state.orderQueues = state.orderQueues.filter(q => q.id !== state.activeQueueId);
+      state.activeQueueId = state.orderQueues[0].id;
+    } else {
+      // Jika hanya 1 antrian, kosongkan keranjang dan kembalikan namanya menjadi 'Pesanan #1'
+      state.orderQueues[0].cart = {};
+      state.orderQueues[0].notes = {};
+      state.orderQueues[0].name = 'Pesanan #1';
+    }
 
-  saveQueues();
-  syncSaveQueues(state.orderQueues);
-  closePaymentModal();
-  toggleMobileCartDrawer(false);
-  renderOrderQueueTabs();
-  renderCart();
-  renderProducts();
-  showToast(`Pembayaran ${formatRp(newTx.total)} Berhasil (${newTx.method})!`, 'success');
+    saveQueues();
+    syncSaveQueues(state.orderQueues);
+    closePaymentModal();
+    toggleMobileCartDrawer(false);
+    renderOrderQueueTabs();
+    renderCart();
+    renderProducts();
+    showToast(`Pembayaran ${formatRp(newTx.total)} Berhasil (${newTx.method})!`, 'success');
+  } finally {
+    setTimeout(() => {
+      isCompletingTransaction = false;
+      const b = document.getElementById('btnFinishPayment');
+      if (b) b.disabled = false;
+    }, 600);
+  }
 }
 
 export function showReceipt(tx) {
