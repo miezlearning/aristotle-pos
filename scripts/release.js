@@ -51,7 +51,7 @@ console.log(`Bumping version: v${currentName} (code ${currentCode}) -> v${target
 const updatedVersionData = {
   versionCode: newVersionCode,
   versionName: targetVersion,
-  apkUrl: `https://github.com/miezlearning/umkm-prototype/releases/download/v${targetVersion}/Aristotle-POS.apk`,
+  apkUrl: `https://github.com/miezlearning/aristotle-pos/releases/download/v${targetVersion}/Aristotle-POS.apk`,
   changelog: changelog,
   releaseDate: today
 };

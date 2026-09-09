@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int UNKNOWN_SOURCES_PERMISSION_REQUEST_CODE = 1003;
     private boolean pendingInstallAfterPermission = false;
 
-    private static final String PRODUCTION_URL = "https://miezlearning.github.io/umkm-prototype/";
+    private static final String PRODUCTION_URL = "https://miezlearning.github.io/aristotle-pos/";
     private static final String OFFLINE_FALLBACK_URL = "file:///android_asset/index.html";
 
     // Standard Serial Port Profile (SPP) UUID for Classic Bluetooth Thermal Printers
@@ -154,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
                 if (url == null) return false;
 
                 // 1. Biarkan WebView menangani halaman aplikasi sendiri (URL Cloud & Offline Fallback)
-                if (url.startsWith("https://miezlearning.github.io/umkm-prototype") || 
+                if (url.startsWith("https://miezlearning.github.io/aristotle-pos") || 
                     url.startsWith("file:///android_asset/")) {
                     return false;
                 }

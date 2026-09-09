@@ -43,7 +43,7 @@ export async function checkForAppUpdates(manual = false) {
 
     // Ambil version.json dengan cache-busting timestamp (Gunakan URL cloud absolut jika berjalan di Native Android APK)
     const updateUrl = current.isNative
-      ? `https://miezlearning.github.io/umkm-prototype/version.json?_t=${Date.now()}`
+      ? `https://miezlearning.github.io/aristotle-pos/version.json?_t=${Date.now()}`
       : `version.json?_t=${Date.now()}`;
     const res = await fetch(updateUrl, { cache: 'no-store' });
     if (!res.ok) {

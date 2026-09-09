@@ -1,10 +1,10 @@
 {
-  "versionCode": 75,
-  "versionName": "1.2.27",
-  "apkUrl": "https://github.com/miezlearning/umkm-prototype/releases/download/v1.2.27/Aristotle-POS.apk",
+  "versionCode": 76,
+  "versionName": "1.2.28",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.28/Aristotle-POS.apk",
   "changelog": [
-    "Dukungan foto menu produk: upload, auto-kompresi canvas offline, dan kartu menu visual di katalog kasir",
-    "Sinkronisasi foto menu ke Cloud Firestore dan thumbnail tabel admin"
+    "Migrasi endpoint aplikasi dan URL repositori ke aristotle-pos",
+    "Sinkronisasi auto-updater dan live production webview"
   ],
-  "releaseDate": "2026-09-07"
+  "releaseDate": "2026-09-09"
 }
