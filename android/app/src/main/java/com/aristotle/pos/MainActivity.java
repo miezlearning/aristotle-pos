@@ -114,15 +114,6 @@ public class MainActivity extends AppCompatActivity {
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        // Background warm-up / pre-connect to thermal printer so print is 100% INSTANT with ZERO DELAY!
-        printExecutor.execute(() -> {
-            try {
-                if (bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
-                    getOrConnectPrinter();
-                }
-            } catch (Exception ignored) {}
-        });
-
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -231,10 +222,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 super.onReceivedError(view, request, error);
+                // Hanya beralih ke aset lokal jika request adalah halaman utama (MainFrame) dan BUKAN aset lokal
                 if (request != null && request.isForMainFrame()) {
                     String reqUrl = request.getUrl() != null ? request.getUrl().toString() : "";
-                    if (!reqUrl.startsWith("file:///android_asset/")) {
-                        Log.w(TAG, "Gagal memuat URL cloud, beralih ke aset offline internal...");
+                    if (reqUrl.startsWith("http") && !reqUrl.contains("android_asset")) {
+                        Log.w(TAG, "Gagal memuat URL cloud utama, beralih ke aset offline internal...");
                         view.loadUrl(OFFLINE_FALLBACK_URL);
                     }
                 }
@@ -242,8 +234,9 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                if (failingUrl != null && failingUrl.startsWith("http")) {
-                    Log.w(TAG, "Gagal koneksi internet (" + description + "), muat fallback offline.");
+                // Abaikan error sub-resource (CDN, font, analytics, dll) agar WebView tidak reload sendiri
+                if (failingUrl != null && PRODUCTION_URL.equalsIgnoreCase(failingUrl)) {
+                    Log.w(TAG, "Gagal koneksi internet ke URL cloud produksi, beralih ke offline.");
                     view.loadUrl(OFFLINE_FALLBACK_URL);
                 }
             }
@@ -618,19 +611,7 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public boolean isPrinterReady() {
             synchronized (socketLock) {
-                if (activeSocket != null && activeSocket.isConnected() && activeOutputStream != null) {
-                    return true;
-                }
-                if (bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
-                    try {
-                        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-                        if (pairedDevices != null && !pairedDevices.isEmpty()) {
-                            OutputStream out = getOrConnectPrinter();
-                            return out != null && activeSocket != null && activeSocket.isConnected();
-                        }
-                    } catch (Exception ignored) {}
-                }
-                return false;
+                return activeSocket != null && activeSocket.isConnected() && activeOutputStream != null;
             }
         }
 
@@ -638,27 +619,29 @@ public class MainActivity extends AppCompatActivity {
         public String getConnectedPrinterInfo() {
             synchronized (socketLock) {
                 if (activeSocket != null && activeSocket.isConnected()) {
-                    BluetoothDevice dev = activeSocket.getRemoteDevice();
-                    if (dev != null) {
-                        return dev.getName() != null && !dev.getName().isEmpty() ? dev.getName() : dev.getAddress();
-                    }
-                }
-                if (bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
                     try {
-                        Set<BluetoothDevice> paired = bluetoothAdapter.getBondedDevices();
-                        if (paired != null && !paired.isEmpty()) {
-                            for (BluetoothDevice d : paired) {
-                                if (preferredPrinterAddress != null && preferredPrinterAddress.equalsIgnoreCase(d.getAddress())) {
-                                    return d.getName() != null && !d.getName().isEmpty() ? d.getName() : d.getAddress();
-                                }
-                            }
-                            BluetoothDevice first = paired.iterator().next();
-                            return first.getName() != null && !first.getName().isEmpty() ? first.getName() : first.getAddress();
+                        BluetoothDevice dev = activeSocket.getRemoteDevice();
+                        if (dev != null) {
+                            return dev.getName() != null && !dev.getName().isEmpty() ? dev.getName() : dev.getAddress();
                         }
                     } catch (Exception ignored) {}
                 }
-                return "";
             }
+            if (bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
+                try {
+                    Set<BluetoothDevice> paired = bluetoothAdapter.getBondedDevices();
+                    if (paired != null && !paired.isEmpty()) {
+                        for (BluetoothDevice d : paired) {
+                            if (preferredPrinterAddress != null && preferredPrinterAddress.equalsIgnoreCase(d.getAddress())) {
+                                return d.getName() != null && !d.getName().isEmpty() ? d.getName() : d.getAddress();
+                            }
+                        }
+                        BluetoothDevice first = paired.iterator().next();
+                        return first.getName() != null && !first.getName().isEmpty() ? first.getName() : first.getAddress();
+                    }
+                } catch (Exception ignored) {}
+            }
+            return "";
         }
 
         @JavascriptInterface
@@ -740,58 +723,59 @@ public class MainActivity extends AppCompatActivity {
                     return activeOutputStream;
                 }
             }
+        }
 
-            closeActiveSocket();
+        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
+            throw new IOException("Bluetooth adapter mati atau tidak tersedia.");
+        }
 
-            if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
-                throw new IOException("Bluetooth adapter mati atau tidak tersedia.");
+        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+        if (pairedDevices == null || pairedDevices.isEmpty()) {
+            throw new IOException("Belum ada printer Bluetooth yang di-pair di HP.");
+        }
+
+        BluetoothDevice targetDevice = null;
+        for (BluetoothDevice dev : pairedDevices) {
+            String name = dev.getName();
+            String addr = dev.getAddress();
+            if (preferredPrinterAddress != null && preferredPrinterAddress.equalsIgnoreCase(addr)) {
+                targetDevice = dev;
+                break;
             }
-
-            Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-            if (pairedDevices == null || pairedDevices.isEmpty()) {
-                throw new IOException("Belum ada printer Bluetooth yang di-pair di HP.");
-            }
-
-            BluetoothDevice targetDevice = null;
-            for (BluetoothDevice dev : pairedDevices) {
-                String name = dev.getName();
-                String addr = dev.getAddress();
-                if (preferredPrinterAddress != null && preferredPrinterAddress.equalsIgnoreCase(addr)) {
+            if (name != null) {
+                String lower = name.toLowerCase();
+                if (lower.contains("rpp02") || lower.contains("vsc") || lower.contains("pos") ||
+                    lower.contains("thermal") || lower.contains("58") || lower.contains("printer") ||
+                    lower.contains("mpt") || lower.contains("zj")) {
                     targetDevice = dev;
                     break;
                 }
-                if (name != null) {
-                    String lower = name.toLowerCase();
-                    if (lower.contains("rpp02") || lower.contains("vsc") || lower.contains("pos") ||
-                        lower.contains("thermal") || lower.contains("58") || lower.contains("printer") ||
-                        lower.contains("mpt") || lower.contains("zj")) {
-                        targetDevice = dev;
-                        break;
-                    }
-                }
             }
+        }
 
-            if (targetDevice == null) {
-                targetDevice = pairedDevices.iterator().next();
-            }
+        if (targetDevice == null) {
+            targetDevice = pairedDevices.iterator().next();
+        }
 
-            try {
-                Log.d(TAG, "Membuka koneksi persistent Bluetooth ke: " + targetDevice.getName());
-                bluetoothAdapter.cancelDiscovery();
+        try {
+            Log.d(TAG, "Membuka koneksi persistent Bluetooth ke: " + targetDevice.getName());
+            bluetoothAdapter.cancelDiscovery();
 
-                BluetoothSocket socket = targetDevice.createRfcommSocketToServiceRecord(SPP_UUID);
-                socket.connect();
+            BluetoothSocket socket = targetDevice.createRfcommSocketToServiceRecord(SPP_UUID);
+            // Connect di luar socketLock agar tidak memblokir WebView / UI thread
+            socket.connect();
 
+            synchronized (socketLock) {
+                closeActiveSocket();
                 activeSocket = socket;
                 activeOutputStream = socket.getOutputStream();
                 connectedDeviceAddress = targetDevice.getAddress();
                 Log.d(TAG, "Koneksi Bluetooth aktif dan standby (Zero Delay Ready)!");
-
                 return activeOutputStream;
-            } catch (SecurityException se) {
-                Log.e(TAG, "Izin Bluetooth ditolak saat koneksi: " + se.getMessage());
-                throw new IOException("Izin Bluetooth belum aktif di pengaturan perangkat: " + se.getMessage());
             }
+        } catch (SecurityException se) {
+            Log.e(TAG, "Izin Bluetooth ditolak saat koneksi: " + se.getMessage());
+            throw new IOException("Izin Bluetooth belum aktif di pengaturan perangkat: " + se.getMessage());
         }
     }
 

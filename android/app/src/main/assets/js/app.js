@@ -925,7 +925,7 @@ export async function init() {
             document.fonts.load('24px "Material Symbols Rounded"'),
             document.fonts.ready
           ]),
-          new Promise(resolve => setTimeout(resolve, 6000)) // Toleransi maksimal jaringan lambat
+          new Promise(resolve => setTimeout(resolve, 600)) // Maksimal 600ms agar boot instan 0-1 detik
         ]);
       } catch (_) {}
     }

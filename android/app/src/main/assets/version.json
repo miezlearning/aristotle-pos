@@ -1,9 +1,9 @@
 {
-  "versionCode": 82,
-  "versionName": "1.2.34",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.34/Aristotle-POS.apk",
+  "versionCode": 83,
+  "versionName": "1.2.35",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.35/Aristotle-POS.apk",
   "changelog": [
-    "Perbaikan anti-spam interaksi printer & deduplikasi toast error"
+    "Perbaikan fatal startup deadlock Bluetooth & eliminasi auto-reload WebView"
   ],
   "releaseDate": "2026-09-09"
 }
