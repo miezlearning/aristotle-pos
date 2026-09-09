@@ -172,39 +172,106 @@ export function sendNativeKickDrawerAsync() {
 
 /**
  * Konversi Gambar Base64 menjadi Byte Array ESC/POS Raster (GS v 0)
- * Menghasilkan cetakan logo monokrom tajam pada printer thermal 58mm
+ * Menggunakan algoritma Floyd-Steinberg Error Diffusion Dithering + Kontras Adaptif
+ * Menghasilkan cetakan logo yang sangat tajam, halus, dan bertekstur pada printer thermal (58mm / 80mm)
  */
-export async function convertImageToEscPosRaster(base64Data, maxWidth = 160) {
+export async function convertImageToEscPosRaster(base64Data, maxWidth = null) {
   return new Promise((resolve) => {
     if (!base64Data) return resolve(new Uint8Array(0));
     const img = new Image();
     img.crossOrigin = 'Anonymous';
     img.onload = () => {
+      // Tentukan batas lebar optimal: 288 dot untuk 58mm (36 byte) atau 384 dot untuk 80mm
+      const paperWidth = state.printerConfig?.paperWidth || '58mm';
+      const resolvedMaxWidth = maxWidth || (paperWidth === '80mm' ? 384 : 288);
+
       let w = img.width;
       let h = img.height;
-      if (w > maxWidth) {
-        h = Math.round((h * maxWidth) / w);
-        w = maxWidth;
+      if (w > resolvedMaxWidth) {
+        h = Math.round((h * resolvedMaxWidth) / w);
+        w = resolvedMaxWidth;
       }
-      w = Math.floor(w / 8) * 8; // Harus kelipatan 8
+      w = Math.floor(w / 8) * 8; // Wajib kelipatan 8 bit untuk format raster
       if (w <= 0 || h <= 0) return resolve(new Uint8Array(0));
 
       const canvas = document.createElement('canvas');
       canvas.width = w;
       canvas.height = h;
       const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, w, h);
-      ctx.drawImage(img, 0, 0, w, h);
+      if (ctx) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+      }
 
       const imgData = ctx.getImageData(0, 0, w, h);
       const data = imgData.data;
       const bytesWidth = w / 8;
-      const rasterBytes = [];
 
+      // 1. Ekstraksi matriks Grayscale dengan Alpha Blending ke putih & Kurva Kontras
+      const gray = new Float32Array(w * h);
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const idx = (y * w + x) * 4;
+          const alpha = data[idx + 3] / 255;
+          // Komposisi warna dengan background putih (jika PNG transparan)
+          const r = data[idx] * alpha + 255 * (1 - alpha);
+          const g = data[idx + 1] * alpha + 255 * (1 - alpha);
+          const b = data[idx + 2] * alpha + 255 * (1 - alpha);
+          // Luminansi standar optik CIE: mata manusia peka pada hijau dan merah
+          let lum = 0.299 * r + 0.587 * g + 0.114 * b;
+          // Tingkatkan kontras sedikit (+20%) agar teks di dalam logo tajam pekat
+          lum = ((lum - 128) * 1.2) + 128;
+          gray[y * w + x] = Math.max(0, Math.min(255, lum));
+        }
+      }
+
+      // 2. Terapkan Floyd-Steinberg Error Diffusion Dithering
+      const bits = new Uint8Array(w * h);
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const currentIdx = y * w + x;
+          const oldVal = gray[currentIdx];
+          let newVal;
+          let err;
+          // Ambang batas noise: bersihkan bintik kotor di background putih dan solidkan hitam pekat
+          if (oldVal >= 250) {
+            newVal = 255;
+            err = 0;
+          } else if (oldVal <= 15) {
+            newVal = 0;
+            err = 0;
+          } else {
+            newVal = oldVal < 128 ? 0 : 255;
+            err = oldVal - newVal;
+          }
+          bits[currentIdx] = (newVal === 0) ? 1 : 0; // 1 = titik panas hitam thermal
+
+          // Sebar sisa error kuantisasi ke tetangga (Floyd-Steinberg kernel: 7/16, 3/16, 5/16, 1/16)
+          if (err !== 0) {
+            if (x + 1 < w) {
+              gray[currentIdx + 1] += (err * 7) / 16;
+            }
+            if (y + 1 < h) {
+              if (x > 0) {
+                gray[(y + 1) * w + (x - 1)] += (err * 3) / 16;
+              }
+              gray[(y + 1) * w + x] += (err * 5) / 16;
+              if (x + 1 < w) {
+                gray[(y + 1) * w + (x + 1)] += (err * 1) / 16;
+              }
+            }
+          }
+        }
+      }
+
+      // 3. Konversi susunan bit ke perintah byte array GS v 0 ESC/POS
+      const rasterBytes = [];
       // Align Center: ESC a 1
       rasterBytes.push(0x1B, 0x61, 0x01);
-      // GS v 0 0 xL xH yL yH
+      // Header GS v 0 m xL xH yL yH
       const xL = bytesWidth % 256;
       const xH = Math.floor(bytesWidth / 256);
       const yL = h % 256;
@@ -216,24 +283,18 @@ export async function convertImageToEscPosRaster(base64Data, maxWidth = 160) {
           let byte = 0;
           for (let bit = 0; bit < 8; bit++) {
             const px = x * 8 + bit;
-            const idx = (y * w + px) * 4;
-            const r = data[idx];
-            const g = data[idx + 1];
-            const b = data[idx + 2];
-            const a = data[idx + 3];
-            const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-            // Threshold: piksel gelap = 1 (hitam)
-            if (a > 50 && luminance < 170) {
+            if (bits[y * w + px] === 1) {
               byte |= (0x80 >> bit);
             }
           }
           rasterBytes.push(byte);
         }
       }
+
       // Reset Align: ESC a 0
       rasterBytes.push(0x1B, 0x61, 0x00);
-      rasterBytes.push(0x0A); // Linefeed setelah logo
-      // Pastikan kembali ke mode text murni (ESC @ dan ESC t 0)
+      rasterBytes.push(0x0A); // Line feed pasca logo
+      // Pulihkan mode text murni
       rasterBytes.push(0x1B, 0x40);
       rasterBytes.push(0x1B, 0x74, 0x00);
       resolve(new Uint8Array(rasterBytes));
@@ -498,7 +559,9 @@ export async function buildEscPosBytes(tx, kickDrawer = false) {
   // 3. Sisipkan Logo Toko jika ada
   if (cfg.logoBase64 && cfg.showLogo !== false) {
     try {
-      const logoRasterBytes = await convertImageToEscPosRaster(cfg.logoBase64, 160);
+      // Resolusi optimal thermal: 288 dot (36 byte) untuk 58mm atau 384 dot (48 byte) untuk 80mm
+      const targetLogoWidth = (cfg.paperWidth === '80mm') ? 384 : 288;
+      const logoRasterBytes = await convertImageToEscPosRaster(cfg.logoBase64, targetLogoWidth);
       for (let b of logoRasterBytes) commands.push(b);
       commands.push(0x1B, 0x40);
       commands.push(0x1B, 0x74, 0x00);
@@ -540,10 +603,12 @@ export async function buildEscPosBytes(tx, kickDrawer = false) {
     addBytes(0x1B, 0x32);     // ESC 2: Standar 1/6 inch
   }
 
-  // 4. Header Toko (Align Center)
+  // 4. Header Toko (Align Center, Nama Toko Double-Height + Tebal Elegan)
   addBytes(0x1B, 0x61, 0x01); // Align Center
+  addBytes(0x1D, 0x21, 0x01); // Double-Height ON (GS ! 1) - Teks tinggi, gagah & terbaca jelas
   addBytes(0x1B, 0x45, 0x01); // Bold ON
   addText(storeName + '\n');
+  addBytes(0x1D, 0x21, 0x00); // Normal Font Size
   addBytes(0x1B, 0x45, 0x00); // Bold OFF
 
   if (tagline) addText(tagline + '\n');
@@ -770,8 +835,9 @@ export function buildKitchenTicketEscPosBytes(tx, kickDrawer = false) {
   const pad = (n) => String(n).padStart(2, '0');
   const txTime = `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}.${pad(d.getMinutes())}.${pad(d.getSeconds())}`;
   const rawOrder = String(tx.orderName || '01').replace(/^NO ANTRIAN:?\s*/i, '');
-  const divider = '--------------------------------\n';
-  const doubleDivider = '================================\n';
+  const width = cfg.paperWidth === '80mm' ? 48 : 32;
+  const divider = '-'.repeat(width) + '\n';
+  const doubleDivider = '='.repeat(width) + '\n';
 
   // 2. Header: TIKET DAPUR / BAR
   addBytes(0x1B, 0x61, 0x01); // Align Center
@@ -794,7 +860,7 @@ export function buildKitchenTicketEscPosBytes(tx, kickDrawer = false) {
   // 4. Header Kolom Checklist
   addBytes(0x1B, 0x61, 0x00); // Align Left
   addText(divider);
-  addText(padBetween('STATUS / MENU', 'PORSI') + '\n');
+  addText(padBetween('STATUS / MENU', 'PORSI', width) + '\n');
   addText(divider);
 
   // 5. Daftar Item dengan Kotak Checklist [  ]
@@ -808,11 +874,11 @@ export function buildKitchenTicketEscPosBytes(tx, kickDrawer = false) {
       const prefix = '[  ] ';
 
       addBytes(0x1B, 0x45, 0x01); // Bold ON
-      if ((prefix.length + itemName.length + qtyStr.length + 1) <= 32) {
-        addText(padBetween(`${prefix}${itemName}`, qtyStr, 32) + '\n');
+      if ((prefix.length + itemName.length + qtyStr.length + 1) <= width) {
+        addText(padBetween(`${prefix}${itemName}`, qtyStr, width) + '\n');
       } else {
         addText(`${prefix}${itemName}\n`);
-        addText(' '.repeat(Math.max(0, 32 - qtyStr.length)) + qtyStr + '\n');
+        addText(' '.repeat(Math.max(0, width - qtyStr.length)) + qtyStr + '\n');
       }
       addBytes(0x1B, 0x45, 0x00); // Bold OFF
 
@@ -830,7 +896,7 @@ export function buildKitchenTicketEscPosBytes(tx, kickDrawer = false) {
   // 6. Ringkasan Total Porsi
   addText(divider);
   addBytes(0x1B, 0x45, 0x01); // Bold ON
-  addText(padBetween(`Total: ${tx.items ? tx.items.length : 0} Item`, `${totalQty} Porsi`, 32) + '\n');
+  addText(padBetween(`Total: ${tx.items ? tx.items.length : 0} Item`, `${totalQty} Porsi`, width) + '\n');
   addBytes(0x1B, 0x45, 0x00); // Bold OFF
   addText(divider);
 
@@ -2472,7 +2538,7 @@ export function handleLogoUpload(e) {
     // Resize & convert via canvas agar ramah memori & thermal
     const img = new Image();
     img.onload = () => {
-      const maxDim = 300;
+      const maxDim = 512;
       let w = img.width;
       let h = img.height;
       if (w > maxDim || h > maxDim) {
@@ -2488,7 +2554,11 @@ export function handleLogoUpload(e) {
       canvas.width = w;
       canvas.height = h;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
+      if (ctx) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, w, h);
+      }
       const optimizedBase64 = canvas.toDataURL('image/png');
 
       // Update state

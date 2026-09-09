@@ -1,11 +1,12 @@
 {
-  "versionCode": 85,
-  "versionName": "1.2.37",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.37/Aristotle-POS.apk",
+  "versionCode": 86,
+  "versionName": "1.2.38",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.38/Aristotle-POS.apk",
   "changelog": [
-    "Stabilitas koneksi Bluetooth printer thermal & laci kasir",
-    "Hilangkan double error toast saat buka laci",
-    "Penyimpanan permanen preferensi printer di Android"
+    "Peningkatan kualitas cetak struk maksimal: Floyd-Steinberg error diffusion dithering untuk logo super tajam",
+    "Resolusi logo thermal adaptif HD (288 dot untuk 58mm / 384 dot untuk 80mm)",
+    "Format tipografi ESC/POS berkelas: Nama toko Double-Height + Bold elegan",
+    "Format tiket dapur adaptif penuh (48 karakter untuk 80mm / 32 karakter untuk 58mm)"
   ],
   "releaseDate": "2026-09-09"
 }
