@@ -38,6 +38,7 @@ import java.net.URL;
 import java.util.Collections;
 import android.util.Base64;
 import android.util.Log;
+import android.view.View;
 import android.view.WindowManager;
 import android.webkit.GeolocationPermissions;
 import android.webkit.JavascriptInterface;
@@ -105,6 +106,7 @@ public class MainActivity extends AppCompatActivity {
 
         webView = new WebView(this);
         setContentView(webView);
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         // Pastikan layar mesin kasir tetap menyala (tidak sleep/doze) saat bertugas
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
@@ -337,15 +339,11 @@ public class MainActivity extends AppCompatActivity {
             }
         } catch (Exception ignored) {}
 
-        // Cek ketersediaan internet sebelum memuat URL cloud.
-        // Jika offline atau berada di hotspot kasir tanpa internet publik,
-        // langsung muat aset internal lokal agar startup instan dan tidak memicu reloading ganda!
-        if (isNetworkConnected()) {
-            webView.loadUrl(PRODUCTION_URL);
-        } else {
-            Log.i(TAG, "Tidak ada koneksi internet publik: langsung memuat aset internal offline.");
-            webView.loadUrl(OFFLINE_FALLBACK_URL);
-        }
+        // Standar Industri POS: Selalu jalankan UI dari aset internal berkecepatan tinggi (0ms startup),
+        // menjaga konsistensi satu database localStorage, bebas pemblokiran mixed-content LAN printer,
+        // dan 100% tahan offline di segala kondisi hotspot/Wi-Fi toko!
+        Log.i(TAG, "Memuat UI POS langsung dari aset internal berkecepatan tinggi...");
+        webView.loadUrl(OFFLINE_FALLBACK_URL);
     }
 
     /**

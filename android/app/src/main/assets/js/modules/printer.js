@@ -2615,14 +2615,14 @@ export function startHostHeartbeatLoop() {
   const role = getDevicePrinterMode();
   if (role !== 'host') return;
 
-  pulseHostPresence();
+  pulseHostPresence(true);
   hostHeartbeatTimer = setInterval(() => {
     if (getDevicePrinterMode() === 'host') {
       pulseHostPresence();
     } else {
       stopHostHeartbeatLoop();
     }
-  }, 15000);
+  }, 30000);
 }
 
 export function stopHostHeartbeatLoop() {
@@ -2632,7 +2632,11 @@ export function stopHostHeartbeatLoop() {
   }
 }
 
-export function pulseHostPresence() {
+let lastPublishedIp = null;
+let lastPublishedPrinter = null;
+let lastPublishedTime = 0;
+
+export function pulseHostPresence(force = false) {
   const role = getDevicePrinterMode();
   if (role !== 'host') return;
 
@@ -2654,6 +2658,16 @@ export function pulseHostPresence() {
   if (!printerName) {
     printerName = isLocalPrinterReady() ? 'Printer Siap' : 'Kasir Utama Standby';
   }
+
+  const now = Date.now();
+  // Hemat kuota Firestore & cegah DOM churn: hanya kirim jika ada perubahan status atau sudah lewat 60 detik
+  if (!force && hostIp === lastPublishedIp && printerName === lastPublishedPrinter && (now - lastPublishedTime < 60000)) {
+    return;
+  }
+
+  lastPublishedIp = hostIp;
+  lastPublishedPrinter = printerName;
+  lastPublishedTime = now;
 
   try {
     syncPublishHostPresence(hostIp, printerName, true);

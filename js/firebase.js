@@ -1033,18 +1033,43 @@ export async function syncDeleteExpense(expenseId) {
 /**
  * Sync Order Queues (Keranjang Antrian Aktif) to Cloud
  */
-export async function syncSaveQueues(queues) {
+let syncQueuesTimer = null;
+let pendingQueuesToSync = null;
+
+export async function syncSaveQueues(queues, immediate = false) {
   if (!db) return;
-  try {
-    const currentStoreId = getStoreId();
-    const docRef = doc(db, 'stores', currentStoreId, 'data', 'queues');
-    await setDoc(docRef, {
-      list: queues,
-      updatedAt: new Date().toISOString()
-    });
-  } catch (e) {
-    console.error('Failed to sync queues to cloud:', e);
+  pendingQueuesToSync = queues;
+
+  const doSync = async () => {
+    if (!pendingQueuesToSync) return;
+    const toSave = pendingQueuesToSync;
+    pendingQueuesToSync = null;
+    try {
+      const currentStoreId = getStoreId();
+      if (!currentStoreId) return;
+      const docRef = doc(db, 'stores', currentStoreId, 'data', 'queues');
+      await setDoc(docRef, {
+        list: toSave,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (e) {
+      console.error('Failed to sync queues to cloud:', e);
+    }
+  };
+
+  if (immediate) {
+    if (syncQueuesTimer) {
+      clearTimeout(syncQueuesTimer);
+      syncQueuesTimer = null;
+    }
+    return await doSync();
   }
+
+  if (syncQueuesTimer) clearTimeout(syncQueuesTimer);
+  syncQueuesTimer = setTimeout(() => {
+    syncQueuesTimer = null;
+    doSync();
+  }, 400);
 }
 
 /**

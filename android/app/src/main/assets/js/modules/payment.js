@@ -605,7 +605,7 @@ export function completeTransaction() {
     }
 
     saveQueues();
-    syncSaveQueues(state.orderQueues);
+    syncSaveQueues(state.orderQueues, true);
     closePaymentModal();
     toggleMobileCartDrawer(false);
     renderOrderQueueTabs();
