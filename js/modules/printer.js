@@ -1378,6 +1378,7 @@ export function getDevicePrinterMode() {
 }
 
 let isChangingDeviceRole = false;
+let currentRoleEpoch = 0;
 
 /**
  * Atur peran printer perangkat ('host' atau 'pelayan')
@@ -1385,12 +1386,18 @@ let isChangingDeviceRole = false;
 export function setDevicePrinterMode(mode) {
   if (isChangingDeviceRole) return;
   isChangingDeviceRole = true;
+  const epoch = ++currentRoleEpoch;
 
   try {
     const cleanMode = (mode === 'client' || mode === 'pelayan') ? 'pelayan' : 'host';
     localStorage.setItem('aristotle_printer_mode', cleanMode);
     localStorage.setItem('aristotle_device_role', cleanMode);
 
+    // 1. UPDATE STATUS UI SECARA INSTAN (0ms Tanpa Blocking)
+    updatePrinterUIStatus(true);
+    showToast(cleanMode === 'host' ? 'Disetel sebagai Kasir Utama (Host Printer)' : 'Disetel sebagai HP Staf (Cloud Relay)', 'info', 2500);
+
+    // 2. Transisi service & listener di background
     if (cleanMode === 'host') {
       stopHostPresenceListener();
       startHostHeartbeatLoop();
@@ -1402,15 +1409,20 @@ export function setDevicePrinterMode(mode) {
         remotePrintUnsubscribe = null;
       }
       setupHostPresenceListener();
-      reconnectPrinterHost(true);
+      
+      // Jalankan auto-reconnect di background tanpa memblokir thread UI sama sekali
+      setTimeout(() => {
+        if (currentRoleEpoch === epoch && getDevicePrinterMode() === 'pelayan') {
+          reconnectPrinterHost(true, null, epoch);
+        }
+      }, 50);
     }
-
-    updatePrinterUIStatus(true);
-    showToast(cleanMode === 'host' ? 'Disetel sebagai Kasir Utama (Host Printer)' : 'Disetel sebagai HP Staf (Cloud Relay)', 'info', 3000);
   } catch (err) {
     console.warn('Error setting device printer mode:', err);
   } finally {
-    isChangingDeviceRole = false;
+    setTimeout(() => {
+      isChangingDeviceRole = false;
+    }, 150);
   }
 }
 
@@ -3111,6 +3123,9 @@ export function pulseHostPresence(force = false) {
 }
 
 export function renderPelayanConnectionStatus(data = lastKnownHostPresence) {
+  // Guard mutlak: jika peran saat ini BUKAN pelayan, jangan sentuh UI Kasir Utama
+  if (getDevicePrinterMode() !== 'pelayan') return;
+
   const titleEl = document.getElementById('pelayanLiveHostTitle');
   const descEl = document.getElementById('pelayanLiveHostDesc');
   const dotEl = document.getElementById('pelayanLiveHostDot');
@@ -3168,9 +3183,11 @@ export function setupHostPresenceListener() {
   const role = getDevicePrinterMode();
   if (role !== 'pelayan') return;
 
+  const currentEpoch = currentRoleEpoch;
   try {
     hostPresenceUnsub = listenToHostPresence((data) => {
-      if (!data) return;
+      // Abaikan jika peran sudah berganti atau epoch sudah usang
+      if (!data || currentRoleEpoch !== currentEpoch || getDevicePrinterMode() !== 'pelayan') return;
       lastKnownHostPresence = data;
       if (data.ip) {
         localStorage.setItem('aristotle_local_host_ip', data.ip);
@@ -3190,17 +3207,20 @@ let isReconnectingHost = false;
 async function probeSingleHostIp(ip) {
   if (!ip) throw new Error('Empty IP');
 
-  // 1. Native Socket Check (Zero Mixed-Content, Sangat Cepat ~300ms)
+  // Yield ke browser event loop agar rendering dan touch tetap 100% responsif
+  await new Promise(resolve => setTimeout(resolve, 0));
+
+  // 1. Native Socket Check (Zero Mixed-Content, Sangat Cepat)
   if (window.AndroidBridge && typeof window.AndroidBridge.probeLocalHost === 'function') {
     try {
-      const isLive = window.AndroidBridge.probeLocalHost(ip, 8088, 500);
+      const isLive = window.AndroidBridge.probeLocalHost(ip, 8088, 250);
       if (isLive) return ip;
     } catch (_) {}
   }
 
   // 2. Web Fetch Fallback
   const ctrl = new AbortController();
-  const tm = setTimeout(() => ctrl.abort(), 650);
+  const tm = setTimeout(() => ctrl.abort(), 400);
   try {
     const res = await fetch(`http://${ip}:8088/ping`, { signal: ctrl.signal });
     clearTimeout(tm);
@@ -3214,7 +3234,11 @@ async function probeSingleHostIp(ip) {
 /**
  * Hubungkan Kembali (1-Tap Reconnect & Parallel Diagnose - Bebas Lag)
  */
-export async function reconnectPrinterHost(silent = false, customTargetIp = null) {
+export async function reconnectPrinterHost(silent = false, customTargetIp = null, expectedEpoch = null) {
+  // Jika epoch sudah usang atau bukan mode pelayan, batalkan seketika
+  if (expectedEpoch !== null && expectedEpoch !== currentRoleEpoch) return false;
+  if (getDevicePrinterMode() !== 'pelayan') return false;
+
   if (isReconnectingHost) return false;
   isReconnectingHost = true;
 
@@ -3229,18 +3253,31 @@ export async function reconnectPrinterHost(silent = false, customTargetIp = null
   }
 
   try {
-    setupHostPresenceListener();
-
-    // 1. Kumpulkan seluruh kandidat IP Hotspot & LAN secara cerdas
+    // 1. Kumpulkan kandidat IP prioritas tinggi secara cerdas
     const candidateSet = new Set();
 
-    if (customTargetIp) candidateSet.add(customTargetIp.trim());
+    if (customTargetIp && customTargetIp.trim()) {
+      candidateSet.add(customTargetIp.trim());
+    }
 
-    // Cek Default Gateway Wi-Fi perangkat (Sangat akurat saat HP staf nempel ke hotspot kasir)
+    // IP presence cloud terakhir (IP aktual yang baru saja diumumkan oleh Kasir Utama)
+    if (lastKnownHostPresence?.ip && lastKnownHostPresence.ip.trim()) {
+      candidateSet.add(lastKnownHostPresence.ip.trim());
+    }
+
+    // IP tersimpan di config / localStorage
+    const savedIp = (state.printerConfig?.localHostIp || localStorage.getItem('aristotle_local_host_ip') || '').trim();
+    if (savedIp) {
+      candidateSet.add(savedIp);
+    }
+
+    // Default Gateway Wi-Fi perangkat (Sangat akurat saat HP staf nempel ke hotspot kasir)
     if (window.AndroidBridge && typeof window.AndroidBridge.getWifiGatewayIp === 'function') {
       try {
         const gw = window.AndroidBridge.getWifiGatewayIp();
-        if (gw) candidateSet.add(gw.trim());
+        if (gw && gw.trim() && !gw.startsWith('127.')) {
+          candidateSet.add(gw.trim());
+        }
       } catch (_) {}
     }
 
@@ -3257,45 +3294,44 @@ export async function reconnectPrinterHost(silent = false, customTargetIp = null
       } catch (_) {}
     }
 
-    // IP presence cloud terakhir
-    if (lastKnownHostPresence?.ip) candidateSet.add(lastKnownHostPresence.ip.trim());
-
-    // IP tersimpan di config / localStorage
-    const savedIp = state.printerConfig?.localHostIp || localStorage.getItem('aristotle_local_host_ip');
-    if (savedIp) candidateSet.add(savedIp.trim());
-
-    // Subnet hotspot tethering standar berbagai pabrikan HP (Xiaomi, Samsung, Pixel, Vivo, iPhone)
-    ['192.168.43.1', '192.168.49.1', '192.168.50.1', '192.168.44.1', '172.20.10.1', '192.168.1.1'].forEach(ip => candidateSet.add(ip));
-
     const candidateIps = Array.from(candidateSet).filter(Boolean);
 
-    // 2. Eksekusi Probe Paralel (Fastest First Response - Selesai dalam <650ms!)
+    // 2. Eksekusi Probe Sekuensial dengan Short-Circuit (Cepat ~5-10ms jika ketemu)
     let localConnected = false;
     let winningIp = null;
 
-    try {
-      winningIp = await Promise.any(candidateIps.map(ip => probeSingleHostIp(ip)));
-      if (winningIp) {
-        localConnected = true;
-        localStorage.setItem('aristotle_local_host_ip', winningIp);
-        if (!state.printerConfig) state.printerConfig = {};
-        state.printerConfig.localHostIp = winningIp;
+    for (const ip of candidateIps) {
+      if (getDevicePrinterMode() !== 'pelayan' || (expectedEpoch !== null && expectedEpoch !== currentRoleEpoch)) {
+        return false;
       }
-    } catch (_) {
-      localConnected = false;
+      try {
+        const liveIp = await probeSingleHostIp(ip);
+        if (liveIp) {
+          localConnected = true;
+          winningIp = liveIp;
+          localStorage.setItem('aristotle_local_host_ip', winningIp);
+          if (!state.printerConfig) state.printerConfig = {};
+          state.printerConfig.localHostIp = winningIp;
+          break; // Host ditemukan, hentikan probe kandidat lain
+        }
+      } catch (_) {}
     }
 
-    // 3. Ambil langsung data presence Cloud terbaru (One-Shot Direct Fetch)
+    if (getDevicePrinterMode() !== 'pelayan' || (expectedEpoch !== null && expectedEpoch !== currentRoleEpoch)) {
+      return false;
+    }
+
+    // 3. Ambil data presence Cloud terbaru (One-Shot Direct Fetch)
     let freshPresence = null;
     try {
       freshPresence = await fetchHostPresenceDirect();
-      if (freshPresence) {
+      if (freshPresence && getDevicePrinterMode() === 'pelayan') {
         lastKnownHostPresence = freshPresence;
         // Jika belum terhubung lokal tapi cloud mengumumkan IP baru, coba probe sekali lagi
         if (!localConnected && freshPresence.ip && !candidateSet.has(freshPresence.ip)) {
           try {
             const probeOk = await probeSingleHostIp(freshPresence.ip);
-            if (probeOk) {
+            if (probeOk && getDevicePrinterMode() === 'pelayan') {
               localConnected = true;
               winningIp = freshPresence.ip;
               localStorage.setItem('aristotle_local_host_ip', freshPresence.ip);
@@ -3306,6 +3342,11 @@ export async function reconnectPrinterHost(silent = false, customTargetIp = null
         }
       }
     } catch (_) {}
+
+    // Pastikan masih dalam mode pelayan sebelum render hasil
+    if (getDevicePrinterMode() !== 'pelayan' || (expectedEpoch !== null && expectedEpoch !== currentRoleEpoch)) {
+      return false;
+    }
 
     const isCloudOnline = Boolean(lastKnownHostPresence && lastKnownHostPresence.updatedAt && (Date.now() - lastKnownHostPresence.updatedAt < 90000));
 
@@ -3563,7 +3604,6 @@ export function handleScannedPairingData(rawText) {
     }
     closePrinterConfigModal();
 
-    reconnectPrinterHost(true);
     showToast('Terhubung ke kasir utama.', 'success', 3000);
   } catch (err) {
     console.error('Scan parse error:', err);

@@ -1,9 +1,9 @@
 {
-  "versionCode": 91,
-  "versionName": "1.2.43",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.43/Aristotle-POS.apk",
+  "versionCode": 92,
+  "versionName": "1.2.44",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.44/Aristotle-POS.apk",
   "changelog": [
-    "Terapkan animasi modern top-app: single card update dan hilangkan double bouncing"
+    "Perbaiki race condition dan lag saat beralih ke mode HP Staf"
   ],
   "releaseDate": "2026-09-09"
 }

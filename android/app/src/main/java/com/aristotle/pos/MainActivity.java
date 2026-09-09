@@ -1527,7 +1527,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean probeLocalHost(String ip, int port, int timeoutMs) {
         if (ip == null || ip.trim().isEmpty()) return false;
         try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(ip.trim(), port), Math.max(250, Math.min(timeoutMs, 2500)));
+            socket.connect(new InetSocketAddress(ip.trim(), port), Math.max(150, Math.min(timeoutMs, 2000)));
             return socket.isConnected();
         } catch (Exception e) {
             return false;
