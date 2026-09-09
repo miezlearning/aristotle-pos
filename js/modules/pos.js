@@ -7,7 +7,7 @@ import { formatRp, playBeep, playClick, escapeHtml, showToast, showConfirmDialog
 import { syncSaveQueues } from '../firebase.js';
 
 // ================= MULTI-ORDER QUEUE =================
-export function renderOrderQueueTabs() {
+export function renderOrderQueueTabs(autoScrollTab = false) {
   const container = document.getElementById('orderQueueTabs');
   if (!container) return;
 
@@ -53,14 +53,25 @@ export function renderOrderQueueTabs() {
   if (titleEl) titleEl.innerText = queueName;
   if (drawerTitleEl) drawerTitleEl.innerText = queueName;
 
-  // Auto-scroll active tab into view smoothly & init drag scroll
-  setTimeout(() => {
-    initQueueDragScroll();
+  initQueueDragScroll();
+
+  // PENTING: Hanya geser kontainer horizontal slider orderQueueTabs itu sendiri jika diminta (misal: saat ganti antrian)
+  // JANGAN PERNAH gunakan activeTab.scrollIntoView() karena browser akan menggulir seluruh halaman (window/body) ke atas!
+  if (autoScrollTab) {
     const activeTab = container.querySelector('.active-queue-tab');
     if (activeTab) {
-      activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      const tabLeft = activeTab.offsetLeft;
+      const tabWidth = activeTab.offsetWidth;
+      const currentScroll = container.scrollLeft;
+      const visibleWidth = container.clientWidth;
+
+      if (tabLeft < currentScroll) {
+        container.scrollTo({ left: Math.max(0, tabLeft - 12), behavior: 'smooth' });
+      } else if (tabLeft + tabWidth > currentScroll + visibleWidth) {
+        container.scrollTo({ left: tabLeft + tabWidth - visibleWidth + 12, behavior: 'smooth' });
+      }
     }
-  }, 40);
+  }
 }
 
 export function initQueueDragScroll() {
@@ -151,7 +162,7 @@ export function addNewOrderQueue() {
 export function switchOrderQueue(queueId) {
   playClick('switch');
   state.activeQueueId = queueId;
-  renderOrderQueueTabs();
+  renderOrderQueueTabs(true);
   renderCart();
   renderProducts();
 }
@@ -396,6 +407,8 @@ export function renderProducts() {
   const grid = document.getElementById('productGrid');
   if (!grid) return;
 
+  const currentScrollY = window.scrollY;
+
   const searchInput = document.getElementById('searchInput');
   const search = (searchInput ? searchInput.value : '').toLowerCase().trim();
   const currentCart = getCurrentCart();
@@ -555,6 +568,10 @@ export function renderProducts() {
       </div>
     `;
   }).join('');
+
+  if (typeof window !== 'undefined' && window.scrollY !== currentScrollY) {
+    window.scrollTo({ top: currentScrollY, behavior: 'instant' });
+  }
 }
 
 // ================= CART OPERATIONS =================

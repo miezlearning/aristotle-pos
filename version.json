@@ -1,9 +1,9 @@
 {
-  "versionCode": 89,
-  "versionName": "1.2.41",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.41/Aristotle-POS.apk",
+  "versionCode": 90,
+  "versionName": "1.2.42",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.42/Aristotle-POS.apk",
   "changelog": [
-    "Perapian layout POS: perbaiki badge terpotong, stepper M3 rapi, dan eliminasi overflow header & floating bar"
+    "Perbaiki UX penambahan menu: hilangkan scroll jump ke atas saat menambah produk"
   ],
   "releaseDate": "2026-09-09"
 }
