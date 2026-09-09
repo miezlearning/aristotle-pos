@@ -1,9 +1,9 @@
 {
-  "versionCode": 90,
-  "versionName": "1.2.42",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.42/Aristotle-POS.apk",
+  "versionCode": 91,
+  "versionName": "1.2.43",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.43/Aristotle-POS.apk",
   "changelog": [
-    "Perbaiki UX penambahan menu: hilangkan scroll jump ke atas saat menambah produk"
+    "Terapkan animasi modern top-app: single card update dan hilangkan double bouncing"
   ],
   "releaseDate": "2026-09-09"
 }

@@ -1469,6 +1469,7 @@ const KasirApp = {
   clearSearch,
   reportErrorToDiscord: sendTelemetryToDiscord,
   renderProducts: pos.renderProducts,
+  updateProductCardDOM: pos.updateProductCardDOM,
   renderProductSkeletons: pos.renderProductSkeletons,
   addToCart: pos.addToCart,
   updateCartQty: pos.updateCartQty,

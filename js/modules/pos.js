@@ -403,6 +403,185 @@ function getCategoryVisualConfig(category, icon) {
   };
 }
 
+export function renderProductCardActionHTML(product, qty, isReady) {
+  if (!isReady) {
+    return `
+      <div class="flex items-center justify-between text-[11px] font-extrabold text-rose-500 py-1">
+        <span class="font-black text-rose-600">Stok Kosong</span>
+        <span class="material-symbols-rounded text-base text-rose-500">block</span>
+      </div>
+    `;
+  }
+  if (qty > 0) {
+    return `
+      <div class="flex items-center gap-1.5 pt-0.5" onclick="event.stopPropagation()">
+        <div class="flex-1 bg-stone-100/90 rounded-xl p-0.5 flex items-center justify-between border border-stone-200/70">
+          <button onclick="window.KasirApp.updateCartQty('${product.id}', -1)"
+            class="w-7 h-7 rounded-lg ${qty === 1 ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' : 'bg-white text-stone-700 hover:bg-stone-50'} shadow-2xs font-black text-sm flex items-center justify-center transition active:scale-90 cursor-pointer"
+            title="${qty === 1 ? 'Hapus dari pesanan' : 'Kurangi 1 porsi'}">
+            ${qty === 1 ? '<span class="material-symbols-rounded text-sm">delete</span>' : '<span class="material-symbols-rounded text-sm">remove</span>'}
+          </button>
+          <div class="flex flex-col items-center leading-none px-1 select-none">
+            <span class="font-black text-stone-900 text-xs">${qty}</span>
+            <span class="text-[8px] font-extrabold text-stone-500 uppercase tracking-tighter">porsi</span>
+          </div>
+          <button onclick="window.KasirApp.updateCartQty('${product.id}', 1)"
+            class="w-7 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs font-black text-sm flex items-center justify-center transition active:scale-90 cursor-pointer"
+            title="Tambah 1 porsi">
+            <span class="material-symbols-rounded text-sm">add</span>
+          </button>
+        </div>
+        <button type="button" onclick="window.KasirApp.openItemNoteModal('${product.id}')"
+          class="w-8 h-8 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 flex items-center justify-center transition active:scale-90 shadow-2xs shrink-0 cursor-pointer"
+          title="Catatan & Add-on">
+          <span class="material-symbols-rounded text-base text-amber-700">edit_note</span>
+        </button>
+      </div>
+    `;
+  }
+  return `
+    <button type="button"
+      class="w-full py-1.5 px-2.5 rounded-xl bg-stone-100/80 hover:bg-emerald-50 text-stone-700 hover:text-emerald-800 border border-stone-200/80 hover:border-emerald-300 flex items-center justify-between text-xs font-bold transition active:scale-95 shadow-2xs">
+      <span>+ Tambah</span>
+      <span class="material-symbols-rounded text-base text-emerald-600">add</span>
+    </button>
+  `;
+}
+
+export function renderSingleProductCardHTML(product, qty) {
+  const hasQty = qty > 0;
+  const isReady = product.isAvailable !== false && (!product.trackStock || (product.stock || 0) > 0);
+  const vis = getCategoryVisualConfig(product.category, product.icon);
+
+  return `
+    <div id="posProductCard_${product.id}" onclick="window.KasirApp.addToCart('${product.id}')" 
+      class="pos-product-card relative bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex flex-col justify-between border ${hasQty ? 'pos-product-card-active' : 'border-stone-200/80 hover:border-emerald-300'} ${!isReady ? 'opacity-65 bg-stone-50/90 cursor-not-allowed' : 'cursor-pointer'} touch-target-large select-none">
+      
+      <div id="posBadgeSlot_${product.id}">
+        ${hasQty ? `
+          <span class="absolute -top-2 -right-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow-md z-20 border-2 border-white">
+            ${qty}x
+          </span>
+        ` : ''}
+      </div>
+
+      ${!isReady ? `
+        <span class="absolute top-2.5 right-2.5 bg-rose-600 text-white font-black text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full shadow-md z-20 border border-white">
+          HABIS
+        </span>
+      ` : ''}
+
+      ${product.image ? `
+        <div class="relative w-full h-24 sm:h-28 rounded-xl sm:rounded-2xl overflow-hidden mb-2 bg-stone-100 shrink-0 shadow-2xs">
+          <img src="${product.image}" alt="${escapeHtml(product.name)}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" onerror="this.parentElement.style.display='none'">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none"></div>
+          <div class="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start">
+            <span class="text-[9px] sm:text-[10px] font-bold text-white capitalize px-2 py-0.5 rounded-lg bg-black/40 backdrop-blur-md border border-white/20">${escapeHtml(product.category)}</span>
+          </div>
+          <div class="absolute bottom-1.5 right-1.5 flex flex-col gap-1 items-end">
+            ${Array.isArray(product.addOns) && product.addOns.length > 0 ? `
+              <span class="text-[9px] font-extrabold text-amber-950 bg-amber-300/95 backdrop-blur-xs px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                <span class="material-symbols-rounded text-[11px] text-amber-800">add_circle</span>
+                <span>Add-on</span>
+              </span>
+            ` : ''}
+            ${product.trackStock && isReady ? `
+              <span class="text-[9px] font-extrabold text-white bg-black/50 backdrop-blur-xs px-1.5 py-0.5 rounded-md border border-white/20">
+                Sisa ${product.stock}
+              </span>
+            ` : ''}
+          </div>
+        </div>
+      ` : `
+        <div class="relative w-full h-24 sm:h-28 rounded-xl sm:rounded-2xl overflow-hidden mb-2 shrink-0 ${vis.gradClass} border border-black/[0.04] flex items-center justify-center shadow-2xs">
+          <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/75 backdrop-blur-xs shadow-xs flex items-center justify-center ${vis.accentColor} transition-transform group-hover:scale-110">
+            <span class="material-symbols-rounded text-2xl sm:text-3xl">${vis.icon}</span>
+          </div>
+          <div class="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start">
+            <span class="text-[9px] sm:text-[10px] font-bold capitalize px-2 py-0.5 rounded-lg bg-white/85 backdrop-blur-xs text-stone-700 shadow-2xs border border-white/40">${escapeHtml(product.category)}</span>
+          </div>
+          <div class="absolute bottom-1.5 right-1.5 flex flex-col gap-1 items-end">
+            ${Array.isArray(product.addOns) && product.addOns.length > 0 ? `
+              <span class="text-[9px] font-extrabold text-amber-950 bg-amber-200/90 backdrop-blur-xs px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+                <span class="material-symbols-rounded text-[11px] text-amber-800">add_circle</span>
+                <span>Add-on</span>
+              </span>
+            ` : ''}
+            ${product.trackStock && isReady ? `
+              <span class="text-[9px] font-extrabold text-emerald-900 bg-white/85 backdrop-blur-xs px-1.5 py-0.5 rounded-md shadow-2xs">
+                Sisa ${product.stock}
+              </span>
+            ` : ''}
+          </div>
+        </div>
+      `}
+
+      <div class="flex-1 flex flex-col justify-start">
+        <h3 class="font-extrabold text-stone-900 text-xs sm:text-sm leading-snug line-clamp-2 ${!isReady ? 'text-stone-400 line-through' : ''}">${escapeHtml(product.name)}</h3>
+        <p class="font-black ${isReady ? 'text-emerald-700' : 'text-stone-400'} text-sm sm:text-base mt-1 tracking-tight">${formatRp(product.price)}</p>
+      </div>
+
+      <div id="posActionSlot_${product.id}" class="mt-2.5 pt-2 border-t ${hasQty ? 'border-emerald-200/70' : 'border-stone-100'}">
+        ${renderProductCardActionHTML(product, qty, isReady)}
+      </div>
+    </div>
+  `;
+}
+
+export function updateProductCardDOM(productId) {
+  const cardEl = document.getElementById(`posProductCard_${productId}`);
+  if (!cardEl) {
+    renderProducts();
+    return;
+  }
+
+  const p = state.products.find(prod => prod.id === productId);
+  if (!p) return;
+
+  const currentCart = getCurrentCart();
+  const qty = currentCart[productId] || 0;
+  const hasQty = qty > 0;
+  const isReady = p.isAvailable !== false && (!p.trackStock || (p.stock || 0) > 0);
+
+  // 1. Perbarui visual aktif kartu tunggal
+  if (hasQty) {
+    cardEl.classList.add('pos-product-card-active');
+    cardEl.classList.remove('border-stone-200/80', 'hover:border-emerald-300');
+  } else {
+    cardEl.classList.remove('pos-product-card-active');
+    cardEl.classList.add('border-stone-200/80', 'hover:border-emerald-300');
+  }
+
+  // 2. Perbarui badge porsi dengan animasi fluid tunggal (hanya pada kartu ini)
+  const badgeSlot = document.getElementById(`posBadgeSlot_${productId}`);
+  if (badgeSlot) {
+    const existingBadge = badgeSlot.querySelector('span');
+    if (hasQty) {
+      if (existingBadge) {
+        existingBadge.innerText = `${qty}x`;
+        existingBadge.classList.remove('modern-badge-pulse', 'modern-badge-in');
+        void existingBadge.offsetWidth; // trigger reflow
+        existingBadge.classList.add('modern-badge-pulse');
+      } else {
+        badgeSlot.innerHTML = `
+          <span class="absolute -top-2 -right-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow-md z-20 border-2 border-white modern-badge-in">
+            ${qty}x
+          </span>
+        `;
+      }
+    } else {
+      badgeSlot.innerHTML = '';
+    }
+  }
+
+  // 3. Perbarui baris aksi stepper
+  const actionSlot = document.getElementById(`posActionSlot_${productId}`);
+  if (actionSlot) {
+    actionSlot.className = `mt-2.5 pt-2 border-t ${hasQty ? 'border-emerald-200/70' : 'border-stone-100'}`;
+    actionSlot.innerHTML = renderProductCardActionHTML(p, qty, isReady);
+  }
+}
+
 export function renderProducts() {
   const grid = document.getElementById('productGrid');
   if (!grid) return;
@@ -454,119 +633,7 @@ export function renderProducts() {
 
   grid.innerHTML = filtered.map(product => {
     const qty = currentCart[product.id] || 0;
-    const hasQty = qty > 0;
-    const isReady = product.isAvailable !== false && (!product.trackStock || (product.stock || 0) > 0);
-    const vis = getCategoryVisualConfig(product.category, product.icon);
-
-    return `
-      <div onclick="window.KasirApp.addToCart('${product.id}')" 
-        class="pos-product-card relative bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex flex-col justify-between border ${hasQty ? 'pos-product-card-active' : 'border-stone-200/80 hover:border-emerald-300'} ${!isReady ? 'opacity-65 bg-stone-50/90 cursor-not-allowed' : 'cursor-pointer'} touch-target-large select-none">
-        
-        <!-- Ripple Host Container: clips ripple ink strictly within card boundaries -->
-        <div class="m3-ripple-container absolute inset-0 rounded-2xl sm:rounded-3xl overflow-hidden pointer-events-none"></div>
-
-        ${hasQty ? `
-          <span class="absolute -top-2 -right-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow-md z-20 border-2 border-white m3-badge-pop">
-            ${qty}x
-          </span>
-        ` : ''}
-
-        ${!isReady ? `
-          <span class="absolute top-2.5 right-2.5 bg-rose-600 text-white font-black text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full shadow-md z-20 border border-white">
-            HABIS
-          </span>
-        ` : ''}
-
-        ${product.image ? `
-          <div class="relative w-full h-24 sm:h-28 rounded-xl sm:rounded-2xl overflow-hidden mb-2 bg-stone-100 shrink-0 shadow-2xs">
-            <img src="${product.image}" alt="${escapeHtml(product.name)}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" onerror="this.parentElement.style.display='none'">
-            <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none"></div>
-            <div class="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start">
-              <span class="text-[9px] sm:text-[10px] font-bold text-white capitalize px-2 py-0.5 rounded-lg bg-black/40 backdrop-blur-md border border-white/20">${escapeHtml(product.category)}</span>
-            </div>
-            <div class="absolute bottom-1.5 right-1.5 flex flex-col gap-1 items-end">
-              ${Array.isArray(product.addOns) && product.addOns.length > 0 ? `
-                <span class="text-[9px] font-extrabold text-amber-950 bg-amber-300/95 backdrop-blur-xs px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
-                  <span class="material-symbols-rounded text-[11px] text-amber-800">add_circle</span>
-                  <span>Add-on</span>
-                </span>
-              ` : ''}
-              ${product.trackStock && isReady ? `
-                <span class="text-[9px] font-extrabold text-white bg-black/50 backdrop-blur-xs px-1.5 py-0.5 rounded-md border border-white/20">
-                  Sisa ${product.stock}
-                </span>
-              ` : ''}
-            </div>
-          </div>
-        ` : `
-          <div class="relative w-full h-24 sm:h-28 rounded-xl sm:rounded-2xl overflow-hidden mb-2 shrink-0 ${vis.gradClass} border border-black/[0.04] flex items-center justify-center shadow-2xs">
-            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/75 backdrop-blur-xs shadow-xs flex items-center justify-center ${vis.accentColor} transition-transform group-hover:scale-110">
-              <span class="material-symbols-rounded text-2xl sm:text-3xl">${vis.icon}</span>
-            </div>
-            <div class="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start">
-              <span class="text-[9px] sm:text-[10px] font-bold capitalize px-2 py-0.5 rounded-lg bg-white/85 backdrop-blur-xs text-stone-700 shadow-2xs border border-white/40">${escapeHtml(product.category)}</span>
-            </div>
-            <div class="absolute bottom-1.5 right-1.5 flex flex-col gap-1 items-end">
-              ${Array.isArray(product.addOns) && product.addOns.length > 0 ? `
-                <span class="text-[9px] font-extrabold text-amber-950 bg-amber-200/90 backdrop-blur-xs px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
-                  <span class="material-symbols-rounded text-[11px] text-amber-800">add_circle</span>
-                  <span>Add-on</span>
-                </span>
-              ` : ''}
-              ${product.trackStock && isReady ? `
-                <span class="text-[9px] font-extrabold text-emerald-900 bg-white/85 backdrop-blur-xs px-1.5 py-0.5 rounded-md shadow-2xs">
-                  Sisa ${product.stock}
-                </span>
-              ` : ''}
-            </div>
-          </div>
-        `}
-
-        <div class="flex-1 flex flex-col justify-start">
-          <h3 class="font-extrabold text-stone-900 text-xs sm:text-sm leading-snug line-clamp-2 ${!isReady ? 'text-stone-400 line-through' : ''}">${escapeHtml(product.name)}</h3>
-          <p class="font-black ${isReady ? 'text-emerald-700' : 'text-stone-400'} text-sm sm:text-base mt-1 tracking-tight">${formatRp(product.price)}</p>
-        </div>
-
-        <div class="mt-2.5 pt-2 border-t ${hasQty ? 'border-emerald-200/70' : 'border-stone-100'}">
-          ${!isReady ? `
-            <div class="flex items-center justify-between text-[11px] font-extrabold text-rose-500 py-1">
-              <span class="font-black text-rose-600">Stok Kosong</span>
-              <span class="material-symbols-rounded text-base text-rose-500">block</span>
-            </div>
-          ` : (hasQty ? `
-            <div class="flex items-center gap-1.5 pt-0.5" onclick="event.stopPropagation()">
-              <div class="flex-1 bg-stone-100/90 rounded-xl p-0.5 flex items-center justify-between border border-stone-200/70">
-                <button onclick="window.KasirApp.updateCartQty('${product.id}', -1)"
-                  class="w-7 h-7 rounded-lg ${qty === 1 ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' : 'bg-white text-stone-700 hover:bg-stone-50'} shadow-2xs font-black text-sm flex items-center justify-center transition active:scale-90 cursor-pointer"
-                  title="${qty === 1 ? 'Hapus dari pesanan' : 'Kurangi 1 porsi'}">
-                  ${qty === 1 ? '<span class="material-symbols-rounded text-sm">delete</span>' : '<span class="material-symbols-rounded text-sm">remove</span>'}
-                </button>
-                <div class="flex flex-col items-center leading-none px-1 select-none">
-                  <span class="font-black text-stone-900 text-xs">${qty}</span>
-                  <span class="text-[8px] font-extrabold text-stone-500 uppercase tracking-tighter">porsi</span>
-                </div>
-                <button onclick="window.KasirApp.updateCartQty('${product.id}', 1)"
-                  class="w-7 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs font-black text-sm flex items-center justify-center transition active:scale-90 cursor-pointer"
-                  title="Tambah 1 porsi">
-                  <span class="material-symbols-rounded text-sm">add</span>
-                </button>
-              </div>
-              <button type="button" onclick="window.KasirApp.openItemNoteModal('${product.id}')"
-                class="w-8 h-8 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 flex items-center justify-center transition active:scale-90 shadow-2xs shrink-0 cursor-pointer"
-                title="Catatan & Add-on">
-                <span class="material-symbols-rounded text-base text-amber-700">edit_note</span>
-              </button>
-            </div>
-          ` : `
-            <button type="button"
-              class="w-full py-1.5 px-2.5 rounded-xl bg-stone-100/80 hover:bg-emerald-50 text-stone-700 hover:text-emerald-800 border border-stone-200/80 hover:border-emerald-300 flex items-center justify-between text-xs font-bold transition active:scale-95 shadow-2xs">
-              <span>+ Tambah</span>
-              <span class="material-symbols-rounded text-base text-emerald-600">add</span>
-            </button>
-          `)}
-        </div>
-      </div>
-    `;
+    return renderSingleProductCardHTML(product, qty);
   }).join('');
 
   if (typeof window !== 'undefined' && window.scrollY !== currentScrollY) {
@@ -616,9 +683,9 @@ export function addToCart(productId) {
     syncQueueCartFromItems(q);
     saveQueues();
     syncSaveQueues(state.orderQueues);
-    renderOrderQueueTabs();
+    renderOrderQueueTabs(false);
     renderCart();
-    renderProducts();
+    updateProductCardDOM(productId);
   }
 }
 
@@ -671,9 +738,13 @@ export function updateCartQty(targetId, delta) {
   syncQueueCartFromItems(q);
   saveQueues();
   syncSaveQueues(state.orderQueues);
-  renderOrderQueueTabs();
+  renderOrderQueueTabs(false);
   renderCart();
-  renderProducts();
+  if (p && p.id) {
+    updateProductCardDOM(p.id);
+  } else {
+    renderProducts();
+  }
 }
 
 export async function confirmClearCart() {

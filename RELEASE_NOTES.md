@@ -1,9 +1,9 @@
-# Aristotle POS v1.2.42 Release Notes
+# Aristotle POS v1.2.43 Release Notes
 
 **Tanggal Rilis:** 2026-09-09
 
 ### Catatan Pembaruan:
-- Perbaiki UX penambahan menu: hilangkan scroll jump ke atas saat menambah produk
+- Terapkan animasi modern top-app: single card update dan hilangkan double bouncing
 
 ---
 *Pembaruan ini dapat diunduh dan dipasang langsung dari dalam aplikasi (In-App Auto-Updater).*
