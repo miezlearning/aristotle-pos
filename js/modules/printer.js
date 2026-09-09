@@ -26,6 +26,9 @@ let serialPort = null;
 let serialWriter = null;
 
 // Listener hasil print & drawer asinkron dari Native Android Bridge (Zero UI Freeze)
+let lastNativeBluetoothError = '';
+let lastNativeKickDrawerError = '';
+
 if (typeof window !== 'undefined') {
   window.__onNativePrintResult = function(callbackId, success, errorMsg) {
     if (window.__nativePrintCallbacks && typeof window.__nativePrintCallbacks[callbackId] === 'function') {
@@ -35,11 +38,26 @@ if (typeof window !== 'undefined') {
 
   // Pulihkan printer Bluetooth yang dipilih saat startup APK
   try {
-    const savedPrinterCfg = localStorage.getItem('aristotle_printer_config');
-    if (savedPrinterCfg) {
-      const parsed = JSON.parse(savedPrinterCfg);
-      if (parsed?.bluetoothAddress && window.AndroidBridge && typeof window.AndroidBridge.setPreferredPrinter === 'function') {
-        window.AndroidBridge.setPreferredPrinter(parsed.bluetoothAddress);
+    // 1. Cek dari preferensi Android Native jika tersedia
+    if (window.AndroidBridge && typeof window.AndroidBridge.getPreferredPrinter === 'function') {
+      const nativePref = window.AndroidBridge.getPreferredPrinter();
+      if (nativePref) {
+        if (!state.printerConfig) state.printerConfig = {};
+        state.printerConfig.bluetoothAddress = nativePref;
+      }
+    }
+    // 2. Cek dari localStorage (seluruh key kasir_*_printer_v1 atau aristotle_printer_config)
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.endsWith('_printer_v1') || k === 'aristotle_printer_config')) {
+        const val = localStorage.getItem(k);
+        if (val) {
+          const parsed = JSON.parse(val);
+          if (parsed?.bluetoothAddress && window.AndroidBridge && typeof window.AndroidBridge.setPreferredPrinter === 'function') {
+            window.AndroidBridge.setPreferredPrinter(parsed.bluetoothAddress);
+            break;
+          }
+        }
       }
     }
   } catch (_) {}
@@ -63,12 +81,14 @@ export function sendNativeBluetoothDataAsync(bytes) {
       window.__nativePrintCallbacks = window.__nativePrintCallbacks || {};
       const timer = setTimeout(() => {
         delete window.__nativePrintCallbacks[callbackId];
+        lastNativeBluetoothError = 'Koneksi ke printer timeout (15 detik).';
         resolve(false);
-      }, 8000);
+      }, 15000);
 
       window.__nativePrintCallbacks[callbackId] = (success, errorMsg) => {
         clearTimeout(timer);
         delete window.__nativePrintCallbacks[callbackId];
+        lastNativeBluetoothError = errorMsg || '';
         resolve(Boolean(success));
       };
 
@@ -77,17 +97,21 @@ export function sendNativeBluetoothDataAsync(bytes) {
       } catch (err) {
         clearTimeout(timer);
         delete window.__nativePrintCallbacks[callbackId];
+        lastNativeBluetoothError = err.message || '';
         console.warn('AndroidBridge printBluetoothAsync failed, fallback sync:', err);
         try {
-          resolve(window.AndroidBridge.printBluetooth(b64));
+          const ok = window.AndroidBridge.printBluetooth(b64);
+          resolve(Boolean(ok));
         } catch (_) {
           resolve(false);
         }
       }
     } else if (typeof window.AndroidBridge.printBluetooth === 'function') {
       try {
-        resolve(window.AndroidBridge.printBluetooth(b64));
+        const ok = window.AndroidBridge.printBluetooth(b64);
+        resolve(Boolean(ok));
       } catch (e) {
+        lastNativeBluetoothError = e.message || '';
         resolve(false);
       }
     } else {
@@ -108,12 +132,14 @@ export function sendNativeKickDrawerAsync() {
       window.__nativePrintCallbacks = window.__nativePrintCallbacks || {};
       const timer = setTimeout(() => {
         delete window.__nativePrintCallbacks[callbackId];
+        lastNativeKickDrawerError = 'Koneksi ke printer timeout (15 detik).';
         resolve(false);
-      }, 5000);
+      }, 15000);
 
-      window.__nativePrintCallbacks[callbackId] = (success) => {
+      window.__nativePrintCallbacks[callbackId] = (success, errorMsg) => {
         clearTimeout(timer);
         delete window.__nativePrintCallbacks[callbackId];
+        lastNativeKickDrawerError = errorMsg || '';
         resolve(Boolean(success));
       };
 
@@ -122,16 +148,20 @@ export function sendNativeKickDrawerAsync() {
       } catch (err) {
         clearTimeout(timer);
         delete window.__nativePrintCallbacks[callbackId];
+        lastNativeKickDrawerError = err.message || '';
         try {
-          resolve(window.AndroidBridge.kickDrawer());
+          const ok = window.AndroidBridge.kickDrawer();
+          resolve(Boolean(ok));
         } catch (_) {
           resolve(false);
         }
       }
     } else if (typeof window.AndroidBridge.kickDrawer === 'function') {
       try {
-        resolve(window.AndroidBridge.kickDrawer());
+        const ok = window.AndroidBridge.kickDrawer();
+        resolve(Boolean(ok));
       } catch (e) {
+        lastNativeKickDrawerError = e.message || '';
         resolve(false);
       }
     } else {
@@ -1350,11 +1380,19 @@ export async function executeDirectLocalKickDrawer() {
         showToast('Laci kasir terbuka!', 'success');
         return true;
       } else {
-        showToast('Gagal membuka laci: Printer Bluetooth tidak merespons.', 'warning', 3000);
+        const errMsg = lastNativeKickDrawerError || 'Printer Bluetooth tidak merespons.';
+        showToast('Gagal membuka laci: ' + errMsg, 'warning', 3500);
+
+        if (errMsg.toLowerCase().includes('belum dipilih') || errMsg.toLowerCase().includes('belum ada printer')) {
+          setTimeout(() => {
+            connectBluetoothPrinter();
+          }, 600);
+        }
         return false;
       }
     } catch (e) {
       console.warn('Native Android kick error:', e);
+      showToast('Gagal membuka laci: ' + (e.message || 'Kesalahan sistem'), 'warning', 3500);
       return false;
     }
   }
@@ -1435,7 +1473,14 @@ export async function executeDirectLocalPrintReceipt(tx, shouldKickDrawer, force
         showToast('Struk tercetak!', 'success');
         return true;
       } else {
-        showToast('Gagal mencetak: Printer Bluetooth tidak merespons. Pastikan printer hidup & terhubung.', 'error', 4000);
+        const errMsg = lastNativeBluetoothError || 'Printer Bluetooth tidak merespons. Pastikan printer hidup & terhubung.';
+        showToast('Gagal mencetak: ' + errMsg, 'error', 4000);
+
+        if (errMsg.toLowerCase().includes('belum dipilih') || errMsg.toLowerCase().includes('belum ada printer')) {
+          setTimeout(() => {
+            connectBluetoothPrinter();
+          }, 600);
+        }
         return false;
       }
     } catch (e) {
@@ -1509,12 +1554,19 @@ export async function executeDirectLocalKitchenTicket(tx, shouldKickDrawer = fal
         showToast('Tiket dapur tercetak!', 'success');
         return true;
       } else {
-        showToast('Gagal mencetak tiket dapur: Printer tidak merespons.', 'error', 3500);
+        const errMsg = lastNativeBluetoothError || 'Printer Bluetooth tidak merespons. Pastikan printer hidup & terhubung.';
+        showToast('Gagal mencetak tiket dapur: ' + errMsg, 'error', 4000);
+
+        if (errMsg.toLowerCase().includes('belum dipilih') || errMsg.toLowerCase().includes('belum ada printer')) {
+          setTimeout(() => {
+            connectBluetoothPrinter();
+          }, 600);
+        }
         return false;
       }
     } catch (e) {
       console.warn('Android kitchen print note:', e);
-      showToast('Gagal mencetak tiket dapur: ' + (e.message || 'Printer error'), 'error', 3500);
+      showToast('Gagal mencetak tiket dapur: ' + (e.message || 'Printer error'), 'error', 4000);
       return false;
     }
   }
@@ -1747,11 +1799,7 @@ export async function kickCashDrawer(directOnly = false) {
 
     // 1. Kasir Utama (Host) atau perangkat yang terhubung langsung ke hardware printer
     if (directOnly || isLocalPrinterReady() || role === 'host') {
-      const ok = await executeDirectLocalKickDrawer();
-      if (!ok) {
-        showToast('Laci kasir belum terhubung di perangkat ini. Sambungkan printer Bluetooth/USB.', 'warning', 3000);
-      }
-      return ok;
+      return await executeDirectLocalKickDrawer();
     }
 
     // 2. HP Staf: Coba via Wi-Fi Lokal / Hotspot
@@ -3688,7 +3736,8 @@ export async function printShiftZReport(shiftSummary) {
         showToast('Laporan Z berhasil dicetak!', 'success');
         return true;
       } else {
-        showToast('Gagal cetak Laporan Z: Printer Bluetooth tidak merespons.', 'error', 3500);
+        const errMsg = lastNativeBluetoothError || 'Printer Bluetooth tidak merespons.';
+        showToast('Gagal cetak Laporan Z: ' + errMsg, 'error', 3500);
         return false;
       }
     } catch (e) {

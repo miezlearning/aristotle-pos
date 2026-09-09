@@ -6,8 +6,10 @@ import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.bluetooth.BluetoothClass;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -87,6 +89,8 @@ public class MainActivity extends AppCompatActivity {
 
     // Standard Serial Port Profile (SPP) UUID for Classic Bluetooth Thermal Printers
     private static final UUID SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    private static final String PRINTER_PREFS_NAME = "AristotlePrinterPrefs";
+    private static final String KEY_PREF_PRINTER_MAC = "preferred_printer_mac";
 
     private WebView webView;
     private BluetoothAdapter bluetoothAdapter;
@@ -116,6 +120,13 @@ public class MainActivity extends AppCompatActivity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        try {
+            SharedPreferences prefs = getSharedPreferences(PRINTER_PREFS_NAME, MODE_PRIVATE);
+            preferredPrinterAddress = prefs.getString(KEY_PREF_PRINTER_MAC, null);
+            if (preferredPrinterAddress != null) {
+                Log.d(TAG, "Memuat preferensi printer Bluetooth tersimpan: " + preferredPrinterAddress);
+            }
+        } catch (Exception ignored) {}
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -582,7 +593,7 @@ public class MainActivity extends AppCompatActivity {
                     return pInfo.versionCode;
                 }
             } catch (Exception e) {
-                return 84;
+                return 85;
             }
         }
 
@@ -592,7 +603,7 @@ public class MainActivity extends AppCompatActivity {
                 PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
                 return pInfo.versionName;
             } catch (Exception e) {
-                return "1.2.36";
+                return "1.2.37";
             }
         }
 
@@ -656,7 +667,22 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public void setPreferredPrinter(String address) {
-            preferredPrinterAddress = address;
+            preferredPrinterAddress = (address != null && !address.trim().isEmpty()) ? address.trim() : null;
+            try {
+                SharedPreferences.Editor editor = getSharedPreferences(PRINTER_PREFS_NAME, MODE_PRIVATE).edit();
+                if (preferredPrinterAddress != null) {
+                    editor.putString(KEY_PREF_PRINTER_MAC, preferredPrinterAddress);
+                } else {
+                    editor.remove(KEY_PREF_PRINTER_MAC);
+                }
+                editor.apply();
+                Log.d(TAG, "Preferred printer MAC updated: " + preferredPrinterAddress);
+            } catch (Exception ignored) {}
+        }
+
+        @JavascriptInterface
+        public String getPreferredPrinter() {
+            return preferredPrinterAddress != null ? preferredPrinterAddress : "";
         }
 
         @JavascriptInterface
@@ -682,13 +708,18 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     Set<BluetoothDevice> paired = bluetoothAdapter.getBondedDevices();
                     if (paired != null && !paired.isEmpty()) {
+                        if (preferredPrinterAddress != null && !preferredPrinterAddress.isEmpty()) {
+                            for (BluetoothDevice d : paired) {
+                                if (preferredPrinterAddress.equalsIgnoreCase(d.getAddress())) {
+                                    return d.getName() != null && !d.getName().isEmpty() ? d.getName() : d.getAddress();
+                                }
+                            }
+                        }
                         for (BluetoothDevice d : paired) {
-                            if (preferredPrinterAddress != null && preferredPrinterAddress.equalsIgnoreCase(d.getAddress())) {
+                            if (!isExcludedDevice(d) && isThermalPrinterName(d.getName())) {
                                 return d.getName() != null && !d.getName().isEmpty() ? d.getName() : d.getAddress();
                             }
                         }
-                        BluetoothDevice first = paired.iterator().next();
-                        return first.getName() != null && !first.getName().isEmpty() ? first.getName() : first.getAddress();
                     }
                 } catch (Exception ignored) {}
             }
@@ -815,41 +846,35 @@ public class MainActivity extends AppCompatActivity {
         return sendRawBytesToPrinter(drawerPulse);
     }
 
-    private BluetoothSocket connectSocketWithTimeout(final BluetoothSocket socket, int timeoutMs) throws IOException {
-        if (socket == null) throw new IOException("Socket Bluetooth null");
-        final AtomicBoolean connected = new AtomicBoolean(false);
-        final Throwable[] error = new Throwable[1];
+    private boolean isThermalPrinterName(String name) {
+        if (name == null) return false;
+        String lower = name.toLowerCase();
+        return lower.contains("pos") || lower.contains("rpp") || lower.contains("vsc") ||
+               lower.contains("thermal") || lower.contains("printer") || lower.contains("58") ||
+               lower.contains("80") || lower.contains("mpt") || lower.contains("zj") ||
+               lower.contains("panda") || lower.contains("kassen") || lower.contains("iware") ||
+               lower.contains("eppos") || lower.contains("bellav") || lower.contains("goojprt") ||
+               lower.contains("sunmi") || lower.contains("inner");
+    }
 
-        Thread t = new Thread(() -> {
-            try {
-                socket.connect();
-                connected.set(true);
-            } catch (Throwable e) {
-                error[0] = e;
-            }
-        });
-        t.start();
+    private boolean isExcludedDevice(BluetoothDevice dev) {
+        if (dev == null) return true;
         try {
-            t.join(timeoutMs);
-        } catch (InterruptedException ignored) {}
-
-        if (connected.get()) {
-            return socket;
-        }
-
-        try { socket.close(); } catch (Exception ignored) {}
-
-        if (error[0] instanceof IOException) {
-            throw (IOException) error[0];
-        } else if (error[0] != null) {
-            throw new IOException(error[0].getMessage());
-        }
-        throw new IOException("Koneksi ke printer timeout (" + (timeoutMs / 1000) + " detik). Pastikan printer menyala.");
+            if (dev.getBluetoothClass() != null) {
+                int major = dev.getBluetoothClass().getMajorDeviceClass();
+                if (major == BluetoothClass.Device.Major.AUDIO_VIDEO ||
+                    major == BluetoothClass.Device.Major.PHONE ||
+                    major == BluetoothClass.Device.Major.WEARABLE) {
+                    return true;
+                }
+            }
+        } catch (Exception ignored) {}
+        return false;
     }
 
     private OutputStream getOrConnectPrinter() throws IOException {
         synchronized (socketLock) {
-            // 1. Jika socket sudah aktif terhubung, gunakan langsung (ZERO DELAY!)
+            // 1. Jika socket sudah aktif terhubung ke perangkat yang sesuai, gunakan langsung (ZERO DELAY!)
             if (activeSocket != null && activeSocket.isConnected() && activeOutputStream != null) {
                 if (preferredPrinterAddress == null || preferredPrinterAddress.equalsIgnoreCase(connectedDeviceAddress)) {
                     return activeOutputStream;
@@ -858,22 +883,22 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
-            throw new IOException("Bluetooth adapter mati atau tidak tersedia.");
+            throw new IOException("Bluetooth HP sedang mati. Mohon aktifkan Bluetooth di HP Anda.");
         }
 
         Set<BluetoothDevice> pairedDevices = null;
         try {
             pairedDevices = bluetoothAdapter.getBondedDevices();
         } catch (SecurityException se) {
-            throw new IOException("Izin Bluetooth belum diizinkan di Pengaturan HP: " + se.getMessage());
+            throw new IOException("Izin Bluetooth belum diaktifkan di Pengaturan HP: " + se.getMessage());
         }
 
         if (pairedDevices == null || pairedDevices.isEmpty()) {
-            throw new IOException("Belum ada printer Bluetooth yang di-pair di HP.");
+            throw new IOException("Belum ada printer Bluetooth yang di-pair di HP. Buka Pengaturan Bluetooth HP untuk memindai printer kasir.");
         }
 
         BluetoothDevice targetDevice = null;
-        // Prioritaskan printer yang dipilih oleh pengguna di aplikasi
+        // Prioritaskan printer yang dipilih oleh pengguna di aplikasi (atau tersimpan di SharedPreferences)
         if (preferredPrinterAddress != null && !preferredPrinterAddress.isEmpty()) {
             for (BluetoothDevice dev : pairedDevices) {
                 if (preferredPrinterAddress.equalsIgnoreCase(dev.getAddress())) {
@@ -883,75 +908,73 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // Jika belum ada pilihan spesifik, deteksi nama printer thermal yang umum
+        // Jika belum ada printer terpilih atau printer yang disimpan tidak ditemukan lagi:
         if (targetDevice == null) {
             for (BluetoothDevice dev : pairedDevices) {
-                String name = dev.getName();
-                if (name != null) {
-                    String lower = name.toLowerCase();
-                    if (lower.contains("rpp02") || lower.contains("vsc") || lower.contains("pos") ||
-                        lower.contains("thermal") || lower.contains("58") || lower.contains("80") ||
-                        lower.contains("printer") || lower.contains("mpt") || lower.contains("zj") ||
-                        lower.contains("inner") || lower.contains("bt") || lower.contains("panda") ||
-                        lower.contains("kassen") || lower.contains("iware") || lower.contains("eppos") ||
-                        lower.contains("bellav") || lower.contains("goojprt")) {
-                        targetDevice = dev;
-                        break;
-                    }
+                if (!isExcludedDevice(dev) && isThermalPrinterName(dev.getName())) {
+                    targetDevice = dev;
+                    break;
                 }
             }
         }
 
-        // Fallback: perangkat pertama yang ter-pair
-        if (targetDevice == null) {
-            targetDevice = pairedDevices.iterator().next();
+        // Fallback: Jika hanya ada 1 perangkat yang di-pair dan bukan perangkat audio/ponsel
+        if (targetDevice == null && pairedDevices.size() == 1) {
+            BluetoothDevice single = pairedDevices.iterator().next();
+            if (!isExcludedDevice(single)) {
+                targetDevice = single;
+            }
         }
 
-        Log.d(TAG, "Membuka koneksi persistent Bluetooth ke: " + targetDevice.getName() + " (" + targetDevice.getAddress() + ")");
+        if (targetDevice == null) {
+            throw new IOException("Printer kasir belum dipilih. Silakan buka Pengaturan Printer dan ketuk 'Sambung Bluetooth' untuk memilih printer Anda.");
+        }
+
+        String targetName = targetDevice.getName() != null ? targetDevice.getName() : targetDevice.getAddress();
+        Log.d(TAG, "Membuka koneksi Bluetooth ke printer: " + targetName + " (" + targetDevice.getAddress() + ")");
+
+        // Hentikan proses scanning discovery agar radio Bluetooth stabil
         try {
             if (bluetoothAdapter.isDiscovering()) {
                 bluetoothAdapter.cancelDiscovery();
             }
         } catch (SecurityException ignored) {}
+        try { Thread.sleep(120); } catch (InterruptedException ignored) {}
 
         BluetoothSocket socket = null;
         IOException lastEx = null;
 
-        // Tier 1: Standar SPP UUID
+        // Tier 1: Refleksi RFCOMM Port 1 direct (Paling cepat & kompatibel untuk 98% printer POS thermal di Indonesia seperti VSC, RPP02, Panda, ZJ-58)
         try {
-            BluetoothSocket s1 = targetDevice.createRfcommSocketToServiceRecord(SPP_UUID);
-            socket = connectSocketWithTimeout(s1, 3500);
+            Method m = targetDevice.getClass().getMethod("createRfcommSocket", new Class[]{int.class});
+            BluetoothSocket s1 = (BluetoothSocket) m.invoke(targetDevice, 1);
+            s1.connect();
+            socket = s1;
+            Log.d(TAG, "Koneksi Tier 1 (Reflection Port 1) BERHASIL ke: " + targetName);
         } catch (Exception e1) {
-            Log.w(TAG, "Tier 1 SPP UUID connect gagal: " + e1.getMessage() + ". Mencoba Tier 2 (Reflection Port 1)...");
+            Log.w(TAG, "Tier 1 Reflection Port 1 gagal: " + e1.getMessage() + ". Menyiapkan Tier 2 (Standard SPP)...");
             lastEx = (e1 instanceof IOException) ? (IOException) e1 : new IOException(e1.getMessage());
+            try { Thread.sleep(200); } catch (InterruptedException ignored) {}
         }
 
-        // Tier 2: Refleksi createRfcommSocket port 1 (Solusi universal printer kasir RPP02 / VSC / Panda / ZJ)
+        // Tier 2: Standar SPP UUID (Untuk printer kasir standar/branded seperti Epson & Star Micronics)
         if (socket == null) {
             try {
-                Method m = targetDevice.getClass().getMethod("createRfcommSocket", new Class[]{int.class});
-                BluetoothSocket s2 = (BluetoothSocket) m.invoke(targetDevice, 1);
-                socket = connectSocketWithTimeout(s2, 3500);
+                BluetoothSocket s2 = targetDevice.createRfcommSocketToServiceRecord(SPP_UUID);
+                s2.connect();
+                socket = s2;
+                Log.d(TAG, "Koneksi Tier 2 (Standard SPP UUID) BERHASIL ke: " + targetName);
             } catch (Exception e2) {
-                Log.w(TAG, "Tier 2 Reflection Port 1 gagal: " + e2.getMessage() + ". Mencoba Tier 3 (Insecure)...");
+                Log.e(TAG, "Tier 2 Standard SPP UUID gagal: " + e2.getMessage());
                 lastEx = (e2 instanceof IOException) ? (IOException) e2 : new IOException(e2.getMessage());
             }
         }
 
-        // Tier 3: Refleksi createInsecureRfcommSocket port 1
         if (socket == null) {
-            try {
-                Method mInsecure = targetDevice.getClass().getMethod("createInsecureRfcommSocket", new Class[]{int.class});
-                BluetoothSocket s3 = (BluetoothSocket) mInsecure.invoke(targetDevice, 1);
-                socket = connectSocketWithTimeout(s3, 3500);
-            } catch (Exception e3) {
-                Log.e(TAG, "Tier 3 Insecure Port 1 gagal: " + e3.getMessage());
-                lastEx = (e3 instanceof IOException) ? (IOException) e3 : new IOException(e3.getMessage());
-            }
-        }
-
-        if (socket == null) {
-            throw (lastEx != null ? lastEx : new IOException("Gagal menghubungkan ke printer " + targetDevice.getName()));
+            String reason = (lastEx != null && lastEx.getMessage() != null && !lastEx.getMessage().isEmpty()) 
+                ? lastEx.getMessage() 
+                : "Printer tidak merespons";
+            throw new IOException("Gagal menghubungkan ke " + targetName + " (" + reason + "). Pastikan printer menyala & dekat HP.");
         }
 
         synchronized (socketLock) {
@@ -959,7 +982,17 @@ public class MainActivity extends AppCompatActivity {
             activeSocket = socket;
             activeOutputStream = socket.getOutputStream();
             connectedDeviceAddress = targetDevice.getAddress();
-            Log.d(TAG, "Koneksi Bluetooth aktif dan standby (Zero Delay Ready) ke " + targetDevice.getName());
+            preferredPrinterAddress = targetDevice.getAddress();
+
+            // Simpan otomatis ke SharedPreferences agar tersimpan permanen
+            try {
+                getSharedPreferences(PRINTER_PREFS_NAME, MODE_PRIVATE)
+                    .edit()
+                    .putString(KEY_PREF_PRINTER_MAC, preferredPrinterAddress)
+                    .apply();
+            } catch (Exception ignored) {}
+
+            Log.d(TAG, "Koneksi Bluetooth aktif dan standby (Zero Delay Ready) ke " + targetName);
             return activeOutputStream;
         }
     }
@@ -980,14 +1013,17 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean sendRawBytesToPrinter(byte[] data) {
         if (bluetoothAdapter == null) {
-            lastPrintErrorMessage = "Perangkat tidak memiliki adapter Bluetooth.";
-            runOnUiThread(() -> Toast.makeText(this, lastPrintErrorMessage, Toast.LENGTH_SHORT).show());
+            lastPrintErrorMessage = "HP tidak memiliki adapter Bluetooth.";
             return false;
         }
         if (!bluetoothAdapter.isEnabled()) {
-            lastPrintErrorMessage = "Bluetooth HP sedang mati. Mohon nyalakan Bluetooth.";
-            runOnUiThread(() -> Toast.makeText(this, lastPrintErrorMessage, Toast.LENGTH_SHORT).show());
+            lastPrintErrorMessage = "Bluetooth HP sedang mati. Mohon nyalakan Bluetooth di HP Anda.";
             return false;
+        }
+
+        boolean hadPriorActiveSocket = false;
+        synchronized (socketLock) {
+            hadPriorActiveSocket = (activeSocket != null && activeSocket.isConnected() && activeOutputStream != null);
         }
 
         try {
@@ -998,24 +1034,31 @@ public class MainActivity extends AppCompatActivity {
             lastPrintErrorMessage = "";
             return true;
         } catch (IOException e) {
-            Log.w(TAG, "Socket terputus/gagal, mencoba 1x auto-reconnect: " + e.getMessage());
+            Log.w(TAG, "Gagal kirim data printer: " + e.getMessage());
             closeActiveSocket();
-            try {
-                OutputStream freshOut = getOrConnectPrinter();
-                writeDataChunked(freshOut, data);
-                Log.d(TAG, "Data terkirim tuntas setelah auto-reconnect!");
-                lastPrintErrorMessage = "";
-                return true;
-            } catch (Exception retryErr) {
-                lastPrintErrorMessage = "Gagal menghubungkan ke printer: " + retryErr.getMessage();
-                Log.e(TAG, lastPrintErrorMessage);
-                runOnUiThread(() -> Toast.makeText(this, lastPrintErrorMessage, Toast.LENGTH_SHORT).show());
+
+            // Hanya coba auto-reconnect 1x jika sebelumnya socket SUDAH aktif lalu terputus saat kirim data
+            if (hadPriorActiveSocket) {
+                try {
+                    Thread.sleep(250);
+                    OutputStream freshOut = getOrConnectPrinter();
+                    writeDataChunked(freshOut, data);
+                    Log.d(TAG, "Data terkirim tuntas setelah auto-reconnect!");
+                    lastPrintErrorMessage = "";
+                    return true;
+                } catch (Exception retryErr) {
+                    closeActiveSocket();
+                    lastPrintErrorMessage = "Koneksi terputus: " + retryErr.getMessage();
+                    Log.e(TAG, lastPrintErrorMessage);
+                    return false;
+                }
+            } else {
+                lastPrintErrorMessage = e.getMessage();
                 return false;
             }
         } catch (SecurityException se) {
             lastPrintErrorMessage = "Izin Bluetooth belum diberikan di Pengaturan Aplikasi.";
             Log.e(TAG, "Izin Bluetooth ditolak: " + se.getMessage());
-            runOnUiThread(() -> Toast.makeText(this, lastPrintErrorMessage, Toast.LENGTH_SHORT).show());
             return false;
         }
     }

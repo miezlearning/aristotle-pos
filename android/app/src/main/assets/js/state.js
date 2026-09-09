@@ -279,6 +279,11 @@ export function initState() {
     state.printerConfig = { ...DEFAULT_PRINTER_CONFIG };
   }
 
+  // Sinkronkan ke Android Native jika ada alamat printer Bluetooth tersimpan
+  if (state.printerConfig?.bluetoothAddress && window.AndroidBridge && typeof window.AndroidBridge.setPreferredPrinter === 'function') {
+    window.AndroidBridge.setPreferredPrinter(state.printerConfig.bluetoothAddress);
+  }
+
   // 9. Muat Status Shift Aktif & Riwayat Tutup Shift
   const savedActiveShift = localStorage.getItem(keys.ACTIVE_SHIFT);
   if (savedActiveShift) {
@@ -323,6 +328,9 @@ export function savePrinterConfig(newConfig) {
     state.printerConfig = { ...state.printerConfig, ...newConfig };
   }
   localStorage.setItem(currentStorageKeys.PRINTER, JSON.stringify(state.printerConfig));
+  if (state.printerConfig?.bluetoothAddress && window.AndroidBridge && typeof window.AndroidBridge.setPreferredPrinter === 'function') {
+    window.AndroidBridge.setPreferredPrinter(state.printerConfig.bluetoothAddress);
+  }
 }
 
 /**
