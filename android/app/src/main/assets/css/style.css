@@ -19,6 +19,11 @@
        url('https://fonts.gstatic.com/s/materialsymbolsrounded/v369/sykg-zNym6YjUruM-QrEh7-nyTnjDwKNJ_190FjzaqkNCeE.woff2') format('woff2');
 }
 
+html, body {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 16px;
@@ -451,6 +456,62 @@ div[id$="Modal"]:not(.hidden) > div,
   box-shadow: 0 4px 12px -2px rgba(4, 120, 87, 0.35);
   transform: translateY(-1px);
 }
+
+/* ==================== ULTRA-RESPONSIVE TOUCH & TACTILE UX ==================== */
+
+/* 1. Hilangkan 300ms Click Delay secara menyeluruh di semua tombol & elemen interaktif */
+button,
+[role="button"],
+a,
+input,
+select,
+textarea,
+.cursor-pointer,
+.pos-product-card,
+.touch-target-large,
+.active-queue-tab-wrapper,
+div[onclick] {
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 2. Respons sentuhan taktil instan (Immediate Active Compression) 
+   Memberikan feedback fisik seketika saat jari menyentuh tombol */
+button:active:not(:disabled),
+[role="button"]:active:not([aria-disabled="true"]),
+.clickable:active {
+  transform: scale(0.965);
+  transition: transform 0.04s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 3. Akselerasi perangkat keras GPU untuk Modal & Drawer agar bebas lag saat dibuka */
+div[id$="Modal"] {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+div[id$="Modal"] > div {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform, opacity;
+}
+
+/* 4. Animasi entrance modal super cepat & snappy (150ms) */
+@keyframes modalSnappyEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-in {
+  animation: modalSnappyEnter 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
 
 
 

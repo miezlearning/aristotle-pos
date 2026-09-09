@@ -41,7 +41,7 @@ function getAudioContext() {
   if (audioCtx.state === 'suspended') {
     audioCtx.resume().catch(() => {});
   }
-  return audioCtx.state === 'running' ? audioCtx : null;
+  return audioCtx;
 }
 
 /**
@@ -52,16 +52,18 @@ function getAudioContext() {
 export function playBeep(freq = 600, duration = 0.08) {
   try {
     const ctx = getAudioContext();
-    if (!ctx) return;
+    if (!ctx || ctx.state !== 'running') return;
+    const t = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.12, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(0.1, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
     osc.connect(gain);
     gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + duration);
+    osc.start(t);
+    osc.stop(t + duration);
   } catch (e) {
     // Ignore audio error if not permitted
   }

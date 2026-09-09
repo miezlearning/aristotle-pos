@@ -1,12 +1,12 @@
 {
-  "versionCode": 86,
-  "versionName": "1.2.38",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.38/Aristotle-POS.apk",
+  "versionCode": 87,
+  "versionName": "1.2.39",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.39/Aristotle-POS.apk",
   "changelog": [
-    "Peningkatan kualitas cetak struk maksimal: Floyd-Steinberg error diffusion dithering untuk logo super tajam",
-    "Resolusi logo thermal adaptif HD (288 dot untuk 58mm / 384 dot untuk 80mm)",
-    "Format tipografi ESC/POS berkelas: Nama toko Double-Height + Bold elegan",
-    "Format tiket dapur adaptif penuh (48 karakter untuk 80mm / 32 karakter untuk 58mm)"
+    "Optimalisasi touch experience & UX instan: hilangkan delay 400ms profil toko",
+    "Eliminasi 300ms click delay di seluruh tombol & kartu produk via touch-action manipulation",
+    "Efek pegas sentuhan taktil instan (active spring) untuk sensasi UI ringan & responsif",
+    "Akselerasi GPU hardware-layer untuk pembukaan modal & profil toko secepat kilat"
   ],
   "releaseDate": "2026-09-09"
 }

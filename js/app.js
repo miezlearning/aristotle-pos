@@ -1127,25 +1127,29 @@ function initPullToRefresh() {
 }
 
 let brandSecretTapCount = 0;
-let brandTapActionTimeout = null;
+let brandSecretTapResetTimer = null;
 
 /**
  * Handle klik pada avatar brand / toko di Navigation Rail & Mobile Header.
- * - Klik normal (1x): Buka modal profil toko & cloud sync.
- * - Multi-Tap Gesture (3x cepat): Buka otentikasi Super Admin tanpa memicu popup profil toko.
+ * - Klik normal (1x): Buka modal profil toko & cloud sync secara INSTAN (0ms delay).
+ * - Multi-Tap Gesture (3x cepat dalam 1 detik): Buka otentikasi Super Admin.
  */
 export function handleBrandLogoClick(e) {
   if (e && e.stopPropagation) e.stopPropagation();
   brandSecretTapCount++;
 
-  // Batalkan pembukaan modal profil biasa jika ada tap beruntun
-  if (brandTapActionTimeout) {
-    clearTimeout(brandTapActionTimeout);
-    brandTapActionTimeout = null;
+  // Bersihkan timer reset tap rahasia
+  if (brandSecretTapResetTimer) {
+    clearTimeout(brandSecretTapResetTimer);
   }
+  brandSecretTapResetTimer = setTimeout(() => {
+    brandSecretTapCount = 0;
+  }, 1000);
 
+  // Jika di-tap 3x cepat (dalam 1 detik): buka Super Admin
   if (brandSecretTapCount >= 3) {
     brandSecretTapCount = 0;
+    if (brandSecretTapResetTimer) clearTimeout(brandSecretTapResetTimer);
     playClick('pop');
     closeCloudModal();
     showToast('Membuka Autentikasi Super Admin...', 'info', 2000);
@@ -1153,11 +1157,8 @@ export function handleBrandLogoClick(e) {
     return;
   }
 
-  // Jika tidak ada tap lanjutan dalam 400ms, baru eksekusi klik tunggal biasa
-  brandTapActionTimeout = setTimeout(() => {
-    brandSecretTapCount = 0;
-    openCloudModal();
-  }, 400);
+  // Buka modal profil toko SECARA INSTAN (0ms delay!)
+  openCloudModal();
 }
 
 /**
