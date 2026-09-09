@@ -1,12 +1,12 @@
 {
-  "versionCode": 87,
-  "versionName": "1.2.39",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.39/Aristotle-POS.apk",
+  "versionCode": 88,
+  "versionName": "1.2.40",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.40/Aristotle-POS.apk",
   "changelog": [
-    "Optimalisasi touch experience & UX instan: hilangkan delay 400ms profil toko",
-    "Eliminasi 300ms click delay di seluruh tombol & kartu produk via touch-action manipulation",
-    "Efek pegas sentuhan taktil instan (active spring) untuk sensasi UI ringan & responsif",
-    "Akselerasi GPU hardware-layer untuk pembukaan modal & profil toko secepat kilat"
+    "Implementasi Google Material Design 3 Expressive Motion System",
+    "State Layer & Radial Ink Ripple khas M3 pada seluruh kartu produk & tombol",
+    "Kurva fisika resmi M3: Emphasized Decelerate untuk dialog & bottom sheet",
+    "Integrasi getaran mikro M3 Micro-Haptics pada HP Android & browser"
   ],
   "releaseDate": "2026-09-09"
 }

@@ -13,7 +13,7 @@ import {
   setUserRole 
 } from './state.js';
 import { getStorageKeys, GLOBAL_STORAGE_KEYS, DEFAULT_PRODUCTS, DEFAULT_PRINTER_CONFIG } from './config.js';
-import { showToast, playClick, escapeHtml, showConfirmDialog } from './utils.js';
+import { showToast, playClick, escapeHtml, showConfirmDialog, triggerHaptic, initM3RippleSystem } from './utils.js';
 import * as pos from './modules/pos.js';
 import * as payment from './modules/payment.js';
 import * as admin from './modules/admin.js';
@@ -1058,6 +1058,9 @@ export async function init() {
   setTimeout(() => {
     updater.checkForAppUpdates(false);
   }, 2500);
+
+  // Inisialisasi Material Design 3 Radial Ink Ripple & State Layer Touch System
+  initM3RippleSystem();
 
   // Inisialisasi gestur Swipe Down to Refresh (Pull-to-Refresh)
   initPullToRefresh();

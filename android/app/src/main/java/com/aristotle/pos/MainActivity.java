@@ -40,6 +40,7 @@ import java.net.URL;
 import java.util.Collections;
 import android.util.Base64;
 import android.util.Log;
+import android.view.HapticFeedbackConstants;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.GeolocationPermissions;
@@ -803,6 +804,21 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void setLocalPosToken(String token) {
             MainActivity.this.setLocalPosToken(token);
+        }
+
+        @JavascriptInterface
+        public void triggerHaptic(int type) {
+            runOnUiThread(() -> {
+                if (webView != null) {
+                    if (type == 2) {
+                        webView.performHapticFeedback(HapticFeedbackConstants.CONFIRM);
+                    } else if (type == 1) {
+                        webView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                    } else {
+                        webView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                    }
+                }
+            });
         }
 
         private boolean sendRawBytesToPrinter(byte[] data) {

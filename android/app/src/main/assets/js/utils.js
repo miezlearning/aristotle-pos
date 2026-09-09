@@ -84,12 +84,14 @@ export function playClick(type = 'tap') {
   };
   const [freq, duration] = sounds[type] || sounds.tap;
   playBeep(freq, duration);
+  triggerHaptic(type === 'pop' || type === 'switch' ? 'medium' : 'light');
 }
 
 /**
  * Nada sukses transaksi kasir (Pleasant Double Register Chime)
  */
 export function playSuccessChime() {
+  triggerHaptic('success');
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
@@ -410,6 +412,71 @@ export function compressImageToDataUrl(file, maxDimension = 360, quality = 0.75)
   });
 }
 
+/**
+ * Picu getaran taktil mikro Material Design 3 (Micro-Haptics)
+ * @param {'light'|'medium'|'success'} type
+ */
+export function triggerHaptic(type = 'light') {
+  try {
+    // 1. Prioritas utama: AndroidBridge native haptics
+    if (window.AndroidBridge && typeof window.AndroidBridge.triggerHaptic === 'function') {
+      const bridgeType = type === 'success' ? 2 : (type === 'medium' ? 1 : 0);
+      window.AndroidBridge.triggerHaptic(bridgeType);
+      return;
+    }
+    // 2. Fallback Web Vibrate API
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      if (type === 'light') {
+        navigator.vibrate(8);
+      } else if (type === 'medium') {
+        navigator.vibrate(15);
+      } else if (type === 'success') {
+        navigator.vibrate([12, 40, 18]);
+      }
+    }
+  } catch (_) {}
+}
+
+/**
+ * Inisialisasi Material Design 3 Radial Ink Ripple System
+ * Menghadirkan pendaran gelombang sentuhan presisi dari titik sentuh jari kasir
+ */
+export function initM3RippleSystem() {
+  if (typeof window === 'undefined' || window._m3RippleInitialized) return;
+  window._m3RippleInitialized = true;
+
+  const handlePointerDown = (e) => {
+    // Cari elemen terdekat yang mendukung ripple
+    const target = e.target.closest('.pos-product-card, button, [role="button"], .m3-ripple-surface, .active-queue-tab-wrapper');
+    if (!target || target.disabled || target.getAttribute('aria-disabled') === 'true') return;
+
+    // Picu getaran taktil ringan M3
+    triggerHaptic('light');
+
+    // Buat lingkaran gelombang ripple
+    const rect = target.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height) * 1.5;
+    const x = (e.clientX || (e.touches && e.touches[0]?.clientX) || (rect.left + rect.width / 2)) - rect.left - size / 2;
+    const y = (e.clientY || (e.touches && e.touches[0]?.clientY) || (rect.top + rect.height / 2)) - rect.top - size / 2;
+
+    target.classList.add('m3-ripple-surface');
+    const wave = document.createElement('span');
+    const isDarkBg = target.classList.contains('bg-stone-900') || target.classList.contains('bg-emerald-700') || target.classList.contains('bg-stone-950') || target.classList.contains('text-white');
+    wave.className = `m3-ripple-wave ${isDarkBg ? 'm3-ripple-wave-dark' : ''}`;
+    wave.style.width = `${size}px`;
+    wave.style.height = `${size}px`;
+    wave.style.left = `${x}px`;
+    wave.style.top = `${y}px`;
+
+    target.appendChild(wave);
+    setTimeout(() => {
+      try { wave.remove(); } catch (_) {}
+    }, 450);
+  };
+
+  window.addEventListener('pointerdown', handlePointerDown, { passive: true });
+}
+
 if (typeof window !== 'undefined') {
   window.showToast = showToast;
   window.showConfirmDialog = showConfirmDialog;
@@ -418,6 +485,8 @@ if (typeof window !== 'undefined') {
   window.playSuccessChime = playSuccessChime;
   window.hashSha256 = hashSha256;
   window.compressImageToDataUrl = compressImageToDataUrl;
+  window.triggerHaptic = triggerHaptic;
+  window.initM3RippleSystem = initM3RippleSystem;
 }
 
 

@@ -19,6 +19,30 @@
        url('https://fonts.gstatic.com/s/materialsymbolsrounded/v369/sykg-zNym6YjUruM-QrEh7-nyTnjDwKNJ_190FjzaqkNCeE.woff2') format('woff2');
 }
 
+/* ==================== GOOGLE MATERIAL DESIGN 3 MOTION TOKENS ==================== */
+:root {
+  /* M3 Easing Curves (Official Google Motion Specification) */
+  --md-sys-motion-easing-linear: cubic-bezier(0, 0, 1, 1);
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --md-sys-motion-easing-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+  --md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1.0);
+  --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+
+  /* M3 Duration Tokens */
+  --md-sys-motion-duration-short1: 50ms;
+  --md-sys-motion-duration-short2: 100ms;
+  --md-sys-motion-duration-short3: 150ms;
+  --md-sys-motion-duration-short4: 200ms;
+  --md-sys-motion-duration-medium1: 250ms;
+  --md-sys-motion-duration-medium2: 300ms;
+  --md-sys-motion-duration-medium3: 350ms;
+  --md-sys-motion-duration-medium4: 400ms;
+  --md-sys-motion-duration-long1: 450ms;
+  --md-sys-motion-duration-long2: 500ms;
+}
+
 html, body {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -481,10 +505,42 @@ button:active:not(:disabled),
 [role="button"]:active:not([aria-disabled="true"]),
 .clickable:active {
   transform: scale(0.965);
-  transition: transform 0.04s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--md-sys-motion-duration-short1) var(--md-sys-motion-easing-standard);
 }
 
-/* 3. Akselerasi perangkat keras GPU untuk Modal & Drawer agar bebas lag saat dibuka */
+/* 3. Material Design 3 State Layer & Radial Ink Ripple */
+.m3-ripple-surface {
+  position: relative;
+  overflow: hidden;
+  -webkit-mask-image: -webkit-radial-gradient(white, black); /* Fix webkit overflow border-radius */
+}
+
+.m3-ripple-wave {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: scale(0);
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, rgba(5, 150, 105, 0.15) 65%, transparent 100%);
+  animation: m3RippleSpread 0.45s var(--md-sys-motion-easing-standard-decelerate) forwards;
+  will-change: transform, opacity;
+}
+
+.m3-ripple-wave-dark {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0.16) 65%, transparent 100%);
+}
+
+@keyframes m3RippleSpread {
+  0% {
+    transform: scale(0);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(3.2);
+    opacity: 0;
+  }
+}
+
+/* 4. Akselerasi perangkat keras GPU untuk Modal & Drawer agar bebas lag saat dibuka */
 div[id$="Modal"] {
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
@@ -496,11 +552,11 @@ div[id$="Modal"] > div {
   will-change: transform, opacity;
 }
 
-/* 4. Animasi entrance modal super cepat & snappy (150ms) */
-@keyframes modalSnappyEnter {
+/* 5. Animasi entrance modal resmi M3 Emphasized Decelerate */
+@keyframes m3DialogEnter {
   0% {
     opacity: 0;
-    transform: scale(0.96) translateY(6px);
+    transform: scale(0.93) translateY(8px);
   }
   100% {
     opacity: 1;
@@ -509,8 +565,45 @@ div[id$="Modal"] > div {
 }
 
 .animate-in {
-  animation: modalSnappyEnter 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  animation: m3DialogEnter var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized-decelerate) forwards !important;
 }
+
+/* 6. M3 Bottom Sheet Slide-Up */
+@keyframes m3BottomSheetEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-bottom-sheet {
+  animation: m3BottomSheetEnter var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate) forwards !important;
+}
+
+/* 7. M3 Cart Badge Bouncy Spring Pop */
+@keyframes m3BadgePop {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  75% {
+    transform: scale(1.24);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.m3-badge-pop {
+  animation: m3BadgePop var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized-decelerate) forwards;
+  will-change: transform, opacity;
+}
+
 
 
 
