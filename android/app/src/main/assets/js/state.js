@@ -67,6 +67,23 @@ export function resolveActiveStoreId() {
     const storeParam = params.get('store');
     if (storeParam && storeParam.trim()) {
       const sanitized = storeParam.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+      const roleParam = params.get('role');
+      const authParam = params.get('auth');
+      const isPairingLink = (roleParam === 'client' || roleParam === 'pelayan' || authParam === '1');
+
+      // Auto-authorize jika dibuka dari tautan/QR pairing kasir
+      if (isPairingLink) {
+        sessionStorage.removeItem('is_logged_out_state');
+        localStorage.setItem('auth_store_session_' + sanitized, '1');
+        localStorage.setItem(GLOBAL_STORAGE_KEYS.ACTIVE_STORE_ID, sanitized);
+        localStorage.setItem('aristotle_device_role', 'pelayan');
+        localStorage.setItem('aristotle_printer_mode', 'pelayan');
+        const hostIp = params.get('hostIp');
+        if (hostIp) {
+          localStorage.setItem('aristotle_local_host_ip', hostIp);
+        }
+        return sanitized;
+      }
       
       // Auto-restore hanya jika perangkat ini sudah memiliki sesi auth terverifikasi
       const isDeviceAuth = localStorage.getItem('auth_store_session_' + sanitized) === '1';

@@ -4,6 +4,7 @@
  */
 
 import { state, savePrinterConfig } from '../state.js';
+import { GLOBAL_STORAGE_KEYS } from '../config.js';
 import { formatRp, formatDateShort, showToast, playClick, escapeHtml } from '../utils.js';
 import { renderQRToContainer } from '../qris.js';
 import { 
@@ -1745,10 +1746,17 @@ async function tryPrintViaLocalLan(bytes, overrideIp = null) {
   let hostIp = overrideIp || state.printerConfig?.localHostIp || localStorage.getItem('aristotle_local_host_ip');
   if (!hostIp) {
     if (window.AndroidBridge && typeof window.AndroidBridge.getWifiGatewayIp === 'function') {
-      hostIp = window.AndroidBridge.getWifiGatewayIp();
+      try {
+        const gw = window.AndroidBridge.getWifiGatewayIp();
+        if (gw && gw.trim() && !gw.startsWith('127.')) hostIp = gw.trim();
+      } catch (_) {}
     }
   }
   if (!hostIp && detectHotspotConnection()) {
+    hostIp = '192.168.43.1';
+  }
+  // Standar fallback hotspot tethering jika perangkat disetel sebagai pelayan
+  if (!hostIp && getDevicePrinterMode() === 'pelayan') {
     hostIp = '192.168.43.1';
   }
   if (!hostIp) return false;
@@ -1758,7 +1766,7 @@ async function tryPrintViaLocalLan(bytes, overrideIp = null) {
   const b64 = window.btoa(binary);
   const token = getLocalPosToken(state.storeId);
 
-  // 1. Jalur Utama Native Android Bridge (Bebas Mixed-Content & Bypass Mobile Data Fallback)
+  // 1. Jalur Utama Native Android Bridge (Bebas Mixed-Content, Bypass Cellular Data, Timeout Cukup untuk Cold BT Handshake)
   if (window.AndroidBridge && typeof window.AndroidBridge.sendLocalHttpRequest === 'function') {
     try {
       const respStr = window.AndroidBridge.sendLocalHttpRequest(
@@ -1766,7 +1774,7 @@ async function tryPrintViaLocalLan(bytes, overrideIp = null) {
         'POST',
         JSON.stringify({ base64: b64 }),
         token,
-        2500
+        6000
       );
       if (respStr) {
         const data = JSON.parse(respStr);
@@ -1780,7 +1788,7 @@ async function tryPrintViaLocalLan(bytes, overrideIp = null) {
   // 2. Jalur Web Fetch Fallback
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2000);
+    const timeout = setTimeout(() => controller.abort(), 6000);
 
     const res = await fetch(`http://${hostIp}:8088/print`, {
       method: 'POST',
@@ -1801,15 +1809,20 @@ async function tryPrintViaLocalLan(bytes, overrideIp = null) {
   }
   return false;
 }
-
-async function tryKickDrawerViaLocalLan(overrideIp = null) {
+async function tryKickDrawerViaLocalLan(overrideIp = null) {
   let hostIp = overrideIp || state.printerConfig?.localHostIp || localStorage.getItem('aristotle_local_host_ip');
   if (!hostIp) {
     if (window.AndroidBridge && typeof window.AndroidBridge.getWifiGatewayIp === 'function') {
-      hostIp = window.AndroidBridge.getWifiGatewayIp();
+      try {
+        const gw = window.AndroidBridge.getWifiGatewayIp();
+        if (gw && gw.trim() && !gw.startsWith('127.')) hostIp = gw.trim();
+      } catch (_) {}
     }
   }
   if (!hostIp && detectHotspotConnection()) {
+    hostIp = '192.168.43.1';
+  }
+  if (!hostIp && getDevicePrinterMode() === 'pelayan') {
     hostIp = '192.168.43.1';
   }
   if (!hostIp) return false;
@@ -1824,7 +1837,7 @@ async function tryKickDrawerViaLocalLan(overrideIp = null) {
         'POST',
         JSON.stringify({ action: 'kick' }),
         token,
-        2500
+        5000
       );
       if (respStr) {
         const data = JSON.parse(respStr);
@@ -1838,11 +1851,11 @@ async function tryKickDrawerViaLocalLan(overrideIp = null) {
   // 2. Jalur Web Fetch Fallback
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2000);
+    const timeout = setTimeout(() => controller.abort(), 5000);
 
     const res = await fetch(`http://${hostIp}:8088/drawer`, {
       method: 'POST',
-      headers: {
+      headers: { 
         'Content-Type': 'application/json',
         'X-POS-Token': token
       },
@@ -3294,6 +3307,13 @@ export async function reconnectPrinterHost(silent = false, customTargetIp = null
       } catch (_) {}
     }
 
+    // Default hotspot IP candidates (Android Tethering 192.168.43.1 & iOS 172.20.10.1)
+    if (detectHotspotConnection() || window.AndroidBridge || getDevicePrinterMode() === 'pelayan') {
+      candidateSet.add('192.168.43.1');
+      candidateSet.add('172.20.10.1');
+      candidateSet.add('192.168.49.1');
+    }
+
     const candidateIps = Array.from(candidateSet).filter(Boolean);
 
     // 2. Eksekusi Probe Sekuensial dengan Short-Circuit (Cepat ~5-10ms jika ketemu)
@@ -3430,14 +3450,25 @@ export function openHostQrPairingModal() {
   if (!hostIp) {
     hostIp = state.printerConfig?.localHostIp || localStorage.getItem('aristotle_local_host_ip') || '';
   }
+  if (!hostIp && detectHotspotConnection()) {
+    hostIp = '192.168.43.1';
+  }
 
-  // URL pairing lengkap yang memuat store, role, dan hostIp
-  const baseUrl = window.location.origin + window.location.pathname;
+  // Gunakan Canonical Production Web URL jika berjalan di APK (file:///android_asset/...)
+  let baseUrl = window.location.origin + window.location.pathname;
+  if (!baseUrl || baseUrl.startsWith('file:') || baseUrl.startsWith('null') || baseUrl.includes('/android_asset/')) {
+    baseUrl = 'https://miezlearning.github.io/aristotle-pos/';
+  }
+
+  // URL pairing lengkap yang memuat store, role, auth, token, dan hostIp
   const params = new URLSearchParams();
   params.set('store', storeId);
   params.set('role', 'pelayan');
+  params.set('auth', '1');
+  const token = getLocalPosToken(storeId);
+  if (token) params.set('token', token);
   if (hostIp) params.set('hostIp', hostIp);
-  const pairingUrl = `${baseUrl}?${params.toString()}`;
+  const pairingUrl = `${baseUrl.split('?')[0]}?${params.toString()}`;
 
   const container = document.getElementById('hostQrCanvasContainer');
   if (container) {
@@ -3558,18 +3589,59 @@ export function closeQrPairingScannerModal() {
  */
 export function handleScannedPairingData(rawText) {
   closeQrPairingScannerModal();
+  if (!rawText || typeof rawText !== 'string') {
+    showToast('Kode QR kosong atau tidak terbaca.', 'warning', 3000);
+    return;
+  }
 
   try {
-    let url;
-    if (rawText.startsWith('http://') || rawText.startsWith('https://')) {
-      url = new URL(rawText);
-    } else {
-      url = new URL('https://dummy/?' + rawText);
+    let store = '';
+    let role = 'pelayan';
+    let hostIp = '';
+
+    const trimmed = rawText.trim();
+
+    // 1. Format JSON standar
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      try {
+        const obj = JSON.parse(trimmed);
+        store = obj.store || obj.storeId || obj.id || '';
+        if (obj.role) role = (obj.role === 'client' || obj.role === 'pelayan') ? 'pelayan' : 'host';
+        hostIp = obj.hostIp || obj.ip || '';
+      } catch (_) {}
     }
-    const store = url.searchParams.get('store');
-    const rawRole = url.searchParams.get('role') || 'pelayan';
-    const role = (rawRole === 'client' || rawRole === 'pelayan') ? 'pelayan' : 'host';
-    const hostIp = url.searchParams.get('hostIp');
+
+    // 2. Format URL atau Query string (?store=... atau store=...)
+    if (!store) {
+      let queryString = '';
+      if (trimmed.includes('?')) {
+        queryString = trimmed.substring(trimmed.indexOf('?') + 1);
+      } else if (trimmed.includes('store=')) {
+        queryString = trimmed;
+      }
+
+      if (queryString) {
+        const searchParams = new URLSearchParams(queryString);
+        store = searchParams.get('store') || '';
+        const rawRole = searchParams.get('role');
+        if (rawRole) {
+          role = (rawRole === 'client' || rawRole === 'pelayan') ? 'pelayan' : 'host';
+        }
+        hostIp = searchParams.get('hostIp') || '';
+      }
+    }
+
+    // 3. Regex Fallback
+    if (!store) {
+      const matchStore = trimmed.match(/[?&]?store=([^&#\s]+)/i);
+      if (matchStore && matchStore[1]) {
+        store = decodeURIComponent(matchStore[1]);
+      }
+      const matchIp = trimmed.match(/[?&]?hostIp=([^&#\s]+)/i);
+      if (matchIp && matchIp[1]) {
+        hostIp = decodeURIComponent(matchIp[1]);
+      }
+    }
 
     if (!store) {
       showToast('Kode QR tidak valid (Data toko tidak ditemukan).', 'warning', 3000);
@@ -3578,11 +3650,13 @@ export function handleScannedPairingData(rawText) {
 
     const cleanStore = store.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
 
-    // 1. Otorisasi sesi toko ini di perangkat ini secara permanen
+    // 1. Otorisasi sesi toko ini di perangkat ini secara permanen sebagai Staf
     sessionStorage.removeItem('is_logged_out_state');
     localStorage.setItem('auth_store_session_' + cleanStore, '1');
+    localStorage.setItem(GLOBAL_STORAGE_KEYS.ACTIVE_STORE_ID, cleanStore);
     localStorage.setItem('aristotle_active_store_id', cleanStore);
     localStorage.setItem('aristotle_device_role', role);
+    localStorage.setItem('aristotle_printer_mode', role);
 
     if (hostIp) {
       localStorage.setItem('aristotle_local_host_ip', hostIp);
@@ -3604,7 +3678,12 @@ export function handleScannedPairingData(rawText) {
     }
     closePrinterConfigModal();
 
-    showToast('Terhubung ke kasir utama.', 'success', 3000);
+    // 5. Trigger auto-connect ke kasir utama
+    setTimeout(() => {
+      reconnectPrinterHost(false, hostIp || null);
+    }, 120);
+
+    showToast(`Berhasil login ke toko [${cleanStore.replace(/_/g, ' ').toUpperCase()}] sebagai HP Staf!`, 'success', 3500);
   } catch (err) {
     console.error('Scan parse error:', err);
     showToast('Gagal memproses kode QR.', 'warning', 3000);

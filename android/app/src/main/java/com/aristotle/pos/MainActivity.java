@@ -19,6 +19,7 @@ import android.net.LinkProperties;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.net.RouteInfo;
 import android.net.Uri;
 import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
@@ -380,6 +381,9 @@ public class MainActivity extends AppCompatActivity {
         // Jalankan Local Offline LAN Print Server (Zero Internet Printer Relay)
         startLocalHttpServer();
 
+        // Warmup printer standby di latar belakang agar HP Staf langsung bisa cetak tanpa cold delay
+        warmupPrinterConnectionAsync();
+
         // Bersihkan file update lama jika versi saat ini sudah sama atau lebih baru
         try {
             File cacheDir = getExternalCacheDir() != null ? getExternalCacheDir() : getCacheDir();
@@ -458,6 +462,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        warmupPrinterConnectionAsync();
         if (pendingInstallAfterPermission) {
             pendingInstallAfterPermission = false;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && getPackageManager().canRequestPackageInstalls()) {
@@ -679,6 +684,9 @@ public class MainActivity extends AppCompatActivity {
                 editor.apply();
                 Log.d(TAG, "Preferred printer MAC updated: " + preferredPrinterAddress);
             } catch (Exception ignored) {}
+            if (preferredPrinterAddress != null) {
+                warmupPrinterConnectionAsync();
+            }
         }
 
         @JavascriptInterface
@@ -1506,7 +1514,68 @@ public class MainActivity extends AppCompatActivity {
         return "192.168.43.1";
     }
 
+    private Network getWifiNetwork() {
+        try {
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                Network[] allNetworks = cm.getAllNetworks();
+                for (Network net : allNetworks) {
+                    NetworkCapabilities caps = cm.getNetworkCapabilities(net);
+                    if (caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                        return net;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private void warmupPrinterConnectionAsync() {
+        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) return;
+        new Thread(() -> {
+            try {
+                Thread.sleep(1200);
+                synchronized (socketLock) {
+                    if (activeSocket != null && activeSocket.isConnected() && activeOutputStream != null) {
+                        return;
+                    }
+                }
+                Log.d(TAG, "Menjalankan background printer warmup standby...");
+                getOrConnectPrinter();
+            } catch (Exception e) {
+                Log.d(TAG, "Printer warmup note: " + e.getMessage());
+            }
+        }).start();
+    }
+
     public String getWifiGatewayIp() {
+        // 1. Jalur ConnectivityManager LinkProperties Routes (Akurat di Android 10-14 tanpa butuh izin lokasi)
+        try {
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                Network wifiNet = getWifiNetwork();
+                if (wifiNet == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    wifiNet = cm.getActiveNetwork();
+                }
+                if (wifiNet != null) {
+                    LinkProperties lp = cm.getLinkProperties(wifiNet);
+                    if (lp != null) {
+                        for (RouteInfo route : lp.getRoutes()) {
+                            if (route.isDefaultRoute() && route.getGateway() instanceof Inet4Address) {
+                                String gw = route.getGateway().getHostAddress();
+                                if (gw != null && !gw.equals("0.0.0.0") && !gw.startsWith("127.")) {
+                                    return gw;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "LinkProperties gateway note: " + e.getMessage());
+        }
+
+        // 2. Jalur WifiManager DHCP Fallback
         try {
             WifiManager wm = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
             if (wm != null) {
@@ -1519,15 +1588,31 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         } catch (Exception e) {
-            Log.d(TAG, "getWifiGatewayIp note: " + e.getMessage());
+            Log.d(TAG, "WifiManager gateway note: " + e.getMessage());
         }
-        return "";
+
+        // 3. Fallback jika IP lokal memiliki subnet (misal 192.168.43.45 -> 192.168.43.1)
+        try {
+            String myIp = getLocalIpAddress();
+            if (myIp != null && myIp.contains(".")) {
+                String[] parts = myIp.split("\\.");
+                if (parts.length == 4) {
+                    return parts[0] + "." + parts[1] + "." + parts[2] + ".1";
+                }
+            }
+        } catch (Exception ignored) {}
+
+        return "192.168.43.1";
     }
 
     public boolean probeLocalHost(String ip, int port, int timeoutMs) {
         if (ip == null || ip.trim().isEmpty()) return false;
         try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(ip.trim(), port), Math.max(150, Math.min(timeoutMs, 2000)));
+            Network wifiNet = getWifiNetwork();
+            if (wifiNet != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                try { wifiNet.bindSocket(socket); } catch (Exception ignored) {}
+            }
+            socket.connect(new InetSocketAddress(ip.trim(), port), Math.max(250, Math.min(timeoutMs, 4000)));
             return socket.isConnected();
         } catch (Exception e) {
             return false;
@@ -1538,10 +1623,15 @@ public class MainActivity extends AppCompatActivity {
         HttpURLConnection conn = null;
         try {
             URL url = new URL(urlStr);
-            conn = (HttpURLConnection) url.openConnection();
+            Network wifiNet = getWifiNetwork();
+            if (wifiNet != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                conn = (HttpURLConnection) wifiNet.openConnection(url);
+            } else {
+                conn = (HttpURLConnection) url.openConnection();
+            }
             conn.setRequestMethod(method != null ? method.toUpperCase() : "GET");
-            conn.setConnectTimeout(Math.max(400, Math.min(timeoutMs, 4000)));
-            conn.setReadTimeout(Math.max(400, Math.min(timeoutMs, 4000)));
+            conn.setConnectTimeout(Math.max(1000, Math.min(timeoutMs, 8000)));
+            conn.setReadTimeout(Math.max(1000, Math.min(timeoutMs, 8000)));
             if (posToken != null && !posToken.isEmpty()) {
                 conn.setRequestProperty("X-POS-Token", posToken);
             }

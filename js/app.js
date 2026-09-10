@@ -897,17 +897,35 @@ export async function init() {
     pos.renderProductSkeletons(8);
     initState();
 
-    // Baca parameter pairing (role, hostIp) jika ada di URL (misal dibuka dari scan QR / link WA)
+    // Baca parameter pairing (store, role, hostIp, auth) jika ada di URL (misal dibuka dari scan QR / link WA)
     const urlParams = new URLSearchParams(window.location.search);
+    const storeParam = urlParams.get('store');
     const roleParam = urlParams.get('role');
-    if (roleParam) {
-      localStorage.setItem('aristotle_device_role', roleParam);
-    }
+    const authParam = urlParams.get('auth');
     const hostIpParam = urlParams.get('hostIp');
-    if (hostIpParam) {
-      localStorage.setItem('aristotle_local_host_ip', hostIpParam);
-      if (!state.printerConfig) state.printerConfig = {};
-      state.printerConfig.localHostIp = hostIpParam;
+
+    if (storeParam && (roleParam === 'client' || roleParam === 'pelayan' || authParam === '1')) {
+      const cleanStore = storeParam.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+      sessionStorage.removeItem('is_logged_out_state');
+      localStorage.setItem('auth_store_session_' + cleanStore, '1');
+      localStorage.setItem(GLOBAL_STORAGE_KEYS.ACTIVE_STORE_ID, cleanStore);
+      localStorage.setItem('aristotle_active_store_id', cleanStore);
+      localStorage.setItem('aristotle_device_role', 'pelayan');
+      localStorage.setItem('aristotle_printer_mode', 'pelayan');
+      if (hostIpParam) {
+        localStorage.setItem('aristotle_local_host_ip', hostIpParam);
+        if (!state.printerConfig) state.printerConfig = {};
+        state.printerConfig.localHostIp = hostIpParam;
+      }
+      state.storeId = cleanStore;
+      state.isSessionActive = true;
+    } else if (roleParam) {
+      localStorage.setItem('aristotle_device_role', roleParam);
+      if (hostIpParam) {
+        localStorage.setItem('aristotle_local_host_ip', hostIpParam);
+        if (!state.printerConfig) state.printerConfig = {};
+        state.printerConfig.localHostIp = hostIpParam;
+      }
     }
 
     // 2. Render UI katalog, antrean, dan keranjang (45%)
@@ -1025,11 +1043,12 @@ export async function init() {
         openUniversalLoginModal('login');
       }
       
-      // Jika tautan mengandung ?store=..., otomatis isikan nama toko & fokuskan kolom PIN!
+      // Jika tautan mengandung ?store=... (dan BUKAN pairing pelayan), otomatis isikan nama toko & fokuskan kolom PIN!
       try {
         const params = new URLSearchParams(window.location.search);
         const storeParam = params.get('store');
-        if (storeParam && storeParam.trim()) {
+        const isPairing = params.get('role') === 'pelayan' || params.get('auth') === '1';
+        if (storeParam && storeParam.trim() && !isPairing) {
           const sanitized = storeParam.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
           const storeInput = document.getElementById('loginStoreIdInput');
           const pinInput = document.getElementById('loginPinInput');

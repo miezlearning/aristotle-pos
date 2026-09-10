@@ -1,9 +1,10 @@
 {
-  "versionCode": 92,
-  "versionName": "1.2.44",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.44/Aristotle-POS.apk",
+  "versionCode": 93,
+  "versionName": "1.2.45",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.45/Aristotle-POS.apk",
   "changelog": [
-    "Perbaiki race condition dan lag saat beralih ke mode HP Staf"
+    "Perbaiki koneksi QR login dan auto-auth staf tanpa PIN",
+    "Standarisasi rute koneksi hotspot Wi-Fi dan warmup printer standby HP Staf"
   ],
-  "releaseDate": "2026-09-09"
+  "releaseDate": "2026-09-10"
 }

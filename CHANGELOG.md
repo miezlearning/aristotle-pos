@@ -4,6 +4,21 @@ Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant S
 
 Format dokumen ini mengacu pada panduan [Keep a Changelog](https://keepachangelog.com/id/1.0.0/) dan mematuhi aturan [Semantic Versioning](https://semver.org/).
 
+## [v1.2.45] - 2026-09-10
+
+### 📷 Perbaikan Universal QR Pairing & Auto-Login Staf (Zero-PIN Authentication)
+- **URL Pairing Kanonik Standar:** Pembuatan QR Pairing di Kasir Utama kini selalu mengacu pada URL kanonik web valid (`https://miezlearning.github.io/aristotle-pos/`) lengkap dengan parameter `store`, `role=pelayan`, `auth=1`, `token`, dan `hostIp`, menggantikan format lokal `file:///android_asset/...` atau `null/...` yang sebelumnya memicu error *"Kode QR tidak valid (Data toko tidak ditemukan)"* pada aplikasi Android APK.
+- **Auto-Login Bebas PIN:** Pemindaian QR melalui scanner internal maupun pembukaan tautan QR melalui browser/kamera HP langsung mengotorisasi sesi kasir sebagai HP Staf/Pelayan tanpa memunculkan dialog PIN 6 digit pemilik toko.
+- **Parser Cerdas Multi-Format:** Scanner in-app kini mendukung berbagai format data masukan (URL lengkap, parameter query string mentah, maupun format objek JSON) secara toleran.
+
+### 🌐 Standar Komunikasi Hotspot Wi-Fi & Eliminasi Delay Printer HP Staf
+- **Binding Eksplisit Jaringan Wi-Fi (Bypass Redirect Data Seluler):** Mengadopsi standar komunikasi IoT/POS internasional pada Android modern (SDK 29–34). Ketika HP Staf terhubung ke hotspot Kasir Utama tanpa internet aktif, permintaan HTTP LAN dan probe TCP socket kini di-binding secara langsung ke antarmuka Wi-Fi (`NetworkCapabilities.TRANSPORT_WIFI`), mencegah Android mengalihkan lalu lintas data ke jaringan seluler 4G/5G.
+- **Deteksi Akurat Default Gateway Wi-Fi:** Fungsi `getWifiGatewayIp()` diperbarui menggunakan rute `LinkProperties` IPv4 default (`0.0.0.0/0`) sehingga alamat gateway hotspot (`192.168.43.1`) terbaca andal di seluruh varian Android tanpa ketergantungan izin lokasi runtime.
+- **Warmup Printer Standby di Latar Belakang:** Kasir Utama kini secara proaktif membuka socket Bluetooth standby saat aplikasi dibuka (`warmupPrinterConnectionAsync`). Hal ini mengeliminasi jeda *cold connection* (2–4 detik) sehingga perintah tes printer dari HP Staf langsung dicetak dalam hitungan milidetik tanpa harus dipancing atau di-trigger terlebih dahulu dari Kasir Utama.
+- **Penyesuaian Batas Waktu Permintaan HTTP:** Meningkatkan timeout permintaan cetak LAN dari 2.5 detik menjadi 6 detik untuk memberikan toleransi yang cukup pada jabat tangan radio Bluetooth pertama kali.
+
+---
+
 ## [v1.2.24] - 2026-09-05
 
 ### 🧾 Tata Letak 2 Kolom Modal Pengaturan Printer & Struk (Live Sticky Receipt Preview)
