@@ -186,8 +186,8 @@ export function renderFinancialReport() {
   if (netProfitEl) {
     netProfitEl.innerText = formatRp(netProfit);
     netProfitEl.className = netProfit >= 0
-      ? 'text-xl sm:text-3xl font-black text-emerald-700 mt-1 truncate'
-      : 'text-xl sm:text-3xl font-black text-red-600 mt-1 truncate';
+      ? 'text-xl sm:text-2xl lg:text-3xl font-black text-emerald-700 leading-tight tabular-nums'
+      : 'text-xl sm:text-2xl lg:text-3xl font-black text-red-600 leading-tight tabular-nums';
   }
 
   if (cashEl) cashEl.innerText = formatRp(totalCash);

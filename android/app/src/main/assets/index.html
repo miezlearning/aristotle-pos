@@ -1244,10 +1244,29 @@
       <!-- Top Action & Period Filter Toolbar -->
       <div class="bg-white p-3 sm:p-4 rounded-3xl shadow-sm border border-stone-200/80 flex flex-col gap-3">
 
-        <!-- Baris 1: Filter Periode (Presets + Tombol Rentang Tanggal) + Toggle Tampilan -->
-        <div class="flex items-center justify-between gap-3 flex-wrap">
-          <!-- Sisi Kiri: Presets + Rentang Tanggal -->
-          <div class="flex items-center gap-2 overflow-x-auto custom-scroll flex-1 min-w-0 py-0.5">
+        <!-- Baris 1: Toggle Tampilan + Filter Periode (susun vertikal di HP) -->
+        <div class="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
+          <!-- Toggle Ringkasan / Grafik: penuh di HP, pojok di desktop -->
+          <div class="relative grid grid-cols-2 bg-stone-100 p-1 rounded-2xl border border-stone-200/80 shadow-2xs w-full lg:w-auto shrink-0 order-1 lg:order-2" id="reportViewSegmentedControl">
+            <!-- Sliding background pill indicator -->
+            <div id="reportToggleSlider"
+                 class="absolute top-1 bottom-1 rounded-xl bg-white shadow-xs transition-all duration-200 ease-out pointer-events-none"
+                 style="left: 4px; width: calc(50% - 4px);"></div>
+
+            <button type="button" id="tabBtnReportData" onclick="window.KasirApp.switchReportViewMode('data')"
+              class="relative z-10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-colors duration-200 text-stone-900 cursor-pointer">
+              <span class="material-symbols-rounded text-base sm:text-lg text-emerald-700">receipt_long</span>
+              <span>Ringkasan Data</span>
+            </button>
+            <button type="button" id="tabBtnReportVisual" onclick="window.KasirApp.switchReportViewMode('visual')"
+              class="relative z-10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-colors duration-200 text-stone-500 hover:text-stone-800 cursor-pointer">
+              <span class="material-symbols-rounded text-base sm:text-lg text-indigo-600">insights</span>
+              <span>Grafik Usaha</span>
+            </button>
+          </div>
+
+          <!-- Filter Periode: strip geser penuh di HP -->
+          <div class="flex items-center gap-2 overflow-x-auto custom-scroll w-full lg:w-auto lg:flex-1 lg:min-w-0 py-0.5 order-2 lg:order-1">
             <span class="text-[11px] font-black uppercase tracking-wider text-stone-400 shrink-0">Periode</span>
             <div class="flex items-center gap-0.5 bg-stone-100 p-1 rounded-full border border-stone-200/60 shrink-0" role="tablist" aria-label="Periode laporan">
               <button onclick="setReportPeriod('today')" id="period-today"
@@ -1270,25 +1289,6 @@
               title="Filter rentang tanggal khusus">
               <span class="material-symbols-rounded text-base text-emerald-700">date_range</span>
               <span id="reportRangeBtnLabel">Rentang Tanggal</span>
-            </button>
-          </div>
-
-          <!-- Toggle Ringkasan / Grafik -->
-          <div class="relative flex items-center bg-stone-100 p-1 rounded-2xl border border-stone-200/80 shadow-2xs shrink-0" id="reportViewSegmentedControl">
-            <!-- Sliding background pill indicator -->
-            <div id="reportToggleSlider" 
-                 class="absolute top-1 bottom-1 rounded-xl bg-white shadow-xs transition-all duration-200 ease-out pointer-events-none"
-                 style="left: 4px; width: calc(50% - 4px);"></div>
-
-            <button type="button" id="tabBtnReportData" onclick="window.KasirApp.switchReportViewMode('data')"
-              class="relative z-10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-black text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 transition-colors duration-200 text-stone-900 cursor-pointer">
-              <span class="material-symbols-rounded text-base sm:text-lg text-emerald-700">receipt_long</span>
-              <span>Ringkasan Data</span>
-            </button>
-            <button type="button" id="tabBtnReportVisual" onclick="window.KasirApp.switchReportViewMode('visual')"
-              class="relative z-10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 transition-colors duration-200 text-stone-500 hover:text-stone-800 cursor-pointer">
-              <span class="material-symbols-rounded text-base sm:text-lg text-indigo-600">insights</span>
-              <span>Grafik Usaha</span>
             </button>
           </div>
         </div>
@@ -1327,11 +1327,11 @@
       <!-- ==================== REPORT DATA VIEW (RINGKASAN & RIWAYAT) ==================== -->
       <div id="reportDataView" class="flex flex-col gap-5 report-slide-left">
 
-        <!-- Core Financial Metric Cards (3 Spacious Cards) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Core Financial Metric Cards (2 kolom di HP) -->
+        <div class="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
 
         <!-- 1. Omset (Pemasukan) -->
-        <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-stone-200/80 flex flex-col justify-between gap-4">
+        <div class="bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-stone-200/80 flex flex-col justify-between gap-3">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2.5">
               <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center">
@@ -1344,13 +1344,13 @@
             </div>
           </div>
           <div>
-            <h3 id="statTotalRevenue" class="text-2xl sm:text-3xl lg:text-4xl font-black text-stone-900 leading-tight">Rp 0</h3>
-            <span id="statRevenueSub" class="inline-block text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/80 mt-2">0 Transaksi Selesai</span>
+            <h3 id="statTotalRevenue" class="text-xl sm:text-2xl lg:text-3xl font-black text-stone-900 leading-tight tabular-nums">Rp 0</h3>
+            <span id="statRevenueSub" class="inline-block text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/80 mt-2">0 Transaksi Selesai</span>
           </div>
         </div>
 
         <!-- 2. Total Pengeluaran -->
-        <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-stone-200/80 flex flex-col justify-between gap-4">
+        <div class="bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-stone-200/80 flex flex-col justify-between gap-3">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2.5">
               <div class="w-10 h-10 rounded-2xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center">
@@ -1363,13 +1363,13 @@
             </div>
           </div>
           <div>
-            <h3 id="statTotalExpenses" class="text-2xl sm:text-3xl lg:text-4xl font-black text-red-600 leading-tight">Rp 0</h3>
-            <span id="statExpenseSub" class="inline-block text-xs font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded-md border border-red-200/80 mt-2">0 Catatan Biaya</span>
+            <h3 id="statTotalExpenses" class="text-xl sm:text-2xl lg:text-3xl font-black text-red-600 leading-tight tabular-nums">Rp 0</h3>
+            <span id="statExpenseSub" class="inline-block text-[11px] font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded-md border border-red-200/80 mt-2">0 Catatan Biaya</span>
           </div>
         </div>
 
         <!-- 3. LABA BERSIH (Hero Card) -->
-        <div class="bg-gradient-to-br from-emerald-50/90 to-teal-50/90 p-5 sm:p-6 rounded-3xl shadow-md border-2 border-emerald-400/80 flex flex-col justify-between gap-4">
+        <div class="bg-gradient-to-br from-emerald-50/90 to-teal-50/90 p-4 sm:p-5 rounded-3xl shadow-md border-2 border-emerald-400/80 flex flex-col justify-between gap-3 col-span-2 lg:col-span-1">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2.5">
               <div class="w-10 h-10 rounded-2xl bg-emerald-700 text-white flex items-center justify-center shadow-sm">
