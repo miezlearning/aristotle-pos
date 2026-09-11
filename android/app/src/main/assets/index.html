@@ -1798,8 +1798,24 @@
         </div>
       </div>
 
-      <!-- Ringkasan KPI (Mobile-Optimized 2x2 Grid) -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+      <!-- Segmented Super Admin Tabs: Toko Mitra vs Generator Lisensi -->
+      <div class="flex items-center gap-1.5 p-1 bg-stone-100 rounded-2xl border border-stone-200/90 shadow-2xs">
+        <button type="button" id="saTabStoresBtn" onclick="window.KasirApp.switchSuperAdminTab('stores')"
+          class="flex-1 py-2 px-3 rounded-xl bg-white text-stone-900 font-extrabold text-xs sm:text-sm shadow-2xs flex items-center justify-center gap-1.5 transition cursor-pointer">
+          <span class="material-symbols-rounded text-base sm:text-lg text-emerald-700">storefront</span>
+          <span>Monitoring Toko Mitra</span>
+        </button>
+        <button type="button" id="saTabLicensesBtn" onclick="window.KasirApp.switchSuperAdminTab('licenses')"
+          class="flex-1 py-2 px-3 rounded-xl text-stone-600 hover:text-stone-900 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition cursor-pointer">
+          <span class="material-symbols-rounded text-base sm:text-lg text-amber-600">vpn_key</span>
+          <span>Generator & Lisensi</span>
+        </button>
+      </div>
+
+      <!-- ==================== TAB CONTENT: MONITORING TOKO MITRA ==================== -->
+      <div id="saStoresTabContent" class="flex flex-col gap-3">
+        <!-- Ringkasan KPI (Mobile-Optimized 2x2 Grid) -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         <!-- 1. Total Toko -->
         <div class="bg-white p-3 sm:p-3.5 rounded-2xl border border-stone-200 flex flex-col justify-between shadow-xs">
           <div class="flex items-center justify-between gap-1.5">
@@ -1916,6 +1932,124 @@
             </tbody>
           </table>
         </div>
+      </div>
+      </div><!-- End saStoresTabContent -->
+
+      <!-- ==================== TAB CONTENT: GENERATOR & LISENSI SAAS ==================== -->
+      <div id="saLicensesTabContent" class="hidden flex-col gap-3.5">
+        
+        <!-- License Generator Card -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-xs flex flex-col gap-4">
+          <div class="flex items-center justify-between gap-2 border-b border-stone-100 pb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-800 border border-amber-200/70 flex items-center justify-center shrink-0">
+                <span class="material-symbols-rounded text-xl">vpn_key</span>
+              </div>
+              <div>
+                <h3 class="text-sm sm:text-base font-black text-stone-900 leading-tight">Generator Lisensi Resmi Sekali Beli (Lifetime)</h3>
+                <p class="text-xs text-stone-500 mt-0.5">Buat kode lisensi baru untuk klien setelah konfirmasi pembayaran.</p>
+              </div>
+            </div>
+          </div>
+
+          <form id="saLicenseGenForm" onsubmit="window.KasirApp.handleGenerateLicenseSubmit(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <label class="block text-stone-700 font-bold mb-1 text-xs">Nama Klien / Toko UMKM <span class="text-rose-500">*</span>:</label>
+              <input type="text" id="saGenClientName" required placeholder="Misal: Kedai Kopi Melati"
+                class="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs sm:text-sm font-bold text-stone-900 outline-none focus:border-stone-900 focus:bg-white transition">
+            </div>
+
+            <div>
+              <label class="block text-stone-700 font-bold mb-1 text-xs">Nomor WhatsApp Klien <span class="text-rose-500">*</span>:</label>
+              <input type="tel" id="saGenClientPhone" required placeholder="Misal: 08123456789"
+                class="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs sm:text-sm font-bold text-stone-900 outline-none focus:border-stone-900 focus:bg-white transition">
+            </div>
+
+            <div>
+              <label class="block text-stone-700 font-bold mb-1 text-xs">Paket Lisensi:</label>
+              <select id="saGenTier"
+                class="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs sm:text-sm font-bold text-stone-900 outline-none focus:border-stone-900 focus:bg-white transition">
+                <option value="LT">Lifetime Sekali Beli (Standar Retail)</option>
+                <option value="PR">Pro Lifetime (Multi-Kasir & Cabang)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-stone-700 font-bold mb-1 text-xs">Catatan Pembayaran:</label>
+              <input type="text" id="saGenNotes" placeholder="Misal: Lunas BCA / Mandiri"
+                class="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs sm:text-sm text-stone-900 outline-none focus:border-stone-900 focus:bg-white transition">
+            </div>
+
+            <div class="sm:col-span-2 lg:col-span-4 flex items-center justify-end pt-1">
+              <button type="submit" id="saBtnGenerateLicense"
+                class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs sm:text-sm shadow-sm transition active:scale-95 flex items-center gap-2 cursor-pointer">
+                <span class="material-symbols-rounded text-lg">add_task</span>
+                <span>Generate Lisensi Resmi</span>
+              </button>
+            </div>
+          </form>
+
+          <!-- Kotak Hasil Generate Baru (Tampil saat lisensi berhasil dibuat) -->
+          <div id="saGeneratedResultBox" class="hidden p-4 rounded-2xl bg-emerald-50/90 border border-emerald-200/90 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+            <div class="flex items-center gap-3 min-w-0 w-full sm:w-auto">
+              <div class="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <span class="material-symbols-rounded text-xl">key</span>
+              </div>
+              <div class="min-w-0">
+                <p class="text-[10.5px] uppercase font-black tracking-wider text-emerald-800">Lisensi Berhasil Dibuat!</p>
+                <p id="saGeneratedKeyDisplay" class="font-mono font-black text-sm sm:text-base text-stone-900 tracking-wider select-all">ARIS-XXXX-XXXX-XXXX-XXXX</p>
+                <p id="saGeneratedClientDisplay" class="text-[11px] text-stone-600 truncate">Klien: Nama (08123...)</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <button type="button" onclick="window.KasirApp.copyGeneratedLicenseCode()"
+                class="px-3 py-2 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-stone-800 font-bold text-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer shadow-2xs">
+                <span class="material-symbols-rounded text-base text-stone-600">content_copy</span>
+                <span>Salin Kode</span>
+              </button>
+              <button type="button" onclick="window.KasirApp.shareGeneratedLicenseViaWA()"
+                class="px-3 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer shadow-xs">
+                <span class="material-symbols-rounded text-base">chat</span>
+                <span>Kirim WhatsApp</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabel Daftar Seluruh Lisensi -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-xs flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-2 border-b border-stone-100 pb-3">
+            <div>
+              <h4 class="text-sm font-black text-stone-900">Riwayat Lisensi Diterbitkan</h4>
+              <p class="text-xs text-stone-500 mt-0.5">Monitoring pemakaian lisensi & status aktivasi toko.</p>
+            </div>
+            <button type="button" onclick="window.KasirApp.renderSuperAdminLicensesTable()"
+              class="px-2.5 py-1.5 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold text-xs flex items-center gap-1 transition cursor-pointer">
+              <span class="material-symbols-rounded text-sm">sync</span>
+              <span>Segarkan</span>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-stone-50 text-stone-500 uppercase font-black text-[10px] tracking-wider border-b border-stone-200/80">
+                <tr>
+                  <th class="py-2.5 px-3">Kode Lisensi</th>
+                  <th class="py-2.5 px-3">Klien / Toko</th>
+                  <th class="py-2.5 px-3">Paket</th>
+                  <th class="py-2.5 px-3">Status</th>
+                  <th class="py-2.5 px-3">Dibuat</th>
+                  <th class="py-2.5 px-3">Toko Pengklaim</th>
+                  <th class="py-2.5 px-3 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="saLicensesTableBody" class="divide-y divide-stone-100 text-stone-800">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -3725,6 +3859,27 @@ Kopi susu 7k"
       <!-- Body -->
       <div class="p-4 flex flex-col gap-3.5 overflow-y-auto custom-scrollbar">
         
+        <!-- Banner Status Lisensi Toko (Lifetime vs Demo) -->
+        <div id="cloudModalLicenseBox" class="p-3 rounded-2xl bg-stone-50 border border-stone-200/90 flex items-center justify-between gap-2.5 shadow-2xs">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div id="cloudModalLicenseIconContainer" class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 border border-emerald-200/70">
+              <span id="cloudModalLicenseIcon" class="material-symbols-rounded text-lg">verified</span>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] uppercase font-black tracking-wider text-stone-400">Lisensi</span>
+                <span id="cloudModalLicenseBadge" class="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-950 text-[10px] font-black">Lifetime Resmi</span>
+              </div>
+              <p id="cloudModalLicenseSub" class="text-[10.5px] text-stone-500 truncate">Akses tak terbatas selamanya</p>
+            </div>
+          </div>
+          <button type="button" id="cloudModalActivateLicenseBtn" onclick="closeCloudModal(); window.KasirApp.openActivateLicenseModal();"
+            class="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-extrabold text-[11px] transition shadow-2xs shrink-0 cursor-pointer hidden flex items-center gap-1">
+            <span class="material-symbols-rounded text-sm">vpn_key</span>
+            <span>Aktivasi</span>
+          </button>
+        </div>
+
         <!-- Kartu Status Peran Aktif & Ganti Role -->
         <div id="cloudModalRoleCard" class="p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200/90 flex items-center justify-between gap-3 shadow-2xs">
           <div class="flex items-center gap-3 min-w-0">
@@ -4015,6 +4170,21 @@ Kopi susu 7k"
 
       <!-- Tab Content: DAFTAR TOKO BARU -->
       <div id="authContentRegister" class="p-5 flex flex-col gap-3.5 overflow-y-auto hidden">
+        
+        <!-- Segmented Mode: Toko Resmi vs Mode Demo -->
+        <div class="flex items-center bg-stone-100 p-1 rounded-xl border border-stone-200/80">
+          <button id="btnRegModeLicensed" type="button" onclick="window.KasirApp.switchRegisterMode('licensed')"
+            class="flex-1 py-1.5 rounded-lg text-xs font-black transition bg-emerald-700 text-white shadow-2xs flex items-center justify-center gap-1 cursor-pointer">
+            <span class="material-symbols-rounded text-sm">verified</span>
+            <span>Lisensi Resmi</span>
+          </button>
+          <button id="btnRegModeDemo" type="button" onclick="window.KasirApp.switchRegisterMode('demo')"
+            class="flex-1 py-1.5 rounded-lg text-xs font-bold transition text-stone-600 hover:text-stone-900 flex items-center justify-center gap-1 cursor-pointer">
+            <span class="material-symbols-rounded text-sm">science</span>
+            <span>Coba Demo (25 Tx)</span>
+          </button>
+        </div>
+
         <form id="storeRegisterForm" onsubmit="handleStoreRegisterSubmit(event)" class="flex flex-col gap-3">
           <div>
             <label class="block text-stone-700 font-bold mb-1 text-xs">Nama Usaha / Warung / Toko <span class="text-rose-500">*</span>:</label>
@@ -4032,7 +4202,32 @@ Kopi susu 7k"
             <label class="block text-stone-700 font-bold mb-1 text-xs">Nomor WhatsApp Toko <span class="text-rose-500">*</span>:</label>
             <input type="tel" id="regPhone" required placeholder="Misal: 081234567890"
               class="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-emerald-600 font-bold text-stone-900 text-sm outline-none">
-            <p class="text-[10px] text-stone-500 mt-0.5">Digunakan untuk kirim laporan harian & bantuan teknis</p>
+            <p class="text-[10px] text-stone-500 mt-0.5">Digunakan untuk konfirmasi aktivasi & bantuan teknis</p>
+          </div>
+
+          <!-- Input Kode Lisensi Resmi (Tampil saat mode Lisensi Resmi) -->
+          <div id="regLicenseGroup">
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-stone-700 font-bold text-xs">Kode Lisensi Resmi <span class="text-rose-500">*</span>:</label>
+              <a href="https://wa.me/6281345028895?text=Halo%20Admin%20Aristotle%20POS,%20saya%20ingin%20membeli%20kode%20lisensi%20toko%20resmi." target="_blank" class="text-[10.5px] font-bold text-emerald-700 hover:underline flex items-center gap-0.5">
+                <span class="material-symbols-rounded text-xs">support_agent</span>
+                <span>Beli Lisensi via WA</span>
+              </a>
+            </div>
+            <input type="text" id="regLicenseKey" maxlength="24" placeholder="ARIS-XXXX-XXXX-XXXX-XXXX"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-emerald-600 font-mono font-bold text-stone-900 text-center tracking-widest text-sm outline-none uppercase">
+            <p class="text-[10px] text-stone-500 mt-0.5">Kode unik 24 karakter sekali beli seumur hidup dari developer</p>
+          </div>
+
+          <!-- Banner Mode Demo (Tampil saat mode Coba Demo) -->
+          <div id="regDemoNotice" class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs hidden flex-col gap-1">
+            <div class="flex items-center gap-1.5 font-bold">
+              <span class="material-symbols-rounded text-base text-amber-700">science</span>
+              <span>Batasan Mode Demo UMKM:</span>
+            </div>
+            <p class="text-[11px] text-amber-800 leading-relaxed">
+              Mode demo dibatasi <strong>maksimal 25 transaksi</strong> & 10 menu produk. Struk kasir akan mencantumkan tanda air demo. Anda dapat meng-upgrade ke lisensi resmi kapan saja tanpa kehilangan data.
+            </p>
           </div>
 
           <div>
@@ -4046,12 +4241,13 @@ Kopi susu 7k"
                 <span class="material-symbols-rounded text-lg">visibility</span>
               </button>
             </div>
-            <p class="text-[10px] text-stone-500 mt-0.5">PIN / Sandi untuk mengunci menu & laporan dari kasir (min. 6 karakter)</p>
+            <p class="text-[10px] text-stone-500 mt-0.5">PIN untuk mengunci menu & laporan dari kasir (min. 6 karakter)</p>
           </div>
 
-          <button type="submit"
-            class="w-full py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-sm shadow-sm transition active:scale-95 touch-target-large mt-2">
-            Daftar Toko
+          <button type="submit" id="btnSubmitRegisterStore"
+            class="w-full py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-sm shadow-sm transition active:scale-95 touch-target-large mt-2 flex items-center justify-center gap-1.5 cursor-pointer">
+            <span class="material-symbols-rounded text-lg" id="btnSubmitRegisterStoreIcon">verified</span>
+            <span id="btnSubmitRegisterStoreText">Daftar & Aktivasi Lisensi Resmi</span>
           </button>
         </form>
       </div>
@@ -4059,10 +4255,100 @@ Kopi susu 7k"
       <!-- Watermark & Support -->
       <div class="p-3 bg-stone-50 border-t border-stone-100 flex flex-col items-center gap-1.5 text-center text-[10px] text-stone-500">
         <div>
-          Butuh bantuan pendaftaran? WhatsApp: <a href="https://wa.me/6281345028895" target="_blank" class="font-bold text-emerald-800 hover:underline">081345028895</a>
+          Butuh bantuan pendaftaran atau lisensi? WhatsApp: <a href="https://wa.me/6281345028895" target="_blank" class="font-bold text-emerald-800 hover:underline">081345028895</a>
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: AKTIVASI LISENSI RESMI ==================== -->
+  <div id="activateLicenseModal"
+    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div
+      class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-stone-200 p-5 flex flex-col gap-3.5 text-center animate-in zoom-in-95 my-auto font-sans">
+      
+      <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto border border-amber-200/80 shadow-xs">
+        <span class="material-symbols-rounded text-2xl">vpn_key</span>
+      </div>
+
+      <div>
+        <h3 class="text-base sm:text-lg font-black text-stone-900 leading-tight">Aktivasi Lisensi Resmi</h3>
+        <p class="text-xs text-stone-500 mt-1">Buka kuota transaksi & nikmati sistem Aristotle POS tanpa batas seumur hidup.</p>
+      </div>
+
+      <form id="activateLicenseForm" onsubmit="window.KasirApp.handleActivateLicenseSubmit(event)" class="flex flex-col gap-3 text-left">
+        <div>
+          <label class="block text-stone-700 font-bold mb-1 text-xs">Masukkan Kode Lisensi Toko:</label>
+          <input type="text" id="activateLicenseKeyInput" required maxlength="24" placeholder="ARIS-XXXX-XXXX-XXXX-XXXX"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-emerald-600 font-mono font-bold text-center tracking-widest text-sm text-stone-900 outline-none uppercase">
+          <p class="text-[10px] text-stone-400 mt-1 text-center">Format 24 karakter dengan tanda strip (-)</p>
+        </div>
+
+        <button type="submit" id="btnSubmitActivateLicense"
+          class="w-full py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs sm:text-sm shadow-sm transition active:scale-95 cursor-pointer mt-1 flex items-center justify-center gap-1.5">
+          <span class="material-symbols-rounded text-base">verified</span>
+          <span>Aktivasi Sekarang</span>
+        </button>
+
+        <button type="button" onclick="window.KasirApp.closeActivateLicenseModal()"
+          class="w-full py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold text-xs transition cursor-pointer">
+          Batal
+        </button>
+      </form>
+
+      <div class="pt-2 border-t border-stone-100 text-[11px] text-stone-500">
+        Belum punya lisensi? <a href="https://wa.me/6281345028895?text=Halo%20Admin%20Aristotle%20POS,%20saya%20ingin%20membeli%20lisensi%20resmi%20untuk%20toko%20saya." target="_blank" class="font-bold text-emerald-700 hover:underline">Beli Lisensi via WhatsApp</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: BATAS KUOTA DEMO TERCAPAI ==================== -->
+  <div id="quotaLimitModal"
+    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div
+      class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-stone-200 p-5 flex flex-col gap-3.5 text-center animate-in zoom-in-95 my-auto font-sans">
+      
+      <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center mx-auto border border-rose-200/80 shadow-xs animate-bounce">
+        <span class="material-symbols-rounded text-2xl">lock_clock</span>
+      </div>
+
+      <div>
+        <h3 class="text-base sm:text-lg font-black text-stone-900 leading-tight">Batas Kuota Demo Tercapai</h3>
+        <p class="text-xs text-stone-500 mt-1">Anda telah mencapai batas <strong class="text-stone-800">25 transaksi</strong> akun demo. Untuk melanjutkan kasir tanpa batas & cetak struk resmi, silakan aktivasi lisensi.</p>
+      </div>
+
+      <div class="p-3 rounded-2xl bg-amber-50 border border-amber-200/80 text-left text-xs text-amber-950 flex flex-col gap-1">
+        <p class="font-bold flex items-center gap-1.5">
+          <span class="material-symbols-rounded text-sm text-amber-700">verified</span>
+          <span>Keunggulan Lisensi Sekali Beli:</span>
+        </p>
+        <ul class="text-[11px] text-amber-900 list-disc list-inside space-y-0.5 pt-0.5">
+          <li>Transaksi penjualan tak terbatas seumur hidup</li>
+          <li>Menu produk & kategori bebas tanpa batas</li>
+          <li>Struk thermal bersih tanpa watermark demo</li>
+          <li>Sinkronisasi multi-perangkat (HP Staf)</li>
+        </ul>
+      </div>
+
+      <div class="flex flex-col gap-2 pt-1">
+        <button type="button" onclick="window.KasirApp.closeQuotaLimitModal(); window.KasirApp.openActivateLicenseModal();"
+          class="w-full py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs sm:text-sm shadow-sm transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+          <span class="material-symbols-rounded text-base">vpn_key</span>
+          <span>Masukkan Kode Lisensi</span>
+        </button>
+
+        <a href="https://wa.me/6281345028895?text=Halo%20Admin%20Aristotle%20POS,%20kuota%20demo%20toko%20saya%20sudah%20habis%20(25/25).%20Saya%20ingin%20membeli%20lisensi%20resmi." target="_blank"
+          class="w-full py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold text-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1">
+          <span class="material-symbols-rounded text-sm">chat</span>
+          <span>Beli Lisensi via WhatsApp</span>
+        </a>
+
+        <button type="button" onclick="window.KasirApp.closeQuotaLimitModal()"
+          class="w-full py-1.5 text-stone-500 hover:text-stone-800 font-bold text-xs transition cursor-pointer">
+          Tutup
+        </button>
+      </div>
     </div>
   </div>
 
@@ -4458,7 +4744,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.60</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.61</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -4618,7 +4904,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.60</span>
+    <span id="appVersionBadge" class="hidden">v1.2.61</span>
   </div>
 
   <!-- Main JavaScript App Module -->

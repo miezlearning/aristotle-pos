@@ -3,6 +3,7 @@ import { formatRp, escapeHtml, showToast, showConfirmDialog, playClick, compress
 import { renderProducts, renderCart } from './pos.js';
 import { syncSaveProduct, syncDeleteProduct, syncBatchDeleteProducts, syncClearAllProducts, forceUploadAllToCloud, syncSaveQrisPayload } from '../firebase.js';
 import { decodeQRFromImage, renderQRToContainer, parseQRISMetadata } from '../qris.js';
+import { getStoreLicenseStatus, DEMO_MAX_PRODUCTS } from './license.js';
 
 // State seleksi & filter internal tabel admin
 let selectedAdminProductIds = new Set();
@@ -504,6 +505,19 @@ export function saveProduct(e) {
   if (!name || isNaN(price) || price <= 0) {
     showToast('Isi nama dan harga', 'warning');
     return;
+  }
+
+  // Cek Batasan Jumlah Produk untuk Akun Demo (Maksimal 10 Produk)
+  if (!id) {
+    const licStatus = getStoreLicenseStatus(state.storeId);
+    if (!licStatus.isLicensed && state.products && state.products.length >= DEMO_MAX_PRODUCTS) {
+      playClick('error');
+      showToast(`Batas Demo: Akun demo dibatasi maksimal ${DEMO_MAX_PRODUCTS} produk. Silakan aktivasi lisensi resmi seumur hidup!`, 'warning', 5000);
+      if (window.KasirApp && typeof window.KasirApp.openActivateLicenseModal === 'function') {
+        window.KasirApp.openActivateLicenseModal();
+      }
+      return;
+    }
   }
 
   // Jika input stok diisi angka -> aktifkan batasan stok porsi. Jika dikosongkan -> stok bebas.
@@ -1342,6 +1356,20 @@ export function applyBulkMenuImport() {
     trackStock: false,
     stock: null
   }));
+
+  // Cek Batasan Jumlah Produk untuk Akun Demo
+  const licStatus = getStoreLicenseStatus(state.storeId);
+  if (!licStatus.isLicensed) {
+    const projectedCount = mode === 'replace' ? processedItems.length : ((state.products ? state.products.length : 0) + processedItems.length);
+    if (projectedCount > DEMO_MAX_PRODUCTS) {
+      playClick('error');
+      showToast(`Batas Demo: Akun demo dibatasi maksimal ${DEMO_MAX_PRODUCTS} produk. Total (${projectedCount}) melebihi batas. Silakan aktivasi lisensi resmi!`, 'warning', 5000);
+      if (window.KasirApp && typeof window.KasirApp.openActivateLicenseModal === 'function') {
+        window.KasirApp.openActivateLicenseModal();
+      }
+      return;
+    }
+  }
 
   if (mode === 'replace') {
     state.products = [...processedItems];

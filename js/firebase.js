@@ -1748,4 +1748,183 @@ export async function fetchHostPresenceDirect() {
   return null;
 }
 
+// ==================== SAAS LICENSE MANAGEMENT & VERIFICATION ====================
+
+/**
+ * Super Admin: Buat & Simpan Kode Lisensi Baru ke Firestore
+ */
+export async function superAdminGenerateLicense(licenseData) {
+  if (!licenseData || !licenseData.licenseKey) {
+    return { success: false, message: 'Kode lisensi tidak valid' };
+  }
+  if (!db) return { success: false, message: 'Database cloud belum terhubung' };
+
+  try {
+    const key = String(licenseData.licenseKey).trim().toUpperCase();
+    const licRef = doc(db, 'licenses', key);
+    
+    const existing = await getDoc(licRef);
+    if (existing.exists()) {
+      return { success: false, message: 'Kode lisensi ini sudah pernah dibuat sebelumnya' };
+    }
+
+    const docData = {
+      licenseKey: key,
+      tier: licenseData.tier || 'LIFETIME_STANDARD',
+      clientName: licenseData.clientName || 'UMKM Mitra',
+      clientPhone: licenseData.clientPhone || '',
+      notes: licenseData.notes || '',
+      status: 'active', // 'active' (tersedia) | 'claimed' (sudah dipakai) | 'revoked' (dibekukan)
+      claimedByStoreId: null,
+      claimedAt: null,
+      claimedDevice: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    await setDoc(licRef, docData);
+    return { success: true, license: docData };
+  } catch (err) {
+    console.error('Error in superAdminGenerateLicense:', err);
+    return { success: false, message: err.message || 'Gagal menyimpan lisensi ke cloud' };
+  }
+}
+
+/**
+ * Super Admin: Ambil Seluruh Daftar Lisensi
+ */
+export async function superAdminFetchAllLicenses() {
+  if (!db) return [];
+  try {
+    const q = query(collection(db, 'licenses'), orderBy('createdAt', 'desc'), limit(100));
+    const snap = await getDocs(q);
+    const list = [];
+    snap.forEach(docSnap => {
+      list.push(docSnap.data());
+    });
+    return list;
+  } catch (err) {
+    console.warn('Fetch all licenses fallback without orderBy index:', err);
+    try {
+      const snap = await getDocs(collection(db, 'licenses'));
+      const list = [];
+      snap.forEach(docSnap => {
+        list.push(docSnap.data());
+      });
+      return list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    } catch (e2) {
+      console.error('Failed to fetch licenses:', e2);
+      return [];
+    }
+  }
+}
+
+/**
+ * Super Admin: Bekukan atau cabut lisensi
+ */
+export async function superAdminRevokeLicense(licenseKey) {
+  if (!db || !licenseKey) return false;
+  try {
+    const key = String(licenseKey).trim().toUpperCase();
+    const licRef = doc(db, 'licenses', key);
+    await setDoc(licRef, {
+      status: 'revoked',
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    return true;
+  } catch (err) {
+    console.error('Failed to revoke license:', err);
+    return false;
+  }
+}
+
+/**
+ * Middleware: Verifikasi dan Klaim Lisensi untuk Toko Baru / Upgrade Toko
+ */
+export async function verifyAndClaimLicense(licenseKey, storeId, deviceFingerprint) {
+  if (!licenseKey) return { success: false, message: 'Kode lisensi wajib diisi' };
+  const key = String(licenseKey).trim().toUpperCase();
+  const cleanId = String(storeId).toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+
+  if (!db) {
+    return {
+      success: true,
+      tier: key.includes('-PR') ? 'PRO_LIFETIME' : 'LIFETIME_STANDARD',
+      licenseKey: key,
+      isOfflineValidated: true
+    };
+  }
+
+  try {
+    const licRef = doc(db, 'licenses', key);
+    const licSnap = await getDoc(licRef);
+
+    if (!licSnap.exists()) {
+      return { 
+        success: false, 
+        message: 'Kode lisensi tidak terdaftar di sistem pusat Aristotle POS. Pastikan Anda memasukkan lisensi resmi.' 
+      };
+    }
+
+    const licData = licSnap.data();
+
+    if (licData.status === 'revoked') {
+      return { 
+        success: false, 
+        message: 'Kode lisensi ini telah dibekukan / dicabut oleh developer.' 
+      };
+    }
+
+    if (licData.status === 'claimed' && licData.claimedByStoreId && licData.claimedByStoreId !== cleanId) {
+      return { 
+        success: false, 
+        message: `Kode lisensi ini sudah digunakan oleh toko lain (${licData.claimedByStoreId}). Setiap toko wajib memiliki lisensi unik tersendiri.` 
+      };
+    }
+
+    const claimTime = new Date().toISOString();
+    await setDoc(licRef, {
+      status: 'claimed',
+      claimedByStoreId: cleanId,
+      claimedAt: licData.claimedAt || claimTime,
+      claimedDevice: deviceFingerprint || null,
+      updatedAt: claimTime
+    }, { merge: true });
+
+    const regRef = doc(db, 'stores_registry', cleanId);
+    await setDoc(regRef, {
+      licenseStatus: 'licensed',
+      licenseKey: key,
+      licenseTier: licData.tier || 'LIFETIME_STANDARD',
+      licensedAt: claimTime,
+      updatedAt: claimTime
+    }, { merge: true });
+
+    const confRef = doc(db, 'stores', cleanId, 'data', 'config');
+    await setDoc(confRef, {
+      license: {
+        isLicensed: true,
+        tier: licData.tier || 'LIFETIME_STANDARD',
+        licenseKey: key,
+        activatedAt: claimTime
+      },
+      updatedAt: claimTime
+    }, { merge: true });
+
+    return {
+      success: true,
+      tier: licData.tier || 'LIFETIME_STANDARD',
+      licenseKey: key,
+      clientName: licData.clientName
+    };
+  } catch (err) {
+    console.error('Error verifying license in cloud:', err);
+    return { 
+      success: false, 
+      message: 'Gagal memvalidasi lisensi: ' + (err.message || 'Koneksi error') 
+    };
+  }
+}
+
+
 

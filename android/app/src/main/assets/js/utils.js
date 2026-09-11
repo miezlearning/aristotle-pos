@@ -23,9 +23,11 @@ const unlockAudio = () => {
     audioCtx.resume().catch(() => {});
   }
 };
-window.addEventListener('click', unlockAudio, { capture: true, passive: true });
-window.addEventListener('touchstart', unlockAudio, { capture: true, passive: true });
-window.addEventListener('keydown', unlockAudio, { capture: true, passive: true });
+if (typeof window !== 'undefined') {
+  window.addEventListener('click', unlockAudio, { capture: true, passive: true });
+  window.addEventListener('touchstart', unlockAudio, { capture: true, passive: true });
+  window.addEventListener('keydown', unlockAudio, { capture: true, passive: true });
+}
 
 function getAudioContext() {
   if (!hasUserInteracted) return null;

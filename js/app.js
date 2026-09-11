@@ -55,8 +55,16 @@ import {
   loginWithGoogleOwner,
   logoutGoogleOwner,
   fetchStoresByOwner,
-  linkStoreToOwner
+  linkStoreToOwner,
+  verifyAndClaimLicense
 } from './firebase.js';
+import { 
+  getStoreLicenseStatus, 
+  setStoreLicenseLocal, 
+  validateLicenseChecksumAlgorithm, 
+  checkDemoTransactionLimit, 
+  getOrCreateDeviceFingerprint 
+} from './modules/license.js';
 
 let pendingTargetView = null;
 
@@ -253,6 +261,7 @@ export function openCloudModal() {
     updatePinButtonUI();
     updateCloudOwnerAccountUI();
     updateHeaderRoleBadgeUI();
+    updateStoreLicenseUI();
     modal.classList.remove('hidden');
   }
 }
@@ -261,6 +270,46 @@ export function closeCloudModal() {
   playClick('pop');
   const modal = document.getElementById('cloudModal');
   if (modal) modal.classList.add('hidden');
+}
+
+export function updateStoreLicenseUI() {
+  if (!state.storeId) return;
+  const status = getStoreLicenseStatus(state.storeId);
+  const licenseBox = document.getElementById('cloudModalLicenseBox');
+  const iconContainer = document.getElementById('cloudModalLicenseIconContainer');
+  const icon = document.getElementById('cloudModalLicenseIcon');
+  const badge = document.getElementById('cloudModalLicenseBadge');
+  const sub = document.getElementById('cloudModalLicenseSub');
+  const btnActivate = document.getElementById('cloudModalActivateLicenseBtn');
+
+  if (!licenseBox) return;
+
+  if (status.isLicensed) {
+    if (iconContainer) iconContainer.className = 'w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 border border-emerald-200/70';
+    if (icon) icon.textContent = 'verified';
+    if (badge) {
+      badge.className = 'px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-950 text-[10px] font-black';
+      badge.textContent = status.tier === 'PRO_LIFETIME' ? 'Pro Lifetime' : 'Lifetime Resmi';
+    }
+    if (sub) {
+      const maskedKey = status.licenseKey ? `${status.licenseKey.substring(0, 9)}...${status.licenseKey.substring(status.licenseKey.length - 4)}` : 'Aktif';
+      sub.textContent = `Akses tak terbatas (${maskedKey})`;
+    }
+    if (btnActivate) btnActivate.classList.add('hidden');
+  } else {
+    const currentTx = state.history ? state.history.length : 0;
+    const remaining = Math.max(0, 25 - currentTx);
+    if (iconContainer) iconContainer.className = 'w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 border border-amber-200/70';
+    if (icon) icon.textContent = 'science';
+    if (badge) {
+      badge.className = 'px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-950 text-[10px] font-black';
+      badge.textContent = 'Akun Demo (25 Tx)';
+    }
+    if (sub) {
+      sub.textContent = `Sisa Kuota: ${remaining} / 25 Transaksi`;
+    }
+    if (btnActivate) btnActivate.classList.remove('hidden');
+  }
 }
 
 export function copyStoreShareLink() {
@@ -442,6 +491,11 @@ export function quickDemoStore() {
       cashierName: 'Kasir Demo'
     }));
     localStorage.setItem(GLOBAL_STORAGE_KEYS.ACTIVE_STORE_ID, demoId);
+    setStoreLicenseLocal(demoId, {
+      isLicensed: false,
+      tier: 'DEMO',
+      registeredAt: new Date().toISOString()
+    });
     registerStoreOnDevice({
       id: demoId,
       name: demoProfile.name,
@@ -607,17 +661,58 @@ export async function handleStoreLoginSubmit(e) {
   }
 }
 
-export function handleStoreRegisterSubmit(e) {
+let currentRegisterMode = 'licensed';
+
+export function switchRegisterMode(mode) {
+  playClick('pop');
+  currentRegisterMode = mode === 'demo' ? 'demo' : 'licensed';
+
+  const btnLicensed = document.getElementById('btnRegModeLicensed');
+  const btnDemo = document.getElementById('btnRegModeDemo');
+  const licenseGroup = document.getElementById('regLicenseGroup');
+  const demoNotice = document.getElementById('regDemoNotice');
+  const submitIcon = document.getElementById('btnSubmitRegisterStoreIcon');
+  const submitText = document.getElementById('btnSubmitRegisterStoreText');
+
+  if (currentRegisterMode === 'licensed') {
+    if (btnLicensed) {
+      btnLicensed.className = 'flex-1 py-1.5 rounded-lg text-xs font-black transition bg-emerald-700 text-white shadow-2xs flex items-center justify-center gap-1 cursor-pointer';
+    }
+    if (btnDemo) {
+      btnDemo.className = 'flex-1 py-1.5 rounded-lg text-xs font-bold transition text-stone-600 hover:text-stone-900 flex items-center justify-center gap-1 cursor-pointer';
+    }
+    if (licenseGroup) licenseGroup.classList.remove('hidden');
+    if (demoNotice) demoNotice.classList.add('hidden');
+    if (submitIcon) submitIcon.textContent = 'verified';
+    if (submitText) submitText.textContent = 'Daftar & Aktivasi Lisensi Resmi';
+  } else {
+    if (btnLicensed) {
+      btnLicensed.className = 'flex-1 py-1.5 rounded-lg text-xs font-bold transition text-stone-600 hover:text-stone-900 flex items-center justify-center gap-1 cursor-pointer';
+    }
+    if (btnDemo) {
+      btnDemo.className = 'flex-1 py-1.5 rounded-lg text-xs font-black transition bg-amber-600 text-white shadow-2xs flex items-center justify-center gap-1 cursor-pointer';
+    }
+    if (licenseGroup) licenseGroup.classList.add('hidden');
+    if (demoNotice) demoNotice.classList.remove('hidden');
+    if (submitIcon) submitIcon.textContent = 'science';
+    if (submitText) submitText.textContent = 'Mulai Coba Demo (25 Transaksi)';
+  }
+}
+
+export async function handleStoreRegisterSubmit(e) {
   if (e) e.preventDefault();
   const nameInput = document.getElementById('regStoreName');
   const ownerInput = document.getElementById('regOwnerName');
   const phoneInput = document.getElementById('regPhone');
   const pinInput = document.getElementById('regPin');
+  const licenseInput = document.getElementById('regLicenseKey');
+  const submitBtn = document.getElementById('btnSubmitRegisterStore');
 
   const storeName = nameInput ? nameInput.value.trim() : '';
   const ownerName = ownerInput ? ownerInput.value.trim() : '';
   const phone = phoneInput ? phoneInput.value.trim() : '';
   const pin = pinInput ? pinInput.value.trim() : '123456';
+  const licenseKey = licenseInput ? licenseInput.value.trim().toUpperCase() : '';
 
   if (!storeName || !ownerName || !phone) {
     showToast('Harap lengkapi semua kolom pendaftaran toko', 'warning');
@@ -628,6 +723,49 @@ export function handleStoreRegisterSubmit(e) {
   if (!cleanId) {
     showToast('Nama toko tidak valid', 'warning');
     return;
+  }
+
+  let claimTier = 'LIFETIME_STANDARD';
+
+  if (currentRegisterMode === 'licensed') {
+    if (!licenseKey) {
+      showToast('Harap masukkan Kode Lisensi Resmi, atau pilih mode Coba Demo jika ingin coba gratis.', 'warning', 4500);
+      if (licenseInput) licenseInput.focus();
+      return;
+    }
+
+    // 1. Validasi Kriptografis Algoritma Checksum Offline
+    const algoCheck = await validateLicenseChecksumAlgorithm(licenseKey);
+    if (!algoCheck.valid) {
+      playClick('error');
+      showToast(algoCheck.message || 'Kode lisensi tidak valid atau salah ketik!', 'danger', 4500);
+      if (licenseInput) licenseInput.focus();
+      return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-75');
+    }
+
+    try {
+      const fp = getOrCreateDeviceFingerprint();
+      const claimResult = await verifyAndClaimLicense(licenseKey, cleanId, fp);
+      if (!claimResult.success) {
+        playClick('error');
+        showToast(claimResult.message || 'Gagal memverifikasi lisensi ke server pusat', 'danger', 5000);
+        return;
+      }
+      claimTier = claimResult.tier || 'LIFETIME_STANDARD';
+    } catch (verErr) {
+      showToast('Koneksi verifikasi gagal: ' + verErr.message, 'error');
+      return;
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-75');
+      }
+    }
   }
 
   const newKeys = getStorageKeys(cleanId);
@@ -657,6 +795,21 @@ export function handleStoreRegisterSubmit(e) {
       phone
     });
 
+    if (currentRegisterMode === 'licensed') {
+      setStoreLicenseLocal(cleanId, {
+        isLicensed: true,
+        tier: claimTier,
+        licenseKey: licenseKey,
+        activatedAt: new Date().toISOString()
+      });
+    } else {
+      setStoreLicenseLocal(cleanId, {
+        isLicensed: false,
+        tier: 'DEMO',
+        registeredAt: new Date().toISOString()
+      });
+    }
+
     // Berikan starter menu produk contoh untuk toko baru jika masih kosong
     if (!localStorage.getItem(newKeys.PRODUCTS)) {
       localStorage.setItem(newKeys.PRODUCTS, JSON.stringify(DEFAULT_PRODUCTS));
@@ -675,8 +828,120 @@ export function handleStoreRegisterSubmit(e) {
   quickSelectStore(cleanId);
   syncSaveStoreProfile(newProfile);
   syncSaveStoreAuth(newAuth);
-  syncStoreToRegistry({ id: cleanId, name: storeName, ownerName, phone, pin: pin || '123456' });
-  showToast(`Toko [${storeName}] berhasil didaftarkan & dibuka!`, 'success');
+  syncStoreToRegistry({ 
+    id: cleanId, 
+    name: storeName, 
+    ownerName, 
+    phone, 
+    pin: pin || '123456',
+    isLicensed: currentRegisterMode === 'licensed',
+    tier: currentRegisterMode === 'licensed' ? claimTier : 'DEMO'
+  });
+
+  if (currentRegisterMode === 'licensed') {
+    showToast(`Toko [${storeName}] berhasil diaktifkan dengan Lisensi Resmi Sekali Beli!`, 'success', 5000);
+  } else {
+    showToast(`Toko [${storeName}] dibuka dalam Mode Demo (Maksimal 25 Transaksi).`, 'info', 5000);
+  }
+}
+
+export function openActivateLicenseModal() {
+  playClick('pop');
+  const modal = document.getElementById('activateLicenseModal');
+  const input = document.getElementById('activateLicenseKeyInput');
+  if (modal) {
+    if (input) {
+      input.value = '';
+      setTimeout(() => input.focus(), 150);
+    }
+    modal.classList.remove('hidden');
+  }
+}
+
+export function closeActivateLicenseModal() {
+  playClick('pop');
+  const modal = document.getElementById('activateLicenseModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+export async function handleActivateLicenseSubmit(e) {
+  if (e) e.preventDefault();
+  if (!state.storeId) {
+    showToast('Pilih atau buka toko terlebih dahulu', 'warning');
+    return;
+  }
+
+  const input = document.getElementById('activateLicenseKeyInput');
+  const submitBtn = document.getElementById('btnSubmitActivateLicense');
+  const licenseKey = input ? input.value.trim().toUpperCase() : '';
+
+  if (!licenseKey) {
+    showToast('Harap masukkan Kode Lisensi Resmi', 'warning');
+    if (input) input.focus();
+    return;
+  }
+
+  const algoCheck = await validateLicenseChecksumAlgorithm(licenseKey);
+  if (!algoCheck.valid) {
+    playClick('error');
+    showToast(algoCheck.message || 'Kode lisensi tidak valid atau salah ketik!', 'danger', 4500);
+    if (input) input.focus();
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <span class="material-symbols-rounded text-base animate-spin">sync</span>
+      <span>Memverifikasi Lisensi...</span>
+    `;
+  }
+
+  try {
+    const fp = getOrCreateDeviceFingerprint();
+    const claimRes = await verifyAndClaimLicense(licenseKey, state.storeId, fp);
+
+    if (!claimRes.success) {
+      playClick('error');
+      showToast(claimRes.message || 'Gagal memverifikasi lisensi', 'danger', 5000);
+      return;
+    }
+
+    playClick('success');
+    setStoreLicenseLocal(state.storeId, {
+      isLicensed: true,
+      tier: claimRes.tier || 'LIFETIME_STANDARD',
+      licenseKey: licenseKey,
+      activatedAt: new Date().toISOString()
+    });
+
+    closeActivateLicenseModal();
+    updateStoreLicenseUI();
+    showToast('🎉 Selamat! Lisensi Resmi Berhasil Diaktifkan Seumur Hidup. Transaksi kini tanpa batas!', 'success', 6000);
+  } catch (err) {
+    console.error('Activation error:', err);
+    showToast('Terjadi kesalahan aktivasi: ' + err.message, 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `
+        <span class="material-symbols-rounded text-base">verified</span>
+        <span>Aktivasi Sekarang</span>
+      `;
+    }
+  }
+}
+
+export function openQuotaLimitModal() {
+  playClick('error');
+  const modal = document.getElementById('quotaLimitModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+export function closeQuotaLimitModal() {
+  playClick('pop');
+  const modal = document.getElementById('quotaLimitModal');
+  if (modal) modal.classList.add('hidden');
 }
 
 // ================= PIN SECURITY & ROLE MANAGEMENT =================
@@ -2476,6 +2741,13 @@ const KasirApp = {
   renderSavedStoresList,
   handleStoreLoginSubmit,
   handleStoreRegisterSubmit,
+  switchRegisterMode,
+  openActivateLicenseModal,
+  closeActivateLicenseModal,
+  handleActivateLicenseSubmit,
+  openQuotaLimitModal,
+  closeQuotaLimitModal,
+  updateStoreLicenseUI,
   logoutStoreSession: logoutStore,
   quickSelectStore,
   openPinSecurityModal,
@@ -2485,8 +2757,16 @@ const KasirApp = {
   forceSyncCloud,
   showToast,
 
-  // Super Admin Monitoring
+  // Super Admin Monitoring & Licenses
   openSuperAdmin,
+  switchSuperAdminTab: superadmin.switchSuperAdminTab,
+  handleGenerateLicenseSubmit: superadmin.handleGenerateLicenseSubmit,
+  copyGeneratedLicenseCode: superadmin.copyGeneratedLicenseCode,
+  shareGeneratedLicenseViaWA: superadmin.shareGeneratedLicenseViaWA,
+  renderSuperAdminLicensesTable: superadmin.renderSuperAdminLicensesTable,
+  copySpecificLicenseCode: superadmin.copySpecificLicenseCode,
+  shareSpecificLicenseViaWA: superadmin.shareSpecificLicenseViaWA,
+  revokeLicenseAction: superadmin.revokeLicenseAction,
   openSuperAdminChangePin: superadmin.openSuperAdminChangePin,
   closeSuperAdminChangePinModal: superadmin.closeSuperAdminChangePinModal,
   handleSuperAdminChangePinSubmit: superadmin.handleSuperAdminChangePinSubmit,

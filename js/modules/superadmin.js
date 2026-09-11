@@ -12,14 +12,21 @@ import {
   superAdminUpdateStorePin,
   superAdminCreateStore,
   superAdminUpdateStore,
-  deleteStoreFromCloud 
+  deleteStoreFromCloud,
+  superAdminGenerateLicense,
+  superAdminFetchAllLicenses,
+  superAdminRevokeLicense
 } from '../firebase.js';
+import { generateOfficialLicenseKey } from './license.js';
 
 let superAdminStores = [];
+let superAdminLicenses = [];
 let searchQuery = '';
 let activeStatusFilter = 'all'; // 'all' | 'active_today' | 'current_store'
 let activeSortBy = 'revenue_desc'; // 'revenue_desc' | 'tx_desc' | 'name_asc' | 'id_asc'
 let viewMode = 'grid'; // 'grid' | 'table'
+let activeSuperAdminTab = 'stores'; // 'stores' | 'licenses'
+let lastGeneratedLicense = null;
 let isLoading = false;
 
 const SUPERADMIN_SESSION_KEY = 'superadmin_auth_session_v1';
@@ -858,6 +865,320 @@ export async function confirmSuperAdminDeleteStore() {
         <span class="material-symbols-rounded text-base">delete</span>
         <span>Hapus Toko</span>
       `;
+    }
+  }
+}
+
+// ==================== SUPER ADMIN SAAS LICENSE MANAGEMENT ====================
+
+/**
+ * Switch Super Admin Tab ('stores' vs 'licenses')
+ */
+export function switchSuperAdminTab(tab = 'stores') {
+  playClick('switch');
+  activeSuperAdminTab = tab;
+
+  const tabStoresBtn = document.getElementById('saTabStoresBtn');
+  const tabLicensesBtn = document.getElementById('saTabLicensesBtn');
+  const storesContent = document.getElementById('saStoresTabContent');
+  const licensesContent = document.getElementById('saLicensesTabContent');
+
+  if (tab === 'licenses') {
+    if (tabStoresBtn) {
+      tabStoresBtn.className = 'flex-1 py-2 px-3 rounded-xl text-stone-600 hover:text-stone-900 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition cursor-pointer';
+    }
+    if (tabLicensesBtn) {
+      tabLicensesBtn.className = 'flex-1 py-2 px-3 rounded-xl bg-white text-stone-900 font-extrabold text-xs sm:text-sm shadow-2xs flex items-center justify-center gap-1.5 transition cursor-pointer';
+    }
+    if (storesContent) storesContent.classList.add('hidden');
+    if (licensesContent) {
+      licensesContent.classList.remove('hidden');
+      licensesContent.classList.add('flex');
+    }
+    renderSuperAdminLicensesTable();
+  } else {
+    if (tabStoresBtn) {
+      tabStoresBtn.className = 'flex-1 py-2 px-3 rounded-xl bg-white text-stone-900 font-extrabold text-xs sm:text-sm shadow-2xs flex items-center justify-center gap-1.5 transition cursor-pointer';
+    }
+    if (tabLicensesBtn) {
+      tabLicensesBtn.className = 'flex-1 py-2 px-3 rounded-xl text-stone-600 hover:text-stone-900 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition cursor-pointer';
+    }
+    if (licensesContent) {
+      licensesContent.classList.add('hidden');
+      licensesContent.classList.remove('flex');
+    }
+    if (storesContent) storesContent.classList.remove('hidden');
+  }
+}
+
+/**
+ * Handle submit pada generator lisensi baru
+ */
+export async function handleGenerateLicenseSubmit(e) {
+  if (e) e.preventDefault();
+  playClick('pop');
+
+  const nameInput = document.getElementById('saGenClientName');
+  const phoneInput = document.getElementById('saGenClientPhone');
+  const tierSelect = document.getElementById('saGenTier');
+  const notesInput = document.getElementById('saGenNotes');
+  const submitBtn = document.getElementById('saBtnGenerateLicense');
+
+  const clientName = nameInput ? nameInput.value.trim() : '';
+  const clientPhone = phoneInput ? phoneInput.value.trim() : '';
+  const tierCode = tierSelect ? tierSelect.value : 'LT';
+  const notes = notesInput ? notesInput.value.trim() : '';
+
+  if (!clientName || !clientPhone) {
+    showToast('Harap isi nama klien dan nomor WhatsApp', 'warning');
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span class="material-symbols-rounded text-lg animate-spin">sync</span><span>Membuat...</span>`;
+  }
+
+  try {
+    // 1. Generate Cryptographic Key
+    const licenseKey = await generateOfficialLicenseKey(tierCode);
+    const tierName = tierCode === 'PR' ? 'PRO_LIFETIME' : 'LIFETIME_STANDARD';
+
+    // 2. Simpan ke Cloud Firestore
+    const res = await superAdminGenerateLicense({
+      licenseKey,
+      tier: tierName,
+      clientName,
+      clientPhone,
+      notes
+    });
+
+    if (res.success) {
+      lastGeneratedLicense = {
+        licenseKey,
+        tier: tierName,
+        clientName,
+        clientPhone
+      };
+
+      // Tampilkan box hasil
+      const resultBox = document.getElementById('saGeneratedResultBox');
+      const keyDisplay = document.getElementById('saGeneratedKeyDisplay');
+      const clientDisplay = document.getElementById('saGeneratedClientDisplay');
+
+      if (keyDisplay) keyDisplay.textContent = licenseKey;
+      if (clientDisplay) clientDisplay.textContent = `Klien: ${clientName} (${clientPhone}) • Paket: ${tierCode === 'PR' ? 'Pro Lifetime' : 'Lifetime Sekali Beli'}`;
+      if (resultBox) resultBox.classList.remove('hidden');
+
+      showToast(`Lisensi [${licenseKey}] berhasil dibuat!`, 'success', 3500);
+
+      // Reset form
+      if (nameInput) nameInput.value = '';
+      if (phoneInput) phoneInput.value = '';
+      if (notesInput) notesInput.value = '';
+
+      await renderSuperAdminLicensesTable();
+    } else {
+      showToast(res.message || 'Gagal menyimpan lisensi', 'error');
+    }
+  } catch (err) {
+    console.error('Error generating license:', err);
+    showToast('Terjadi kesalahan: ' + err.message, 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `
+        <span class="material-symbols-rounded text-lg">add_task</span>
+        <span>Generate Lisensi Resmi</span>
+      `;
+    }
+  }
+}
+
+/**
+ * Salin kode lisensi hasil generate ke clipboard
+ */
+export function copyGeneratedLicenseCode() {
+  if (!lastGeneratedLicense?.licenseKey) return;
+  navigator.clipboard.writeText(lastGeneratedLicense.licenseKey).then(() => {
+    playClick('tap');
+    showToast(`Kode lisensi ${lastGeneratedLicense.licenseKey} berhasil disalin!`, 'success');
+  }).catch(() => {
+    showToast('Gagal menyalin kode', 'warning');
+  });
+}
+
+/**
+ * Kirim lisensi hasil generate langsung via WhatsApp ke klien
+ */
+export function shareGeneratedLicenseViaWA() {
+  if (!lastGeneratedLicense?.licenseKey) return;
+  const { licenseKey, clientName, clientPhone, tier } = lastGeneratedLicense;
+  shareSpecificLicenseViaWA(licenseKey, clientName, clientPhone, tier);
+}
+
+/**
+ * Share WhatsApp formatter serbaguna
+ */
+export function shareSpecificLicenseViaWA(key, name = 'Mitra', phone = '', tier = 'LIFETIME_STANDARD') {
+  let cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
+  if (cleanPhone.startsWith('0')) {
+    cleanPhone = '62' + cleanPhone.substring(1);
+  }
+
+  const tierText = tier === 'PRO_LIFETIME' ? 'Pro Lifetime (Multi-Kasir)' : 'Lifetime Sekali Beli (Standar Retail)';
+
+  const text = `Halo Kak ${name},\n\nTerima kasih telah mempercayakan sistem kasir toko Anda kepada *Aristotle POS*! 🎉\n\nBerikut adalah *Kode Lisensi Resmi* seumur hidup untuk usaha Anda:\n\n🔑 *${key}*\nPaket: ${tierText}\nStatus: Aktif Selamanya (Tanpa Biaya Langganan Bulanan)\n\n*Langkah Aktivasi di Aplikasi:*\n1. Buka aplikasi Aristotle POS\n2. Klik menu *Daftar Toko Baru* (atau dari Profil Toko -> *Aktivasi Lisensi*)\n3. Masukkan kode lisensi resmi di atas\n4. Selesai! Kasir Anda langsung aktif penuh tanpa batas transaksi.\n\nSelamat berniaga dan semoga usaha Anda semakin maju, sukses & berkah selalu! 🙏✨`;
+
+  const encoded = encodeURIComponent(text);
+  const waUrl = cleanPhone 
+    ? `https://wa.me/${cleanPhone}?text=${encoded}`
+    : `https://wa.me/?text=${encoded}`;
+
+  window.open(waUrl, '_blank');
+}
+
+/**
+ * Salin kode lisensi tertentu dari baris tabel
+ */
+export function copySpecificLicenseCode(key) {
+  if (!key) return;
+  navigator.clipboard.writeText(key).then(() => {
+    playClick('tap');
+    showToast(`Kode [${key}] disalin!`, 'success');
+  }).catch(() => {
+    showToast('Gagal menyalin', 'warning');
+  });
+}
+
+/**
+ * Render tabel seluruh riwayat lisensi
+ */
+export async function renderSuperAdminLicensesTable() {
+  const tableBody = document.getElementById('saLicensesTableBody');
+  if (!tableBody) return;
+
+  tableBody.innerHTML = `
+    <tr>
+      <td colspan="7" class="py-6 text-center text-stone-400">
+        <span class="material-symbols-rounded text-xl animate-spin align-middle mr-1">sync</span>
+        <span>Memuat data lisensi...</span>
+      </td>
+    </tr>
+  `;
+
+  try {
+    const licenses = await superAdminFetchAllLicenses();
+    superAdminLicenses = licenses;
+
+    if (licenses.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="7" class="py-8 text-center text-stone-400">
+            <span class="material-symbols-rounded text-2xl mb-1 text-stone-300">vpn_key</span>
+            <p class="font-bold text-xs text-stone-600">Belum ada lisensi resmi yang diterbitkan</p>
+            <p class="text-[11px] text-stone-400 mt-0.5">Gunakan formulir generator di atas untuk membuat kode lisensi pertama.</p>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tableBody.innerHTML = licenses.map(lic => {
+      const isClaimed = lic.status === 'claimed';
+      const isRevoked = lic.status === 'revoked';
+
+      let statusBadge = `
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-200">
+          Tersedia (Ready)
+        </span>
+      `;
+      if (isClaimed) {
+        statusBadge = `
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-blue-900 border border-blue-200">
+            Aktif Terpakai
+          </span>
+        `;
+      } else if (isRevoked) {
+        statusBadge = `
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-200">
+            Dibekukan
+          </span>
+        `;
+      }
+
+      const dateStr = lic.createdAt ? new Date(lic.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
+      const safeKey = escapeHtml(lic.licenseKey);
+      const safeName = escapeHtml(lic.clientName || '-');
+      const safePhone = escapeHtml(lic.clientPhone || '');
+      const claimedStore = lic.claimedByStoreId ? escapeHtml(lic.claimedByStoreId) : '<span class="text-stone-400 italic">Belum diklaim</span>';
+
+      return `
+        <tr class="hover:bg-stone-50/80 transition">
+          <td class="py-3 px-3 font-mono font-black text-xs text-stone-900 select-all tracking-wider">${safeKey}</td>
+          <td class="py-3 px-3 font-bold text-xs text-stone-800">
+            <div>${safeName}</div>
+            <div class="text-[10px] font-normal text-stone-400">${safePhone}</div>
+          </td>
+          <td class="py-3 px-3 text-[11px] font-bold text-stone-600">
+            ${lic.tier === 'PRO_LIFETIME' ? '<span class="text-indigo-700">Pro Lifetime</span>' : 'Lifetime Standar'}
+          </td>
+          <td class="py-3 px-3">${statusBadge}</td>
+          <td class="py-3 px-3 text-[11px] text-stone-500">${dateStr}</td>
+          <td class="py-3 px-3 text-xs font-mono text-stone-700 font-bold">${claimedStore}</td>
+          <td class="py-3 px-3 text-right whitespace-nowrap">
+            <div class="flex items-center justify-end gap-1">
+              <button type="button" onclick="window.KasirApp.copySpecificLicenseCode('${safeKey}')"
+                class="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 transition" title="Salin Kode">
+                <span class="material-symbols-rounded text-sm">content_copy</span>
+              </button>
+              <button type="button" onclick="window.KasirApp.shareSpecificLicenseViaWA('${safeKey}', '${safeName}', '${safePhone}', '${lic.tier}')"
+                class="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition" title="Kirim WhatsApp">
+                <span class="material-symbols-rounded text-sm">chat</span>
+              </button>
+              ${!isRevoked ? `
+                <button type="button" onclick="window.KasirApp.revokeLicenseAction('${safeKey}')"
+                  class="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition" title="Bekukan Lisensi">
+                  <span class="material-symbols-rounded text-sm">block</span>
+                </button>
+              ` : ''}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Error rendering licenses table:', err);
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="7" class="py-6 text-center text-rose-600">
+          Gagal memuat daftar lisensi: ${escapeHtml(err.message)}
+        </td>
+      </tr>
+    `;
+  }
+}
+
+/**
+ * Aksi bekukan lisensi
+ */
+export async function revokeLicenseAction(licenseKey) {
+  if (!licenseKey) return;
+  const ok = await showConfirmDialog({
+    title: 'Bekukan Lisensi?',
+    message: `Apakah Anda yakin ingin membekukan lisensi [${licenseKey}]? Toko yang menggunakan lisensi ini akan ditahan dari akses resmi.`,
+    confirmText: 'Ya, Bekukan Lisensi',
+    confirmType: 'danger',
+    icon: 'block'
+  });
+
+  if (ok) {
+    const res = await superAdminRevokeLicense(licenseKey);
+    if (res) {
+      showToast(`Lisensi [${licenseKey}] telah dibekukan`, 'info');
+      await renderSuperAdminLicensesTable();
+    } else {
+      showToast('Gagal membekukan lisensi', 'error');
     }
   }
 }

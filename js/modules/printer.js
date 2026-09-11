@@ -7,6 +7,7 @@ import { state, savePrinterConfig } from '../state.js';
 import { GLOBAL_STORAGE_KEYS } from '../config.js';
 import { formatRp, formatDateShort, showToast, playClick, escapeHtml } from '../utils.js';
 import { renderQRToContainer } from '../qris.js';
+import { getStoreLicenseStatus } from './license.js';
 import { 
   syncSavePrinterConfig,
   dispatchRemotePrintJob,
@@ -499,6 +500,14 @@ export function generateReceiptPlainText(tx, customConfig = null) {
   }
   lines.push(padCenter(cfg.footerNote || 'Terimakasih telah berkunjung.'));
 
+  // Watermark Khusus Akun Demo
+  const licStatusText = getStoreLicenseStatus(state.storeId);
+  if (!licStatusText.isLicensed) {
+    lines.push('');
+    lines.push(padCenter('** AKUN DEMO PERCOBAAN **'));
+    lines.push(padCenter('Aristotle POS - Maksimal 25 Tx'));
+  }
+
   // 6. NO ANTRIAN (WAJIB ADA - Sesuai Permintaan & Foto)
   if (cfg.showQueueBottom !== false) {
     lines.push(divider);
@@ -730,6 +739,14 @@ export async function buildEscPosBytes(tx, kickDrawer = false) {
   }
   if (note) {
     addText(note + '\n');
+  }
+
+  // Watermark Khusus Akun Demo di Cetakan Thermal ESC/POS
+  const licStatusEsc = getStoreLicenseStatus(state.storeId);
+  if (!licStatusEsc.isLicensed) {
+    addBytes(0x1B, 0x61, 0x01); // Align Center
+    addText('\n** AKUN DEMO PERCOBAAN **\n');
+    addText('Aristotle POS - Maksimal 25 Tx\n');
   }
 
   // 10. NO ANTRIAN BESAR (Double Width & Double Height + Bold - Persis Foto)

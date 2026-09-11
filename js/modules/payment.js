@@ -5,6 +5,7 @@ import { syncAddTransaction, syncSaveQueues, syncSaveProduct } from '../firebase
 import { generateDynamicQRIS, renderQRToContainer, parseQRISMetadata } from '../qris.js';
 import { printReceipt, printKitchenTicket, kickCashDrawer, renderPrintableReceiptArea } from './printer.js';
 import { renderFinancialReport } from './report.js';
+import { checkDemoTransactionLimit } from './license.js';
 
 let paymentMethod = 'cash'; // 'cash' or 'qris'
 let cashGiven = 0;
@@ -222,6 +223,18 @@ export function openPaymentModal() {
   playClick('pop');
   const { total } = calculateCartTotal();
   if (total <= 0) return;
+
+  // Cek Batasan Kuota Akun Demo (Maksimal 25 Transaksi)
+  const quotaCheck = checkDemoTransactionLimit(state.storeId, state.history ? state.history.length : 0);
+  if (!quotaCheck.allowed) {
+    playClick('error');
+    if (window.KasirApp && typeof window.KasirApp.openQuotaLimitModal === 'function') {
+      window.KasirApp.openQuotaLimitModal();
+    } else {
+      showToast('Batas kuota demo tercapai (25/25)! Silakan aktivasi lisensi resmi.', 'warning', 5000);
+    }
+    return;
+  }
 
   activeDiscount = null;
   updatePaymentTotals();

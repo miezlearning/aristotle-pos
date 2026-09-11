@@ -1,10 +1,12 @@
 {
-  "versionCode": 108,
-  "versionName": "1.2.60",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.60/Aristotle-POS.apk",
+  "versionCode": 110,
+  "versionName": "1.2.61",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.61/Aristotle-POS.apk",
   "changelog": [
-    "Penyesuaian hirarki peran di profil toko: sembunyikan Ubah PIN Owner & Manajemen Toko pada mode kasir",
-    "Harmonisasi tipografi Plus Jakarta Sans di modal profil toko"
+    "Sistem Lisensi Resmi Sekali Beli (One-Time Lifetime License)",
+    "Middleware Kriptografis HMAC-SHA256 & verifikasi cloud anti-duplikasi lisensi",
+    "Sandbox Akun Demo: batas 25 transaksi, 10 menu produk, dan watermark struk",
+    "Super Admin: Generator lisensi resmi & integrasi kirim lisensi 1-klik via WhatsApp"
   ],
   "releaseDate": "2026-09-11"
 }
