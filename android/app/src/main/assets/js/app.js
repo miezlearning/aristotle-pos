@@ -246,14 +246,14 @@ export function openCloudModal() {
       storeIdShort.innerText = state.storeId;
     }
     if (modalStatusDot) {
-      modalStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-500 shrink-0';
+      modalStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse';
     }
     if (modalStatusBadge) {
-      modalStatusBadge.className = 'flex items-center gap-1.5 pt-1 shrink-0';
+      modalStatusBadge.className = 'flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 shrink-0';
     }
     if (modalStatusEl) {
       modalStatusEl.innerText = 'Online';
-      modalStatusEl.className = 'text-xs font-medium text-stone-500';
+      modalStatusEl.className = 'text-[11px] font-bold text-emerald-300';
     }
     updatePinButtonUI();
     updateCloudOwnerAccountUI();
@@ -835,10 +835,10 @@ function updatePinButtonUI() {
   if (btn) {
     if (state.auth?.requirePinForAdmin) {
       btn.innerText = 'Aktif';
-      btn.className = 'px-2.5 py-1 rounded-lg font-bold text-[11px] transition shrink-0 bg-stone-900 text-white';
+      btn.className = 'px-3 py-1 rounded-full font-bold text-[11px] transition shrink-0 bg-emerald-600 text-white shadow-xs cursor-pointer active:scale-95';
     } else {
       btn.innerText = 'Nonaktif';
-      btn.className = 'px-2.5 py-1 rounded-lg font-bold text-[11px] transition shrink-0 bg-stone-100 text-stone-500 hover:text-stone-900 border border-stone-200';
+      btn.className = 'px-3 py-1 rounded-full font-bold text-[11px] transition shrink-0 bg-stone-100 text-stone-500 hover:text-stone-800 border border-stone-200 cursor-pointer active:scale-95';
     }
   }
 }

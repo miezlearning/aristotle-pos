@@ -1,12 +1,11 @@
 {
-  "versionCode": 101,
-  "versionName": "1.2.53",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.53/Aristotle-POS.apk",
+  "versionCode": 102,
+  "versionName": "1.2.54",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.54/Aristotle-POS.apk",
   "changelog": [
-    "Universal Material Design 3 Custom Dropdown & Select Component",
-    "Perbaikan tuntas bug saveAuthState is not defined",
-    "Auto-enhancement seluruh dropdown menu di aplikasi kasir",
-    "Sinkronisasi aset native Android v1.2.53"
+    "Redesain profesional Profil Toko (Cloud Modal) dengan tata letak eksekutif & kartu terstruktur",
+    "Penyempurnaan estetika modern Material Design 3 pada menu pengaturan usaha",
+    "Sinkronisasi aset native Android v1.2.54"
   ],
   "releaseDate": "2026-09-11"
 }
