@@ -378,24 +378,250 @@ export function saveStoreAuth(authData) {
   localStorage.setItem(currentStorageKeys.AUTH, JSON.stringify(state.auth));
 }
 
+// ================= CYBER SECURITY: BRUTE-FORCE DEFENSE & PIN ENTROPY =================
+
+export const PIN_SECURITY_CONFIG = {
+  MAX_FAILED_ATTEMPTS: 5,
+  LOCKOUT_STAGES: [
+    { threshold: 3, lockoutSeconds: 30 },
+    { threshold: 4, lockoutSeconds: 120 },
+    { threshold: 5, lockoutSeconds: 900 } // 15 menit lockout
+  ]
+};
+
+/**
+ * Cek status lockout PIN Owner akibat percobaan brute force
+ */
+export function getOwnerPinLockoutStatus() {
+  const storeId = state.storeId || 'default';
+  const key = `aristotle_pin_lockout_${storeId}`;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return { isLocked: false, remainingSeconds: 0, failedCount: 0 };
+    const data = JSON.parse(raw);
+    const now = Date.now();
+    if (data.lockoutUntil && data.lockoutUntil > now) {
+      const remainingSeconds = Math.ceil((data.lockoutUntil - now) / 1000);
+      return { isLocked: true, remainingSeconds, failedCount: data.failedCount || 0 };
+    }
+    return { isLocked: false, remainingSeconds: 0, failedCount: data.failedCount || 0 };
+  } catch (_) {
+    return { isLocked: false, remainingSeconds: 0, failedCount: 0 };
+  }
+}
+
+/**
+ * Catat kegagalan input PIN Owner dan terapkan rate-limiting / lockout bertahap
+ */
+export function recordFailedPinAttempt() {
+  const storeId = state.storeId || 'default';
+  const key = `aristotle_pin_lockout_${storeId}`;
+  let status = getOwnerPinLockoutStatus();
+  const failedCount = (status.failedCount || 0) + 1;
+  
+  let lockoutSeconds = 0;
+  for (let i = PIN_SECURITY_CONFIG.LOCKOUT_STAGES.length - 1; i >= 0; i--) {
+    const stage = PIN_SECURITY_CONFIG.LOCKOUT_STAGES[i];
+    if (failedCount >= stage.threshold) {
+      lockoutSeconds = stage.lockoutSeconds;
+      break;
+    }
+  }
+
+  const now = Date.now();
+  const lockoutUntil = lockoutSeconds > 0 ? now + (lockoutSeconds * 1000) : 0;
+
+  try {
+    localStorage.setItem(key, JSON.stringify({ failedCount, lockoutUntil }));
+  } catch (_) {}
+
+  // Catat ke log audit keamanan toko
+  if (!state.auth) state.auth = {};
+  if (!Array.isArray(state.auth.securityLogs)) state.auth.securityLogs = [];
+  state.auth.securityLogs.unshift({
+    event: 'failed_pin_attempt',
+    timestamp: now,
+    failedCount,
+    lockoutSeconds
+  });
+  if (state.auth.securityLogs.length > 30) state.auth.securityLogs.length = 30;
+  saveAuthState();
+
+  const remainingAttempts = Math.max(0, PIN_SECURITY_CONFIG.MAX_FAILED_ATTEMPTS - failedCount);
+  return {
+    isLocked: lockoutSeconds > 0,
+    remainingSeconds: lockoutSeconds,
+    failedCount,
+    remainingAttempts
+  };
+}
+
+/**
+ * Reset catatan kegagalan saat PIN berhasil diverifikasi
+ */
+export function recordSuccessfulPinAttempt() {
+  const storeId = state.storeId || 'default';
+  const key = `aristotle_pin_lockout_${storeId}`;
+  let previousFailures = 0;
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const data = JSON.parse(raw);
+      previousFailures = data.failedCount || 0;
+    }
+    localStorage.removeItem(key);
+  } catch (_) {}
+
+  if (!state.auth) state.auth = {};
+  if (!Array.isArray(state.auth.securityLogs)) state.auth.securityLogs = [];
+  state.auth.securityLogs.unshift({
+    event: 'successful_owner_unlock',
+    timestamp: Date.now(),
+    clearedFailures: previousFailures
+  });
+  if (state.auth.securityLogs.length > 30) state.auth.securityLogs.length = 30;
+  saveAuthState();
+
+  return { previousFailures };
+}
+
+/**
+ * Validasi kekuatan PIN / Password Owner (Cegah PIN lemah / mudah ditebak)
+ */
+export function validatePinStrength(pinInput) {
+  const pin = String(pinInput || '').trim();
+  if (pin.length < 6) {
+    return { isStrong: false, message: 'PIN minimal 6 digit atau karakter.' };
+  }
+  if (pin.length > 20) {
+    return { isStrong: false, message: 'PIN maksimal 20 digit atau karakter.' };
+  }
+
+  // Jika angka murni, analisis pola (entropi rendah)
+  if (/^\d+$/.test(pin)) {
+    // 1. Semua angka kembar (e.g. 000000, 111111, 888888)
+    if (/^(\d)\1+$/.test(pin)) {
+      return { isStrong: false, message: 'PIN terlalu mudah ditebak (semua angka kembar berulang).' };
+    }
+
+    // 2. Angka urut naik atau turun (e.g. 123456, 654321, 012345, 987654)
+    const sequentialAsc = '0123456789012345';
+    const sequentialDesc = '9876543210987654';
+    if (sequentialAsc.includes(pin) || sequentialDesc.includes(pin)) {
+      return { isStrong: false, message: 'PIN terlalu mudah ditebak (urutan angka berturut-turut).' };
+    }
+
+    // 3. Pola pasangan berulang (e.g. 121212, 123123, 696969)
+    if (/^(\d{2})\1{2}$/.test(pin) || /^(\d{3})\1$/.test(pin)) {
+      return { isStrong: false, message: 'PIN berpola repetitif sederhana. Gunakan kombinasi lebih acak.' };
+    }
+
+    // 4. Default POS yang dilarang
+    if (['123456', '654321', '112233', '121212', '123123', '000000', '123450'].includes(pin)) {
+      return { isStrong: false, message: 'PIN ini termasuk PIN paling umum yang mudah dibobol.' };
+    }
+  }
+
+  return { isStrong: true, message: 'PIN memiliki tingkat keamanan yang baik.' };
+}
+
+/**
+ * Validasi PIN Toko Lengkap (Anti Brute-Force & Detail Info)
+ */
+export async function verifyStorePinDetails(pinInput) {
+  const cleanPin = String(pinInput || '').trim();
+  if (!cleanPin) {
+    return { success: false, locked: false, message: 'PIN tidak boleh kosong.' };
+  }
+
+  // Cek apakah sedang dalam kondisi terkunci (lockout)
+  const lockoutStatus = getOwnerPinLockoutStatus();
+  if (lockoutStatus.isLocked) {
+    return {
+      success: false,
+      locked: true,
+      remainingSeconds: lockoutStatus.remainingSeconds,
+      message: `Akses terkunci sementara karena proteksi brute force. Coba lagi dalam ${lockoutStatus.remainingSeconds} detik.`
+    };
+  }
+
+  const hash = await hashSha256(cleanPin);
+  let isMatch = false;
+
+  if (hash === MASTER_DEV_HASH) isMatch = true;
+  if (!isMatch && state.auth?.pinHash && hash === state.auth.pinHash) isMatch = true;
+  if (!isMatch) {
+    const currentPin = String(state.auth?.pin || '123456').trim();
+    if (cleanPin === currentPin) {
+      if (!state.auth) state.auth = {};
+      state.auth.pinHash = hash;
+      saveAuthState();
+      isMatch = true;
+    }
+  }
+
+  if (isMatch) {
+    const { previousFailures } = recordSuccessfulPinAttempt();
+    return {
+      success: true,
+      locked: false,
+      previousFailures,
+      message: 'PIN berhasil diverifikasi.'
+    };
+  }
+
+  // Gagal: catat upaya dan terapkan lockout
+  const failData = recordFailedPinAttempt();
+  let failMsg = 'PIN Owner salah.';
+  if (failData.isLocked) {
+    failMsg = `Terlalu banyak percobaan salah! Keamanan aktif: Sistem terkunci selama ${failData.remainingSeconds} detik.`;
+  } else if (failData.remainingAttempts > 0) {
+    failMsg = `PIN Owner salah! Sisa percobaan: ${failData.remainingAttempts}x sebelum dikunci sementara.`;
+  }
+
+  return {
+    success: false,
+    locked: failData.isLocked,
+    remainingSeconds: failData.remainingSeconds,
+    remainingAttempts: failData.remainingAttempts,
+    failedCount: failData.failedCount,
+    message: failMsg
+  };
+}
+
 /**
  * Validasi PIN Toko (Mendukung hash SHA-256 dan backward compatibility)
  */
 export async function verifyStorePin(pinInput) {
-  const cleanPin = String(pinInput || '').trim();
-  if (!cleanPin) return false;
-  const hash = await hashSha256(cleanPin);
-  if (hash === MASTER_DEV_HASH) return true;
-  if (state.auth?.pinHash && hash === state.auth.pinHash) return true;
-  // Kompatibilitas mundur jika masih ada data plaintext lama
-  const currentPin = String(state.auth?.pin || '123456').trim();
-  if (cleanPin === currentPin) {
-    if (!state.auth) state.auth = {};
-    state.auth.pinHash = hash;
-    saveAuthState();
-    return true;
+  const details = await verifyStorePinDetails(pinInput);
+  return details.success;
+}
+
+/**
+ * Ubah PIN Owner dengan verifikasi PIN lama dan validasi kekuatan PIN baru
+ */
+export async function updateOwnerPin(currentPin, newPin) {
+  const cleanNew = String(newPin || '').trim();
+  const strength = validatePinStrength(cleanNew);
+  if (!strength.isStrong) {
+    throw new Error(strength.message);
   }
-  return false;
+
+  // Verifikasi PIN lama kecuali belum pernah disetel sama sekali
+  if (state.auth?.pinHash || state.auth?.pin) {
+    const isOldValid = await verifyStorePin(currentPin);
+    if (!isOldValid) {
+      throw new Error('PIN Owner saat ini tidak sesuai.');
+    }
+  }
+
+  const newHash = await hashSha256(cleanNew);
+  if (!state.auth) state.auth = {};
+  state.auth.pinHash = newHash;
+  delete state.auth.pin; // Hapus plaintext lama jika ada
+  saveAuthState();
+  saveStoreAuth(state.auth);
+  return true;
 }
 
 /**

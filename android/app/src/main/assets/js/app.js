@@ -10,6 +10,10 @@ import {
   removeStoreFromDevice, 
   saveStoreAuth, 
   verifyStorePin, 
+  verifyStorePinDetails,
+  getOwnerPinLockoutStatus,
+  updateOwnerPin,
+  validatePinStrength,
   setUserRole,
   addCashierToStore,
   updateCashierInStore,
@@ -902,6 +906,59 @@ export function updateHeaderRoleBadgeUI() {
 
 let activeRoleModalMode = 'switch'; // 'switch_to_owner' | 'lock_to_cashier'
 
+let roleSwitchLockoutTimer = null;
+
+function updateRoleSwitchLockoutUI(seconds) {
+  const banner = document.getElementById('roleSwitchLockoutBanner');
+  const text = document.getElementById('roleSwitchLockoutText');
+  const input = document.getElementById('roleSwitchPinInput');
+  const submitBtn = document.getElementById('roleSwitchSubmitBtn');
+
+  if (roleSwitchLockoutTimer) {
+    clearInterval(roleSwitchLockoutTimer);
+    roleSwitchLockoutTimer = null;
+  }
+
+  if (seconds <= 0) {
+    if (banner) banner.classList.add('hidden');
+    if (input) {
+      input.disabled = false;
+      input.placeholder = '••••••';
+    }
+    if (submitBtn) submitBtn.disabled = false;
+    return;
+  }
+
+  if (banner) banner.classList.remove('hidden');
+  if (input) {
+    input.disabled = true;
+    input.value = '';
+    input.placeholder = `Terkunci (${seconds}d)`;
+  }
+  if (submitBtn) submitBtn.disabled = true;
+
+  let currentSec = seconds;
+  if (text) text.textContent = `Akses diblokir sementara karena proteksi brute force. Coba lagi dalam ${currentSec} detik.`;
+
+  roleSwitchLockoutTimer = setInterval(() => {
+    currentSec--;
+    if (currentSec <= 0) {
+      clearInterval(roleSwitchLockoutTimer);
+      roleSwitchLockoutTimer = null;
+      if (banner) banner.classList.add('hidden');
+      if (input) {
+        input.disabled = false;
+        input.placeholder = '••••••';
+        input.focus();
+      }
+      if (submitBtn) submitBtn.disabled = false;
+    } else {
+      if (text) text.textContent = `Akses diblokir sementara karena proteksi brute force. Coba lagi dalam ${currentSec} detik.`;
+      if (input) input.placeholder = `Terkunci (${currentSec}d)`;
+    }
+  }, 1000);
+}
+
 /**
  * Buka Modal Otorisasi / Alih Peran (Kasir <-> Owner)
  */
@@ -928,11 +985,20 @@ export function openRoleSwitchModal(preferredMode = null) {
 
   if (mode === 'switch_to_owner') {
     if (titleEl) titleEl.textContent = 'Buka Akses Mode Owner';
-    if (subEl) subEl.textContent = 'Masukkan 6 Digit PIN Pemilik Toko untuk membuka seluruh menu & laporan keuangan.';
+    if (subEl) subEl.textContent = 'Masukkan PIN/Password Pemilik Toko untuk membuka seluruh menu & laporan keuangan.';
     if (ownerSection) ownerSection.classList.remove('hidden');
     if (cashierSection) cashierSection.classList.add('hidden');
     if (submitBtn) submitBtn.textContent = 'Buka Akses Owner';
+
+    // Cek status lockout brute-force
+    const lockout = getOwnerPinLockoutStatus();
+    if (lockout.isLocked) {
+      updateRoleSwitchLockoutUI(lockout.remainingSeconds);
+    } else {
+      updateRoleSwitchLockoutUI(0);
+    }
   } else {
+    updateRoleSwitchLockoutUI(0);
     if (titleEl) titleEl.textContent = 'Kunci ke Mode Kasir';
     if (subEl) subEl.textContent = 'Pilih staf kasir yang bertugas. Menu Laporan & Kelola Harga akan disembunyikan total.';
     if (ownerSection) ownerSection.classList.add('hidden');
@@ -944,7 +1010,7 @@ export function openRoleSwitchModal(preferredMode = null) {
   }
 
   modal.classList.remove('hidden');
-  if (pinInput) {
+  if (pinInput && (!getOwnerPinLockoutStatus().isLocked || mode !== 'switch_to_owner')) {
     requestAnimationFrame(() => pinInput.focus());
   }
 }
@@ -967,6 +1033,10 @@ function renderRoleSwitchCashierOptions() {
 
 export function closeRoleSwitchModal() {
   playClick('pop');
+  if (roleSwitchLockoutTimer) {
+    clearInterval(roleSwitchLockoutTimer);
+    roleSwitchLockoutTimer = null;
+  }
   const modal = document.getElementById('roleSwitchModal');
   if (modal) modal.classList.add('hidden');
   const pinInput = document.getElementById('roleSwitchPinInput');
@@ -983,22 +1053,29 @@ export async function handleRoleSwitchSubmit(e) {
 
   if (activeRoleModalMode === 'switch_to_owner') {
     if (!pinValue) {
-      showToast('Masukkan 6 digit PIN Owner', 'warning');
+      showToast('Masukkan PIN / Password Owner', 'warning');
       if (pinInput) pinInput.focus();
       return;
     }
 
-    const isOk = await verifyStorePin(pinValue);
-    if (isOk) {
+    const verifyRes = await verifyStorePinDetails(pinValue);
+    if (verifyRes.success) {
       setUserRole('owner', null);
       applyRoleUIPermissions();
       closeRoleSwitchModal();
-      showToast('Mode Pemilik (Owner) Aktif. Seluruh menu & laporan terbuka.', 'success', 3500);
+      if (verifyRes.previousFailures > 0) {
+        showToast(`Mode Owner Terbuka. ⚠️ Terdeteksi ${verifyRes.previousFailures}x percobaan PIN salah sebelumnya saat kasir aktif.`, 'warning', 6000);
+      } else {
+        showToast('Mode Pemilik (Owner) Aktif. Seluruh menu & laporan terbuka.', 'success', 3500);
+      }
     } else {
-      showToast('PIN Owner salah. Pastikan memasukkan 6 digit yang sesuai.', 'danger');
+      showToast(verifyRes.message, 'danger', 5000);
+      if (verifyRes.locked) {
+        updateRoleSwitchLockoutUI(verifyRes.remainingSeconds);
+      }
       if (pinInput) {
         pinInput.value = '';
-        pinInput.focus();
+        if (!verifyRes.locked) pinInput.focus();
       }
     }
   } else {
@@ -1031,6 +1108,41 @@ export async function handleRoleSwitchSubmit(e) {
     applyRoleUIPermissions();
     closeRoleSwitchModal();
     showToast(`Mode Kasir Aktif (${cashierObj.name}). Menu & Laporan dikunci.`, 'info', 3500);
+  }
+}
+
+/**
+ * Dialog Pengubahan PIN Owner dengan Verifikasi & Proteksi Entropi
+ */
+export async function promptChangeOwnerPin() {
+  playClick('tap');
+  const currentPin = prompt('Masukkan PIN Owner saat ini (kosongkan jika baru):');
+  if (currentPin === null) return;
+
+  const newPin = prompt('Masukkan PIN/Password Owner baru (min. 6 digit/karakter, hindari 123456 atau angka kembar):');
+  if (newPin === null) return;
+
+  const cleanNew = newPin.trim();
+  const strengthCheck = validatePinStrength(cleanNew);
+  if (!strengthCheck.isStrong) {
+    showToast(strengthCheck.message, 'danger', 5000);
+    return;
+  }
+
+  const confirmPin = prompt('Ketik ulang PIN/Password baru untuk konfirmasi:');
+  if (confirmPin === null) return;
+
+  if (cleanNew !== confirmPin.trim()) {
+    showToast('Konfirmasi PIN tidak cocok.', 'danger');
+    return;
+  }
+
+  try {
+    await updateOwnerPin(currentPin.trim(), cleanNew);
+    syncSaveStoreAuth(state.auth);
+    showToast('PIN Owner berhasil diperbarui dengan proteksi Anti Brute-Force!', 'success', 4500);
+  } catch (err) {
+    showToast(err.message, 'danger', 5000);
   }
 }
 
@@ -2241,6 +2353,7 @@ const KasirApp = {
   handleAddCashierSubmit: handleAddCashierSubmit,
   promptChangeCashierPin: promptChangeCashierPin,
   handleDeleteCashier: handleDeleteCashier,
+  promptChangeOwnerPin: promptChangeOwnerPin,
 
   // Google SSO & Multi-Store Owner Management
   handleGoogleSignInOwner: handleGoogleSignInOwner,

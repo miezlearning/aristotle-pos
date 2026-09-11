@@ -1,12 +1,12 @@
 {
-  "versionCode": 98,
-  "versionName": "1.2.50",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.50/Aristotle-POS.apk",
+  "versionCode": 99,
+  "versionName": "1.2.51",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.51/Aristotle-POS.apk",
   "changelog": [
-    "Reposisi cadangan Google Cloud menjadi kartu tautan opsional non-intrusif",
-    "Perbaikan alur navigasi mandiri kasir & pairing HP staf tanpa akun Google",
-    "Pemberitahuan ramah saat status API Key cloud belum disetel",
-    "Sinkronisasi penuh aset web & native Android v1.2.50"
+    "Implementasi proteksi Anti Brute-Force & Lockout bertahap PIN Owner",
+    "Pembersihan total integrasi Google SSO (Opsi B)",
+    "Validasi kekuatan entropi PIN Owner & log audit keamanan",
+    "Sinkronisasi aset native Android v1.2.51"
   ],
   "releaseDate": "2026-09-11"
 }
