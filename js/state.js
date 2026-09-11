@@ -128,7 +128,9 @@ export const state = {
   ],
   activeQueueId: 'q_1',
   currentCategory: 'all',
-  currentPeriod: 'today', // 'today', 'month', 'all'
+  currentPeriod: 'today', // 'today', 'month', 'all', 'custom', 'range'
+  reportMonth: null, // { y, m } untuk filter bulan tertentu
+  reportRange: null, // { from: 'YYYY-MM-DD', to: 'YYYY-MM-DD' } untuk rentang tanggal
   qrisPayload: DEFAULT_QRIS_PAYLOAD,
   qrisMode: 'dynamic', // 'dynamic' (nominal pas otomatis) or 'static' (nominal manual)
   printerConfig: { ...DEFAULT_PRINTER_CONFIG },

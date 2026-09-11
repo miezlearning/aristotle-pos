@@ -109,6 +109,9 @@ export function switchView(viewName) {
     if (mobileNav) mobileNav.classList.remove('hidden');
     if (viewReport) viewReport.classList.remove('hidden');
     if (btnReportM) btnReportM.className = navActiveClass;
+    setTimeout(() => {
+      report.updateReportToggleUI(report.currentReportViewMode);
+    }, 15);
     report.renderFinancialReport();
     if (state.storeId) {
       window.history.replaceState(null, '', `${window.location.pathname}?store=${encodeURIComponent(state.storeId)}`);
@@ -127,12 +130,15 @@ export function switchView(viewName) {
 
 export function handleSearchInput(e) {
   const clearBtn = document.getElementById('clearSearchBtn');
+  const kbdHint = document.getElementById('searchKbdHint');
   const val = (e && e.target) ? e.target.value : (document.getElementById('searchInput')?.value || '');
   if (clearBtn) {
     if (val.trim().length > 0) {
       clearBtn.classList.remove('hidden');
+      if (kbdHint) kbdHint.classList.add('hidden');
     } else {
       clearBtn.classList.add('hidden');
+      if (kbdHint) kbdHint.classList.remove('hidden');
     }
   }
   pos.renderProducts();
@@ -141,12 +147,16 @@ export function handleSearchInput(e) {
 export function clearSearch() {
   const searchInput = document.getElementById('searchInput');
   const clearBtn = document.getElementById('clearSearchBtn');
+  const kbdHint = document.getElementById('searchKbdHint');
   if (searchInput) {
     searchInput.value = '';
     searchInput.focus();
   }
   if (clearBtn) {
     clearBtn.classList.add('hidden');
+  }
+  if (kbdHint) {
+    kbdHint.classList.remove('hidden');
   }
   pos.renderProducts();
 }
@@ -968,9 +978,7 @@ export async function init() {
           admin.renderAdminTable();
         }
       } else if (type === 'transactions' || type === 'expenses') {
-        if (viewReport && !viewReport.classList.contains('hidden')) {
-          report.renderFinancialReport();
-        }
+        report.renderFinancialReport();
       } else if (type === 'queues') {
         if (viewPos && !viewPos.classList.contains('hidden')) {
           pos.renderOrderQueueTabs();
@@ -1015,6 +1023,47 @@ export async function init() {
     // 7. Dismiss Splash Screen smoothly (Guaranteed)
     dismissSplashScreen();
     initHeaderClock();
+
+    // Setup global keyboard shortcut untuk kasir & kelola menu: Tekan '/' untuk cari menu, 'Escape' untuk bersihkan
+    window.addEventListener('keydown', (e) => {
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        if (activeTag !== 'input' && activeTag !== 'textarea') {
+          const searchInput = document.getElementById('searchInput');
+          const adminSearch = document.getElementById('adminProductSearch');
+          const posView = document.getElementById('viewPos');
+          const adminView = document.getElementById('viewAdmin');
+
+          if (adminView && !adminView.classList.contains('hidden') && adminSearch) {
+            e.preventDefault();
+            adminSearch.focus();
+            adminSearch.select();
+          } else if (posView && !posView.classList.contains('hidden') && searchInput) {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+          }
+        }
+      } else if (e.key === 'Escape') {
+        const searchInput = document.getElementById('searchInput');
+        const adminSearch = document.getElementById('adminProductSearch');
+        if (document.activeElement === searchInput) {
+          clearSearch();
+          searchInput.blur();
+        } else if (document.activeElement === adminSearch) {
+          window.KasirApp.clearAdminSearch?.();
+          adminSearch.blur();
+        }
+      }
+    });
+
+    // Auto-reposition report segmented toggle slider on screen resize
+    window.addEventListener('resize', () => {
+      const viewReport = document.getElementById('viewReport');
+      if (viewReport && !viewReport.classList.contains('hidden')) {
+        report.updateReportToggleUI();
+      }
+    });
   }
 
   // 6. Cek Route Super Admin via URL Parameter (?view=superadmin atau ?admin=super atau ?superadmin=1 atau #superadmin)
@@ -1277,6 +1326,8 @@ const MODAL_CLOSE_DISPATCHER = {
   'bulkImportModal': () => admin.closeBulkImportModal(),
   'qrisConfigModal': () => admin.closeQrisModal(),
   'expenseModal': () => report.closeExpenseModal(),
+  'm3CalOverlay': () => report.closeM3Cal(),
+  'insightModal': () => report.closeInsightModal(),
   'printerConfigModal': () => printer.closePrinterConfigModal(),
   'bluetoothTroubleshootModal': () => printer.closeBluetoothTroubleshootModal(),
   'hostQrPairingModal': () => printer.closeHostQrPairingModal(),
@@ -1615,17 +1666,36 @@ const KasirApp = {
   exportDataBackup: admin.exportDataBackup,
   importDataBackup: admin.importDataBackup,
 
-  // Bulk Menu Text Importer
+  // Bulk Menu Rapid Table & Smart Text Importer
   openBulkImportModal: admin.openBulkImportModal,
   closeBulkImportModal: admin.closeBulkImportModal,
+  switchBulkMode: admin.switchBulkMode,
+  addBulkRow: admin.addBulkRow,
+  removeBulkRow: admin.removeBulkRow,
+  clearEmptyBulkRows: admin.clearEmptyBulkRows,
+  clearAllBulkRows: admin.clearAllBulkRows,
+  updateBulkItem: admin.updateBulkItem,
+  convertTextToTable: admin.convertTextToTable,
   loadUserSampleMenu: admin.loadUserSampleMenu,
   handleBulkTextInput: admin.handleBulkTextInput,
-  updateBulkPreviewRow: admin.updateBulkPreviewRow,
-  deleteBulkPreviewRow: admin.deleteBulkPreviewRow,
+  renderBulkTable: admin.renderBulkTable,
   applyBulkMenuImport: admin.applyBulkMenuImport,
 
   // Report & Bookkeeping
   setReportPeriod: report.setReportPeriod,
+  setReportMonth: report.setReportMonth,
+  openDatePicker: report.openDatePicker,
+  closeM3Cal: report.closeM3Cal,
+  applyRangePreset: report.applyRangePreset,
+  setInsightRange: report.setInsightRange,
+  showDayTip: report.showDayTip,
+  moveDayTip: report.moveDayTip,
+  hideDayTip: report.hideDayTip,
+  switchReportViewMode: report.switchReportViewMode,
+  updateReportToggleUI: report.updateReportToggleUI,
+  openInsightModal: report.openInsightModal,
+  closeInsightModal: report.closeInsightModal,
+  showInsightDayDetail: report.showInsightDayDetail,
   renderFinancialReport: report.renderFinancialReport,
   openExpenseModal: report.openExpenseModal,
   closeExpenseModal: report.closeExpenseModal,
@@ -1637,6 +1707,8 @@ const KasirApp = {
   clearTransactionHistory: report.clearTransactionHistory,
   shareReportWhatsApp: report.shareReportWhatsApp,
   exportReportCSV: report.exportReportCSV,
+  exportMonthlyCSV: report.exportMonthlyCSV,
+  requestAiInsight: report.requestAiInsight,
   reprintTx: report.reprintTx,
 
   // Interactive Senior-Friendly Guide Tour

@@ -4,6 +4,7 @@ import { renderOrderQueueTabs, renderCart, renderProducts, toggleMobileCartDrawe
 import { syncAddTransaction, syncSaveQueues, syncSaveProduct } from '../firebase.js';
 import { generateDynamicQRIS, renderQRToContainer, parseQRISMetadata } from '../qris.js';
 import { printReceipt, printKitchenTicket, kickCashDrawer, renderPrintableReceiptArea } from './printer.js';
+import { renderFinancialReport } from './report.js';
 
 let paymentMethod = 'cash'; // 'cash' or 'qris'
 let cashGiven = 0;
@@ -599,6 +600,7 @@ export function completeTransaction() {
       state.activeQueueId = state.orderQueues[0].id;
     } else {
       // Jika hanya 1 antrian, kosongkan keranjang dan kembalikan namanya menjadi 'Pesanan #1'
+      state.orderQueues[0].items = [];
       state.orderQueues[0].cart = {};
       state.orderQueues[0].notes = {};
       state.orderQueues[0].name = 'Pesanan #1';
@@ -611,6 +613,14 @@ export function completeTransaction() {
     renderOrderQueueTabs();
     renderCart();
     renderProducts();
+
+    // Live update laporan keuangan & grafik bisnis seketika
+    try {
+      renderFinancialReport();
+    } catch (reportErr) {
+      console.warn('Live financial report update note:', reportErr);
+    }
+
     showToast(`Pembayaran ${formatRp(newTx.total)} Berhasil (${newTx.method})!`, 'success');
   } finally {
     setTimeout(() => {
