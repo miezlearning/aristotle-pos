@@ -109,7 +109,7 @@ console.log('Updated RELEASE_NOTES.md');
 // 6. Sync to Android Assets
 const assetsDir = path.resolve('android/app/src/main/assets');
 if (fs.existsSync(assetsDir)) {
-  ['index.html', 'version.json', 'sw.js'].forEach(f => {
+  ['index.html', 'version.json', 'sw.js', 'manifest.json', 'icon.svg', 'favicon.png', 'icon.png', 'icon-192.png', 'icon-512.png'].forEach(f => {
     const src = path.resolve(f);
     const dest = path.join(assetsDir, f);
     if (fs.existsSync(src)) {

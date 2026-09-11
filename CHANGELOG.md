@@ -4,6 +4,33 @@ Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant S
 
 Format dokumen ini mengacu pada panduan [Keep a Changelog](https://keepachangelog.com/id/1.0.0/) dan mematuhi aturan [Semantic Versioning](https://semver.org/).
 
+## [v1.2.47] - 2026-09-11
+
+### 🗑️ Pembersihan Menyeluruh Antrian Pesanan & UI Kasir Bersih (Anti-Glassmorphism)
+- **Hapus Bersih Pesanan Antrian:** Memperbaiki logika penghapusan antrian (`deleteOrderQueue`). Saat antrian pesanan dihapus, seluruh isi pesanan (`items`), keranjang (`cart`), dan catatan (`notes`) kini dibersihkan tuntas dari memori, mencegah data pesanan lama tertinggal atau muncul kembali.
+- **UI Kartu Menu Bersih & Kontras Tinggi:** Mengeliminasi efek *glassmorphism* / blur transparan berlebih pada kartu menu dan lencana (*badge*) kategori/stok, beralih ke warna solid berdesain bersih (*clean modern*) yang ramah mata dan mudah dibaca di segala kondisi pencahayaan.
+- **Indikator Pencarian & Tombol Reset:** Menambahkan counter jumlah menu ditemukan (`#posSearchResultCount`) dan tombol reset pencarian & kategori otomatis saat menu tidak ditemukan.
+
+### 📋 Editor Input Menu Massal (Bulk Table Editor) & Sticky Search
+- **Spreadsheet-Style Bulk Table:** Merombak modal tambah menu massal (`#bulkImportModal`) dengan tabel input cepat baris per baris. Pengguna dapat mengisi Nama, Kategori (dropdown cepat), dan Harga secara instan layaknya spreadsheet, dilengkapi penghitung otomatis menu valid per kategori.
+- **Konverter Teks Cerdas ke Tabel:** Menyediakan tab konverter otomatis dari format teks biasa/salinan chat ke tabel siap simpan.
+- **Sticky Search Bar & Pintasan Cepat (`/`):** Bilah pencarian dan filter di Kelola Menu (`#adminSearchFilterStickyBar`) kini terkunci rapi di atas saat digulir, serta mendukung shortcut global `/` untuk fokus cepat ke pencarian dan `Esc` untuk membatalkan.
+
+### 📊 Redesain Laporan Usaha: Animated Sliding Toggle & Live Reactive Update
+- **Toggle Pojok Animasi Slide (Data vs Grafik Usaha):** Menghilangkan redundansi tombol ganda dan menyatukannya ke dalam satu *segmented sliding toggle* modern di pojok kanan atas kartu laporan. Perpindahan antara Data Statistik dan Grafik Visual kini memiliki transisi animasi slide yang halus (`report-slide-right` & `report-slide-left`).
+- **Live Reactive Update Transaksi:** Laporan keuangan dan grafik usaha kini langsung diperbarui secara otomatis seketika saat pembayaran berhasil diselesaikan di kasir tanpa perlu memuat ulang (*reload*) halaman.
+
+### 📅 Kalender Rentang Tanggal M3 & Analisis Rekap Laba Bulanan
+- **Kalender Rentang Tanggal Interaktif (M3 Date Range Picker):** Menggantikan pemilih bulan kaku dengan kalender pemilih rentang tanggal dari-ke interaktif, dilengkapi tombol preset cepat (Hari Ini, Kemarin, 7 Hari Terakhir, Bulan Ini, 30 Hari Terakhir, dan Kustom).
+- **Rekap Laba Rugi Bulanan:** Tabel performa performa finansial per bulan yang merinci total omset, HPP, laba kotor, biaya operasional, dan laba bersih, lengkap dengan fitur Ekspor CSV Rekap Bulanan.
+- **Analisis Pola Hari Penjualan:** Visualisasi distribusi transaksi mingguan (Senin–Minggu) dengan persentase bar interaktif dan sorotan jam-jam puncak operasional toko.
+
+### 🤖 Integrasi Asisten AI Analisis Performa Usaha (GPT-5-4-Nano)
+- **Model AI GPT-5-4-Nano (FikriDev API):** Menghubungkan modul insight bisnis dengan endpoint model AI `https://api.fikridev.me/api/text/gpt-5-4-nano`. Asisten menganalisis data omset, margin keuntungan, efisiensi pengeluaran, menu terlaris, serta pola perputaran stok untuk memberikan rekomendasi strategi bisnis UMKM yang terstruktur dan mudah dipahami.
+- **Smart Cache Signature:** Hasil analisis AI disimpan dalam cache cerdas berbasis ringkasan angka transaksi, mencegah panggilan API berulang yang tidak perlu saat data tidak berubah.
+
+---
+
 ## [v1.2.46] - 2026-09-11
 
 ### 🍔 Tata Letak Modal Menu Responsif 2-Kolom & Anti-Overflow (Tablet & HP)
