@@ -3759,22 +3759,6 @@ Kopi susu 7k"
         </div>
 
         <!-- Daftar menu -->
-        <!-- Google SSO Owner & Multi-Store Section -->
-        <div class="flex flex-col gap-2 p-3 bg-stone-50 border border-stone-200/90 rounded-2xl">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-black uppercase tracking-wider text-stone-600 flex items-center gap-1.5">
-              <span class="material-symbols-rounded text-sm text-emerald-600">admin_panel_settings</span>
-              Akun Pemilik (Google SSO)
-            </span>
-          </div>
-          <div id="googleOwnerAccountContainer">
-            <!-- Rendered by updateCloudOwnerAccountUI() -->
-          </div>
-          <div id="googleOwnerStoresList" class="flex flex-col gap-1.5 empty:hidden pt-1">
-            <!-- Rendered with stores owned by Google user -->
-          </div>
-        </div>
-
         <div class="border border-stone-200 rounded-2xl divide-y divide-stone-100 overflow-hidden text-xs bg-white shadow-2xs">
           <button onclick="closeCloudModal(); window.KasirApp.openCashierManageModal();"
             class="w-full flex items-center gap-3 p-3.5 hover:bg-stone-50 transition text-left cursor-pointer active:bg-stone-100">
@@ -3840,7 +3824,24 @@ Kopi susu 7k"
           </div>
         </div>
 
-        <!-- Keluar -->
+                <!-- Cadangan Akun Google Pemilik (Opsional) -->
+        <div class="p-3 bg-stone-50 border border-stone-200/80 rounded-2xl flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-black uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
+              <span class="material-symbols-rounded text-sm text-stone-400">cloud_sync</span>
+              Cadangan Cloud (Opsional)
+            </span>
+            <span class="text-[10px] text-stone-400">Multi-cabang</span>
+          </div>
+          <div id="googleOwnerAccountContainer">
+            <!-- Rendered by updateCloudOwnerAccountUI() -->
+          </div>
+          <div id="googleOwnerStoresList" class="flex flex-col gap-1.5 empty:hidden pt-0.5">
+            <!-- Rendered with stores owned by Google user -->
+          </div>
+        </div>
+
+<!-- Keluar -->
         <button onclick="logoutStore()"
           class="w-full py-2.5 px-3 rounded-xl text-rose-600 hover:bg-rose-50 border border-stone-200 font-semibold text-xs flex items-center justify-center gap-1.5 transition active:scale-95">
           <span class="material-symbols-rounded text-base">logout</span>

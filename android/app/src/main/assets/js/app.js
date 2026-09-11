@@ -1183,7 +1183,11 @@ export async function handleGoogleSignInOwner() {
     }
   } catch (err) {
     console.warn('Google sign-in error:', err);
-    showToast('Gagal masuk dengan Google: ' + (err.message || 'Coba lagi'), 'danger');
+    let msg = err.message || 'Coba lagi';
+    if (msg.includes('blocked') || msg.includes('requests-from-this-android-client-application') || err.code === 'auth/configuration-not-found') {
+      msg = 'Tautan Google Cloud opsional ini memerlukan aktivasi API Key Web di Google Cloud. Kasir & PIN 6-Digit tetap berfungsi normal tanpa akun Google.';
+    }
+    showToast(msg, 'warning', 6000);
   }
 }
 
@@ -1211,20 +1215,20 @@ export async function updateCloudOwnerAccountUI() {
 
   if (user) {
     container.innerHTML = `
-      <div class="p-3.5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs flex items-center justify-between gap-3">
+      <div class="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200/90 shadow-2xs flex items-center justify-between gap-3">
         <div class="flex items-center gap-2.5 min-w-0">
-          <img src="${user.photoURL || 'icon-192.png'}" alt="${escapeHtml(user.displayName)}" class="w-9 h-9 rounded-full object-cover border border-stone-200 shrink-0" onerror="this.src='icon-192.png'">
+          <img src="${user.photoURL || 'icon-192.png'}" alt="${escapeHtml(user.displayName)}" class="w-8 h-8 rounded-full object-cover border border-emerald-300 shrink-0" onerror="this.src='icon-192.png'">
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
               <span class="font-extrabold text-xs text-stone-900 truncate">${escapeHtml(user.displayName || 'Owner')}</span>
-              <span class="px-1.5 py-0.2 rounded text-[9.5px] font-extrabold bg-emerald-100 text-emerald-800">Google SSO</span>
+              <span class="px-1.5 py-0.2 rounded text-[9.5px] font-extrabold bg-emerald-200 text-emerald-900">Tertaut</span>
             </div>
-            <p class="text-[10.5px] text-stone-400 truncate">${escapeHtml(user.email || '')}</p>
+            <p class="text-[10.5px] text-stone-500 truncate">${escapeHtml(user.email || '')}</p>
           </div>
         </div>
         <button type="button" onclick="window.KasirApp.handleGoogleSignOutOwner()"
           class="px-2.5 py-1 rounded-lg text-stone-500 hover:text-rose-600 hover:bg-rose-50 text-[11px] font-bold transition shrink-0 cursor-pointer">
-          Keluar
+          Lepas
         </button>
       </div>
     `;
@@ -1256,16 +1260,26 @@ export async function updateCloudOwnerAccountUI() {
     }
   } else {
     container.innerHTML = `
-      <button type="button" onclick="window.KasirApp.handleGoogleSignInOwner()"
-        class="w-full py-3 px-4 rounded-2xl bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 font-extrabold text-xs flex items-center justify-center gap-2.5 shadow-2xs transition active:scale-95 cursor-pointer">
-        <svg class="w-4 h-4" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
-          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-        </svg>
-        <span>Masuk dengan Google (Akun Pemilik)</span>
-      </button>
+      <div class="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-white border border-stone-200 shadow-2xs">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-8 h-8 rounded-lg bg-stone-50 border border-stone-200 flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+              <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <p class="font-bold text-xs text-stone-800 leading-tight">Tautkan Akun Google</p>
+            <p class="text-[10.5px] text-stone-400 truncate">Cadangkan kepemilikan multi-toko</p>
+          </div>
+        </div>
+        <button type="button" onclick="window.KasirApp.handleGoogleSignInOwner()"
+          class="px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-white font-extrabold text-xs transition active:scale-95 cursor-pointer shrink-0 shadow-2xs">
+          Tautkan
+        </button>
+      </div>
     `;
     if (storesListEl) storesListEl.innerHTML = '';
   }
