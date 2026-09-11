@@ -22,6 +22,13 @@ import {
   limit,
   orderBy
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signOut as fbSignOut, 
+  onAuthStateChanged 
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 import { DEFAULT_PRODUCTS, getStorageKeys, MASTER_DEV_HASH, DEFAULT_PRINTER_CONFIG } from './config.js';
 import { state, currentStorageKeys, updateUIStoreBranding, getSavedStoresList, removeStoreFromDevice, registerStoreOnDevice } from './state.js';
@@ -53,6 +60,7 @@ export function unsubscribeAllListeners() {
 // Internal Firebase & Firestore instance
 let app = null;
 let db = null;
+let auth = null;
 let isInitialized = false;
 let isSyncing = false;
 let syncStatus = 'connecting'; // 'connecting', 'online', 'offline', 'error'
@@ -157,6 +165,23 @@ export async function initFirebaseSync() {
       });
     } catch (cacheErr) {
       db = getFirestore(app);
+    }
+
+    try {
+      auth = getAuth(app);
+      onAuthStateChanged(auth, (user) => {
+        state.currentUser = user ? {
+          uid: user.uid,
+          email: user.email || '',
+          displayName: user.displayName || user.email || 'Owner',
+          photoURL: user.photoURL || ''
+        } : null;
+        if (typeof window.KasirApp?.updateCloudOwnerAccountUI === 'function') {
+          window.KasirApp.updateCloudOwnerAccountUI();
+        }
+      });
+    } catch (authErr) {
+      console.warn('Firebase Auth init note:', authErr.message);
     }
 
     isInitialized = true;
@@ -717,6 +742,85 @@ export async function authenticateStoreLogin(storeId, inputPin) {
 export async function verifyStorePin(storeId, inputPin) {
   const res = await authenticateStoreLogin(storeId, inputPin);
   return res.success;
+}
+
+// ================= GOOGLE SSO & MULTI-STORE OWNER MANAGEMENT =================
+
+export function getFirebaseAuth() {
+  if (!auth && app) {
+    try { auth = getAuth(app); } catch (_) {}
+  }
+  return auth;
+}
+
+/**
+ * Login Google SSO untuk Pemilik Toko (Owner)
+ */
+export async function loginWithGoogleOwner() {
+  if (!isInitialized) await initFirebaseSync();
+  const authInstance = getFirebaseAuth();
+  if (!authInstance) throw new Error('Modul autentikasi Firebase belum siap.');
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  const result = await signInWithPopup(authInstance, provider);
+  if (result && result.user) {
+    state.currentUser = {
+      uid: result.user.uid,
+      email: result.user.email || '',
+      displayName: result.user.displayName || result.user.email || 'Owner',
+      photoURL: result.user.photoURL || ''
+    };
+  }
+  return result.user;
+}
+
+/**
+ * Logout Akun Google Pemilik Toko
+ */
+export async function logoutGoogleOwner() {
+  const authInstance = getFirebaseAuth();
+  if (authInstance) {
+    await fbSignOut(authInstance);
+  }
+  state.currentUser = null;
+}
+
+/**
+ * Ambil daftar seluruh toko yang dimiliki oleh akun Google (Multi-UMKM)
+ */
+export async function fetchStoresByOwner(ownerUid) {
+  if (!db || !ownerUid) return [];
+  try {
+    const q = query(collection(db, 'stores_registry'), where('ownerUid', '==', ownerUid));
+    const snap = await getDocs(q);
+    const list = [];
+    snap.forEach(docSnap => {
+      list.push({ id: docSnap.id, ...docSnap.data() });
+    });
+    return list;
+  } catch (e) {
+    console.warn('fetchStoresByOwner error:', e);
+    return [];
+  }
+}
+
+/**
+ * Hubungkan toko ke akun Google Pemilik
+ */
+export async function linkStoreToOwner(storeId, ownerUser) {
+  if (!db || !storeId || !ownerUser) return;
+  try {
+    const regRef = doc(db, 'stores_registry', storeId);
+    await setDoc(regRef, {
+      ownerUid: ownerUser.uid,
+      ownerEmail: ownerUser.email || '',
+      ownerName: ownerUser.displayName || ownerUser.email || 'Owner',
+      ownerPhoto: ownerUser.photoURL || '',
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  } catch (e) {
+    console.warn('linkStoreToOwner error:', e);
+  }
 }
 
 /**
