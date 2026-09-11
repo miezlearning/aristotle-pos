@@ -32,6 +32,12 @@ import * as printer from './modules/printer.js';
 import * as updater from './modules/updater.js';
 import * as shift from './modules/shift.js';
 import { initErrorTelemetry, sendTelemetryToDiscord } from './modules/telemetry.js';
+import { 
+  initAllCustomSelects, 
+  enhanceSelectElement, 
+  syncCustomSelect, 
+  closeAllCustomSelects 
+} from './customSelect.js';
 
 // Activate Enterprise Crash Telemetry Watchdog
 initErrorTelemetry();
@@ -1048,6 +1054,8 @@ function renderRoleSwitchCashierOptions() {
       <option value="${c.id}">${escapeHtml(c.name)}</option>
     `).join('');
   }
+  enhanceSelectElement(selectEl);
+  syncCustomSelect(selectEl);
 }
 
 export function closeRoleSwitchModal() {
@@ -1058,6 +1066,7 @@ export function closeRoleSwitchModal() {
   }
   const modal = document.getElementById('roleSwitchModal');
   if (modal) modal.classList.add('hidden');
+  closeAllCustomSelects();
   const pinInput = document.getElementById('roleSwitchPinInput');
   if (pinInput) pinInput.value = '';
 }
@@ -1913,6 +1922,9 @@ export async function init() {
         report.updateReportToggleUI();
       }
     });
+
+    // Inisialisasi Universal Material Design 3 Custom Selects
+    initAllCustomSelects();
   }
 
   // 6. Cek Route Super Admin via URL Parameter (?view=superadmin atau ?admin=super atau ?superadmin=1 atau #superadmin)
@@ -2621,7 +2633,13 @@ const KasirApp = {
   // Google SSO & Multi-Store Owner Management
   handleGoogleSignInOwner: handleGoogleSignInOwner,
   handleGoogleSignOutOwner: handleGoogleSignOutOwner,
-  updateCloudOwnerAccountUI: updateCloudOwnerAccountUI
+  updateCloudOwnerAccountUI: updateCloudOwnerAccountUI,
+
+  // Universal Material Design 3 Custom Select
+  initAllCustomSelects: initAllCustomSelects,
+  enhanceSelectElement: enhanceSelectElement,
+  syncCustomSelect: syncCustomSelect,
+  closeAllCustomSelects: closeAllCustomSelects
 };
 
 // Expose to window for inline onclick HTML handlers
