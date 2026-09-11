@@ -1,12 +1,12 @@
 {
-  "versionCode": 99,
-  "versionName": "1.2.51",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.51/Aristotle-POS.apk",
+  "versionCode": 100,
+  "versionName": "1.2.52",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.52/Aristotle-POS.apk",
   "changelog": [
-    "Implementasi proteksi Anti Brute-Force & Lockout bertahap PIN Owner",
-    "Pembersihan total integrasi Google SSO (Opsi B)",
-    "Validasi kekuatan entropi PIN Owner & log audit keamanan",
-    "Sinkronisasi aset native Android v1.2.51"
+    "Migrasi total pengubahan PIN ke Custom Modal UI/UX Material Design 3",
+    "Indikator entropi dan kekuatan sandi PIN Owner interaktif secara real-time",
+    "Eliminasi 100% seluruh dialog native browser (prompt, alert, confirm)",
+    "Sinkronisasi aset native Android v1.2.52"
   ],
   "releaseDate": "2026-09-11"
 }

@@ -1,12 +1,12 @@
-# Aristotle POS v1.2.51 Release Notes
+# Aristotle POS v1.2.52 Release Notes
 
 **Tanggal Rilis:** 2026-09-11
 
 ### Catatan Pembaruan:
-- Implementasi proteksi Anti Brute-Force & Lockout bertahap PIN Owner
-- Pembersihan total integrasi Google SSO (Opsi B)
-- Validasi kekuatan entropi PIN Owner & log audit keamanan
-- Sinkronisasi aset native Android v1.2.51
+- Migrasi total pengubahan PIN ke Custom Modal UI/UX Material Design 3
+- Indikator entropi dan kekuatan sandi PIN Owner interaktif secara real-time
+- Eliminasi 100% seluruh dialog native browser (prompt, alert, confirm)
+- Sinkronisasi aset native Android v1.2.52
 
 ---
 *Pembaruan ini dapat diunduh dan dipasang langsung dari dalam aplikasi (In-App Auto-Updater).*

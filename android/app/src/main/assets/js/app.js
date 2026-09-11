@@ -274,14 +274,33 @@ export function copyStoreShareLink() {
   const storeUrl = `${baseUrl}?store=${encodeURIComponent(state.storeId)}${hostParam}`;
   const storeName = state.storeProfile?.name || 'Kasir UMKM';
 
+  const fallbackCopy = (text) => {
+    try {
+      const tempInput = document.createElement('textarea');
+      tempInput.value = text;
+      tempInput.setAttribute('readonly', '');
+      tempInput.style.position = 'absolute';
+      tempInput.style.left = '-9999px';
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      const successful = document.execCommand('copy');
+      document.body.removeChild(tempInput);
+      if (successful) {
+        showToast(`Link Toko [${storeName}] berhasil disalin ke clipboard!`, 'success');
+        return;
+      }
+    } catch (_) {}
+    showToast(`Link Toko siap dibagikan: ${text}`, 'info', 6000);
+  };
+
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(storeUrl).then(() => {
       showToast(`Link Toko [${storeName}] berhasil disalin ke clipboard!`, 'success');
     }).catch(() => {
-      prompt(`Salin link untuk Toko [${storeName}]:`, storeUrl);
+      fallbackCopy(storeUrl);
     });
   } else {
-    prompt(`Salin link untuk Toko [${storeName}]:`, storeUrl);
+    fallbackCopy(storeUrl);
   }
 }
 
@@ -1112,39 +1131,208 @@ export async function handleRoleSwitchSubmit(e) {
 }
 
 /**
- * Dialog Pengubahan PIN Owner dengan Verifikasi & Proteksi Entropi
+ * Helper toggle visibility password
  */
-export async function promptChangeOwnerPin() {
+export function togglePasswordVisibility(inputId, btnEl) {
   playClick('tap');
-  const currentPin = prompt('Masukkan PIN Owner saat ini (kosongkan jika baru):');
-  if (currentPin === null) return;
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isPass = input.type === 'password';
+  input.type = isPass ? 'text' : 'password';
+  const icon = btnEl ? btnEl.querySelector('.material-symbols-rounded') : null;
+  if (icon) {
+    icon.innerText = isPass ? 'visibility_off' : 'visibility';
+  }
+}
 
-  const newPin = prompt('Masukkan PIN/Password Owner baru (min. 6 digit/karakter, hindari 123456 atau angka kembar):');
-  if (newPin === null) return;
+/**
+ * Evaluasi kekuatan PIN/Sandi baru secara realtime
+ */
+export function evaluateNewOwnerPinStrength(pinVal) {
+  const pin = (pinVal || '').trim();
+  const badge = document.getElementById('ownerPinStrengthBadge');
+  const bar1 = document.getElementById('ownerPinStrengthBar1');
+  const bar2 = document.getElementById('ownerPinStrengthBar2');
+  const bar3 = document.getElementById('ownerPinStrengthBar3');
+  const ruleLen = document.getElementById('ruleOwnerPinLen');
+  const ruleEntropy = document.getElementById('ruleOwnerPinEntropy');
 
-  const cleanNew = newPin.trim();
-  const strengthCheck = validatePinStrength(cleanNew);
-  if (!strengthCheck.isStrong) {
-    showToast(strengthCheck.message, 'danger', 5000);
+  const setRule = (el, passed) => {
+    if (!el) return;
+    const icon = el.querySelector('.material-symbols-rounded');
+    if (passed) {
+      el.className = 'flex items-center gap-1 text-emerald-600 font-semibold';
+      if (icon) icon.innerText = 'check_circle';
+    } else {
+      el.className = 'flex items-center gap-1 text-stone-400';
+      if (icon) icon.innerText = 'radio_button_unchecked';
+    }
+  };
+
+  const setBars = (b1, b2, b3) => {
+    if (bar1) bar1.className = `h-full flex-1 transition-colors ${b1}`;
+    if (bar2) bar2.className = `h-full flex-1 transition-colors ${b2}`;
+    if (bar3) bar3.className = `h-full flex-1 transition-colors ${b3}`;
+  };
+
+  if (!pin) {
+    if (badge) {
+      badge.innerText = 'Belum diisi';
+      badge.className = 'font-bold text-stone-400';
+    }
+    setBars('bg-stone-200', 'bg-stone-200', 'bg-stone-200');
+    setRule(ruleLen, false);
+    setRule(ruleEntropy, false);
+    checkOwnerPinMatch();
     return;
   }
 
-  const confirmPin = prompt('Ketik ulang PIN/Password baru untuk konfirmasi:');
-  if (confirmPin === null) return;
+  const isLenOk = pin.length >= 6;
+  setRule(ruleLen, isLenOk);
 
-  if (cleanNew !== confirmPin.trim()) {
-    showToast('Konfirmasi PIN tidak cocok.', 'danger');
+  const strength = validatePinStrength(pin);
+  setRule(ruleEntropy, strength.isStrong);
+
+  if (!isLenOk) {
+    if (badge) {
+      badge.innerText = 'Terlalu Pendek';
+      badge.className = 'font-bold text-rose-500';
+    }
+    setBars('bg-rose-500', 'bg-stone-200', 'bg-stone-200');
+  } else if (!strength.isStrong) {
+    if (badge) {
+      badge.innerText = 'Lemah (Pola Rentan)';
+      badge.className = 'font-bold text-amber-500';
+    }
+    setBars('bg-amber-500', 'bg-amber-500', 'bg-stone-200');
+  } else {
+    const hasAlpha = /[a-zA-Z]/.test(pin);
+    if (hasAlpha && pin.length >= 8) {
+      if (badge) {
+        badge.innerText = 'Sangat Kuat (Master Password)';
+        badge.className = 'font-bold text-emerald-600';
+      }
+      setBars('bg-emerald-500', 'bg-emerald-500', 'bg-emerald-500');
+    } else {
+      if (badge) {
+        badge.innerText = 'Kuat & Aman';
+        badge.className = 'font-bold text-emerald-600';
+      }
+      setBars('bg-emerald-500', 'bg-emerald-500', 'bg-emerald-500');
+    }
+  }
+
+  checkOwnerPinMatch();
+}
+
+/**
+ * Cek kesesuaian konfirmasi PIN baru
+ */
+export function checkOwnerPinMatch() {
+  const newPinInput = document.getElementById('ownerNewPinInput');
+  const confirmPinInput = document.getElementById('ownerConfirmPinInput');
+  const statusEl = document.getElementById('ownerPinMatchStatus');
+  if (!newPinInput || !confirmPinInput || !statusEl) return;
+
+  const newPin = newPinInput.value.trim();
+  const confirmPin = confirmPinInput.value.trim();
+
+  if (!confirmPin) {
+    statusEl.innerText = '';
     return;
+  }
+
+  if (newPin === confirmPin) {
+    statusEl.innerText = '✓ Cocok';
+    statusEl.className = 'text-[10.5px] font-bold text-emerald-600';
+  } else {
+    statusEl.innerText = '✕ Belum cocok';
+    statusEl.className = 'text-[10.5px] font-bold text-rose-500';
+  }
+}
+
+/**
+ * Buka modal Ubah PIN Owner
+ */
+export function openChangeOwnerPinModal() {
+  playClick('pop');
+  const modal = document.getElementById('changeOwnerPinModal');
+  if (!modal) return;
+
+  const curr = document.getElementById('ownerCurrentPinInput');
+  const nw = document.getElementById('ownerNewPinInput');
+  const conf = document.getElementById('ownerConfirmPinInput');
+  if (curr) curr.value = '';
+  if (nw) nw.value = '';
+  if (conf) conf.value = '';
+
+  evaluateNewOwnerPinStrength('');
+  modal.classList.remove('hidden');
+  setTimeout(() => { if (curr) curr.focus(); }, 100);
+}
+
+/**
+ * Tutup modal Ubah PIN Owner
+ */
+export function closeChangeOwnerPinModal() {
+  playClick('pop');
+  const modal = document.getElementById('changeOwnerPinModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+/**
+ * Handle form submit Ubah PIN Owner
+ */
+export async function handleChangeOwnerPinSubmit(e) {
+  if (e) e.preventDefault();
+  const currentPin = (document.getElementById('ownerCurrentPinInput')?.value || '').trim();
+  const newPin = (document.getElementById('ownerNewPinInput')?.value || '').trim();
+  const confirmPin = (document.getElementById('ownerConfirmPinInput')?.value || '').trim();
+
+  if (!currentPin) {
+    showToast('PIN / Sandi lama wajib diisi.', 'warning');
+    document.getElementById('ownerCurrentPinInput')?.focus();
+    return;
+  }
+
+  if (newPin !== confirmPin) {
+    showToast('Konfirmasi PIN baru tidak cocok.', 'warning');
+    document.getElementById('ownerConfirmPinInput')?.focus();
+    return;
+  }
+
+  const check = validatePinStrength(newPin);
+  if (!check.isStrong) {
+    showToast(check.message, 'warning', 5000);
+    document.getElementById('ownerNewPinInput')?.focus();
+    return;
+  }
+
+  const submitBtn = document.getElementById('btnSubmitChangeOwnerPin');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerText = 'Menyimpan...';
   }
 
   try {
-    await updateOwnerPin(currentPin.trim(), cleanNew);
+    await updateOwnerPin(currentPin, newPin);
     syncSaveStoreAuth(state.auth);
-    showToast('PIN Owner berhasil diperbarui dengan proteksi Anti Brute-Force!', 'success', 4500);
+    closeChangeOwnerPinModal();
+    showToast('PIN Pemilik berhasil diperbarui dengan proteksi Anti Brute-Force!', 'success', 4500);
   } catch (err) {
     showToast(err.message, 'danger', 5000);
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerText = 'Simpan PIN Baru';
+    }
   }
 }
+
+/**
+ * Alias backward compatibility
+ */
+export const promptChangeOwnerPin = openChangeOwnerPinModal;
 
 // ================= CASHIER MANAGEMENT MODAL (ADMIN SETTINGS) =================
 
@@ -1196,7 +1384,7 @@ export function renderCashiersListInModal() {
         </div>
       </div>
       <div class="flex items-center gap-1 shrink-0">
-        <button type="button" onclick="window.KasirApp.promptChangeCashierPin('${c.id}', '${escapeHtml(c.name)}')"
+        <button type="button" onclick="window.KasirApp.openChangeCashierPinModal('${c.id}', '${escapeHtml(c.name)}')"
           class="px-2.5 py-1.5 rounded-lg text-stone-600 hover:text-stone-900 hover:bg-stone-100 font-bold text-xs transition active:scale-95 cursor-pointer"
           title="Ubah PIN 6 Digit">
           Ubah PIN
@@ -1230,6 +1418,13 @@ export async function handleAddCashierSubmit(e) {
     return;
   }
 
+  const check = validatePinStrength(pin);
+  if (!check.isStrong) {
+    showToast(check.message, 'warning', 5000);
+    if (pinInput) pinInput.focus();
+    return;
+  }
+
   try {
     await addCashierToStore(name, pin);
     syncSaveStoreAuth(state.auth);
@@ -1242,24 +1437,77 @@ export async function handleAddCashierSubmit(e) {
   }
 }
 
-export async function promptChangeCashierPin(cashierId, cashierName) {
-  playClick('tap');
-  const newPin = prompt(`Masukkan 6 digit PIN baru untuk kasir "${cashierName}":`);
-  if (newPin === null) return;
-  const cleanPin = newPin.trim();
-  if (!/^\d{6}$/.test(cleanPin)) {
-    showToast('PIN kasir harus tepat 6 digit angka', 'danger');
+/**
+ * Buka modal Ubah PIN Kasir
+ */
+export function openChangeCashierPinModal(cashierId, cashierName) {
+  playClick('pop');
+  const modal = document.getElementById('changeCashierPinModal');
+  if (!modal) return;
+
+  const hiddenId = document.getElementById('changeCashierIdHidden');
+  const labelName = document.getElementById('changeCashierNameLabel');
+  const avatarText = document.getElementById('changeCashierAvatarText');
+  const pinInput = document.getElementById('newCashierPinInput');
+
+  if (hiddenId) hiddenId.value = cashierId;
+  if (labelName) labelName.innerText = cashierName || 'Kasir';
+  if (avatarText) avatarText.innerText = (cashierName || 'K')[0].toUpperCase();
+  if (pinInput) pinInput.value = '';
+
+  modal.classList.remove('hidden');
+  setTimeout(() => { if (pinInput) pinInput.focus(); }, 100);
+}
+
+/**
+ * Tutup modal Ubah PIN Kasir
+ */
+export function closeChangeCashierPinModal() {
+  playClick('pop');
+  const modal = document.getElementById('changeCashierPinModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+/**
+ * Handle form submit Ubah PIN Kasir
+ */
+export async function handleChangeCashierPinSubmit(e) {
+  if (e) e.preventDefault();
+  const hiddenId = document.getElementById('changeCashierIdHidden');
+  const pinInput = document.getElementById('newCashierPinInput');
+  const cashierId = hiddenId ? hiddenId.value : null;
+  const newPin = pinInput ? pinInput.value.trim() : '';
+
+  if (!cashierId) {
+    showToast('Data kasir tidak valid.', 'danger');
+    return;
+  }
+
+  if (!/^\d{6}$/.test(newPin)) {
+    showToast('PIN kasir harus tepat 6 digit angka.', 'warning');
+    if (pinInput) pinInput.focus();
+    return;
+  }
+
+  const check = validatePinStrength(newPin);
+  if (!check.isStrong) {
+    showToast(check.message, 'warning', 5000);
+    if (pinInput) pinInput.focus();
     return;
   }
 
   try {
-    await updateCashierInStore(cashierId, { pin6Digit: cleanPin });
+    await updateCashierInStore(cashierId, { pin6Digit: newPin });
     syncSaveStoreAuth(state.auth);
-    showToast(`PIN kasir "${cashierName}" berhasil diperbarui`, 'success');
+    closeChangeCashierPinModal();
+    renderCashiersListInModal();
+    showToast('PIN staf kasir berhasil diperbarui!', 'success');
   } catch (err) {
     showToast(err.message, 'danger');
   }
 }
+
+export const promptChangeCashierPin = openChangeCashierPinModal;
 
 export async function handleDeleteCashier(cashierId, cashierName) {
   playClick('pop');
@@ -1945,6 +2193,8 @@ const MODAL_CLOSE_DISPATCHER = {
   'universalLoginModal': () => closeUniversalLoginModal(),
   'roleSwitchModal': () => closeRoleSwitchModal(),
   'cashierManageModal': () => closeCashierManageModal(),
+  'changeOwnerPinModal': () => closeChangeOwnerPinModal(),
+  'changeCashierPinModal': () => closeChangeCashierPinModal(),
   'customConfirmModal': () => {
     const cancelBtn = document.getElementById('customConfirmCancelBtn');
     if (cancelBtn) cancelBtn.click();
@@ -2354,6 +2604,19 @@ const KasirApp = {
   promptChangeCashierPin: promptChangeCashierPin,
   handleDeleteCashier: handleDeleteCashier,
   promptChangeOwnerPin: promptChangeOwnerPin,
+
+  // Change Owner PIN Modal
+  openChangeOwnerPinModal: openChangeOwnerPinModal,
+  closeChangeOwnerPinModal: closeChangeOwnerPinModal,
+  togglePasswordVisibility: togglePasswordVisibility,
+  evaluateNewOwnerPinStrength: evaluateNewOwnerPinStrength,
+  checkOwnerPinMatch: checkOwnerPinMatch,
+  handleChangeOwnerPinSubmit: handleChangeOwnerPinSubmit,
+
+  // Change Cashier PIN Modal
+  openChangeCashierPinModal: openChangeCashierPinModal,
+  closeChangeCashierPinModal: closeChangeCashierPinModal,
+  handleChangeCashierPinSubmit: handleChangeCashierPinSubmit,
 
   // Google SSO & Multi-Store Owner Management
   handleGoogleSignInOwner: handleGoogleSignInOwner,

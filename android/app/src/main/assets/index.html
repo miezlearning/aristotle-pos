@@ -3817,7 +3817,7 @@ Kopi susu 7k"
               <p class="font-bold text-stone-800 text-xs">Ubah PIN Owner</p>
               <p class="text-[10.5px] text-stone-400 truncate">Anti Brute-Force & Entropi Tinggi</p>
             </div>
-            <button type="button" onclick="closeCloudModal(); window.KasirApp.promptChangeOwnerPin();"
+            <button type="button" onclick="closeCloudModal(); window.KasirApp.openChangeOwnerPinModal();"
               class="px-2.5 py-1 rounded-lg font-bold text-[11px] transition shrink-0 bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200 cursor-pointer active:scale-95">
               Ubah PIN
             </button>
@@ -4375,7 +4375,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.51</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.52</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -4535,7 +4535,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.51</span>
+    <span id="appVersionBadge" class="hidden">v1.2.52</span>
   </div>
 
   <!-- Main JavaScript App Module -->
@@ -4705,6 +4705,185 @@ Kopi susu 7k"
           Selesai
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: UBAH PIN / PASSWORD OWNER ==================== -->
+  <div id="changeOwnerPinModal"
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div
+      class="bg-white w-full sm:max-w-md rounded-2xl sm:rounded-3xl shadow-2xl border border-stone-200/90 overflow-hidden flex flex-col my-auto animate-in zoom-in-95">
+      
+      <!-- Header -->
+      <div class="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 flex items-center justify-center">
+            <span class="material-symbols-rounded text-xl">password</span>
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-black text-stone-900 leading-tight">Ubah PIN & Sandi Pemilik</h3>
+            <p class="text-[11px] text-stone-500 font-medium">Standar Keamanan Siber & Anti Brute-Force</p>
+          </div>
+        </div>
+        <button type="button" onclick="window.KasirApp.closeChangeOwnerPinModal()"
+          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition" title="Tutup">
+          <span class="material-symbols-rounded text-xl">close</span>
+        </button>
+      </div>
+
+      <!-- Form -->
+      <form onsubmit="window.KasirApp.handleChangeOwnerPinSubmit(event)" class="p-5 flex flex-col gap-4">
+        
+        <!-- Current PIN -->
+        <div class="flex flex-col gap-1.5">
+          <label class="block text-xs font-black text-stone-700 flex items-center justify-between">
+            <span>PIN / Sandi Lama</span>
+            <span class="text-[10px] text-stone-400 font-normal">Default awal: 123456</span>
+          </label>
+          <div class="relative">
+            <input type="password" id="ownerCurrentPinInput" maxlength="20" placeholder="Ketik PIN lama..." required autocomplete="current-password"
+              class="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-stone-300 font-bold text-stone-900 text-sm focus:outline-none focus:border-emerald-600 bg-stone-50">
+            <button type="button" onclick="window.KasirApp.togglePasswordVisibility('ownerCurrentPinInput', this)"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1">
+              <span class="material-symbols-rounded text-lg">visibility</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- New PIN -->
+        <div class="flex flex-col gap-1.5">
+          <label class="block text-xs font-black text-stone-700 flex items-center justify-between">
+            <span>PIN / Sandi Baru</span>
+            <span class="text-[10px] text-stone-400 font-normal">Min. 6 digit / karakter</span>
+          </label>
+          <div class="relative">
+            <input type="password" id="ownerNewPinInput" maxlength="20" placeholder="Ketik PIN / sandi baru..." required autocomplete="new-password"
+              oninput="window.KasirApp.evaluateNewOwnerPinStrength(this.value)"
+              class="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-stone-300 font-bold text-stone-900 text-sm focus:outline-none focus:border-emerald-600 bg-stone-50">
+            <button type="button" onclick="window.KasirApp.togglePasswordVisibility('ownerNewPinInput', this)"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1">
+              <span class="material-symbols-rounded text-lg">visibility</span>
+            </button>
+          </div>
+
+          <!-- Strength Meter -->
+          <div class="pt-1 flex flex-col gap-1">
+            <div class="flex items-center justify-between text-[10.5px]">
+              <span class="text-stone-500 font-medium">Kekuatan Sandi:</span>
+              <span id="ownerPinStrengthBadge" class="font-bold text-stone-400">Belum diisi</span>
+            </div>
+            <div class="w-full h-1.5 bg-stone-100 rounded-full overflow-hidden flex gap-1">
+              <div id="ownerPinStrengthBar1" class="h-full flex-1 bg-stone-200 transition-colors"></div>
+              <div id="ownerPinStrengthBar2" class="h-full flex-1 bg-stone-200 transition-colors"></div>
+              <div id="ownerPinStrengthBar3" class="h-full flex-1 bg-stone-200 transition-colors"></div>
+            </div>
+            <!-- Real-time Rules List -->
+            <ul class="text-[10.5px] text-stone-500 space-y-0.5 mt-1">
+              <li id="ruleOwnerPinLen" class="flex items-center gap-1 text-stone-400">
+                <span class="material-symbols-rounded text-xs">radio_button_unchecked</span>
+                <span>Minimal 6 digit angka atau karakter</span>
+              </li>
+              <li id="ruleOwnerPinEntropy" class="flex items-center gap-1 text-stone-400">
+                <span class="material-symbols-rounded text-xs">radio_button_unchecked</span>
+                <span>Bukan angka kembar (111111) atau berurutan (123456)</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Confirm New PIN -->
+        <div class="flex flex-col gap-1.5">
+          <label class="block text-xs font-black text-stone-700 flex items-center justify-between">
+            <span>Konfirmasi PIN / Sandi Baru</span>
+            <span id="ownerPinMatchStatus" class="text-[10.5px] font-bold text-stone-400"></span>
+          </label>
+          <div class="relative">
+            <input type="password" id="ownerConfirmPinInput" maxlength="20" placeholder="Ulangi PIN baru..." required autocomplete="new-password"
+              oninput="window.KasirApp.checkOwnerPinMatch()"
+              class="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-stone-300 font-bold text-stone-900 text-sm focus:outline-none focus:border-emerald-600 bg-stone-50">
+            <button type="button" onclick="window.KasirApp.togglePasswordVisibility('ownerConfirmPinInput', this)"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1">
+              <span class="material-symbols-rounded text-lg">visibility</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+          <button type="button" onclick="window.KasirApp.closeChangeOwnerPinModal()"
+            class="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 text-xs touch-target-large transition">
+            Batal
+          </button>
+          <button type="submit" id="btnSubmitChangeOwnerPin"
+            class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs sm:text-sm touch-target-large shadow-sm transition active:scale-95">
+            Simpan PIN Baru
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: UBAH PIN STAF KASIR ==================== -->
+  <div id="changeCashierPinModal"
+    class="fixed inset-0 z-[60] bg-black/50 hidden flex items-end sm:items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div
+      class="bg-white w-full sm:max-w-sm rounded-2xl sm:rounded-3xl shadow-2xl border border-stone-200/90 overflow-hidden flex flex-col my-auto animate-in zoom-in-95">
+      
+      <!-- Header -->
+      <div class="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 flex items-center justify-center">
+            <span class="material-symbols-rounded text-xl">pin</span>
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-black text-stone-900 leading-tight">Ubah PIN Kasir</h3>
+            <p id="changeCashierPinSub" class="text-[11px] text-stone-500 font-medium">Atur PIN 6-digit staf kasir</p>
+          </div>
+        </div>
+        <button type="button" onclick="window.KasirApp.closeChangeCashierPinModal()"
+          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition" title="Tutup">
+          <span class="material-symbols-rounded text-xl">close</span>
+        </button>
+      </div>
+
+      <!-- Form -->
+      <form onsubmit="window.KasirApp.handleChangeCashierPinSubmit(event)" class="p-5 flex flex-col gap-4">
+        <input type="hidden" id="changeCashierIdHidden">
+        
+        <div class="p-3 bg-stone-50 border border-stone-200 rounded-xl flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black text-xs flex items-center justify-center">
+            <span id="changeCashierAvatarText">K</span>
+          </div>
+          <div>
+            <p id="changeCashierNameLabel" class="text-xs font-bold text-stone-900">-</p>
+            <p class="text-[10px] text-stone-500">Staf Kasir Terdaftar</p>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="block text-xs font-black text-stone-700 flex items-center justify-between">
+            <span>PIN Baru (6 Digit Angka)</span>
+            <span class="text-[10px] text-stone-400 font-normal">Wajib 6 digit</span>
+          </label>
+          <div class="relative">
+            <input type="password" id="newCashierPinInput" maxlength="6" inputmode="numeric" pattern="[0-9]{6}"
+              placeholder="••••••" required autocomplete="off"
+              class="w-full px-4 py-3 rounded-xl border-2 border-stone-300 focus:border-emerald-600 focus:outline-none text-center text-2xl tracking-[0.5em] font-black text-stone-900 bg-stone-50">
+          </div>
+          <p class="text-[10.5px] text-stone-400">Gunakan angka acak yang mudah diingat kasir (hindari 123456 / 111111).</p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+          <button type="button" onclick="window.KasirApp.closeChangeCashierPinModal()"
+            class="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 text-xs touch-target-large transition">
+            Batal
+          </button>
+          <button type="submit"
+            class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs sm:text-sm touch-target-large shadow-sm transition active:scale-95">
+            Simpan PIN
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
