@@ -77,7 +77,7 @@
     <div class="flex flex-col items-center text-center max-w-xs animate-in zoom-in-95 duration-300">
       
       <!-- Animated Branded Logo -->
-      <div class="w-24 h-24 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 p-2 flex items-center justify-center shadow-2xl splash-logo-ring mb-4">
+      <div class="w-24 h-24 rounded-3xl bg-white/20 border border-white/30 p-2 flex items-center justify-center shadow-2xl splash-logo-ring mb-4">
         <img src="icon-192.png" alt="Aristotle POS" class="w-full h-full object-contain drop-shadow-md">
       </div>
 
@@ -355,47 +355,60 @@
           </button>
         </div>
 
-        <!-- Category Tabs & Executive Search Command Bar -->
-        <div class="bg-white p-2 sm:p-2.5 rounded-2xl shadow-xs border border-stone-200/80 flex flex-col gap-2">
+        <!-- Category Tabs & Search Bar -->
+        <div class="bg-white p-2.5 sm:p-3 rounded-2xl shadow-xs border border-stone-200/80 flex flex-col gap-2.5">
+          <!-- Category Pills Row -->
           <div class="flex items-center gap-1.5 overflow-x-auto custom-scroll w-full py-0.5 scroll-smooth">
             <button onclick="setCategory('all')" id="cat-all"
-              class="cat-pill shrink-0 py-1.5 px-3 rounded-xl font-black text-xs text-center bg-stone-900 text-white shadow-xs transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-900 whitespace-nowrap">
+              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-black text-xs sm:text-sm text-center bg-stone-900 text-white shadow-xs transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-900 whitespace-nowrap active:scale-95 cursor-pointer">
               <span class="material-symbols-rounded text-base">apps</span>
               <span>Semua</span>
             </button>
             <button onclick="setCategory('makanan')" id="cat-makanan"
-              class="cat-pill shrink-0 py-1.5 px-3 rounded-xl font-bold text-xs text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap">
+              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap active:scale-95 cursor-pointer">
               <span class="material-symbols-rounded text-base">lunch_dining</span>
               <span>Makanan</span>
             </button>
             <button onclick="setCategory('minuman')" id="cat-minuman"
-              class="cat-pill shrink-0 py-1.5 px-3 rounded-xl font-bold text-xs text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap">
+              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap active:scale-95 cursor-pointer">
               <span class="material-symbols-rounded text-base">local_cafe</span>
               <span>Minuman</span>
             </button>
             <button onclick="setCategory('camilan')" id="cat-camilan"
-              class="cat-pill shrink-0 py-1.5 px-3 rounded-xl font-bold text-xs text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap">
+              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap active:scale-95 cursor-pointer">
               <span class="material-symbols-rounded text-base">bakery_dining</span>
               <span>Camilan</span>
             </button>
             <button onclick="setCategory('topping')" id="cat-topping"
-              class="cat-pill shrink-0 py-1.5 px-3 rounded-xl font-bold text-xs text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap">
+              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap active:scale-95 cursor-pointer">
               <span class="material-symbols-rounded text-base">add_circle</span>
               <span>Topping</span>
             </button>
           </div>
 
-          <!-- Glassmorphic Search Input with Clear Button -->
-          <div class="relative w-full">
+          <!-- Search Input with Clear Button & Keyboard Shortcut -->
+          <div class="relative w-full group">
             <span
-              class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-lg pointer-events-none">search</span>
-            <input type="text" id="searchInput" oninput="window.KasirApp.handleSearchInput(event)" placeholder="Cari nama menu..."
-              class="w-full pl-9 pr-9 py-1.5 text-xs sm:text-sm rounded-xl border border-stone-200/90 focus:border-stone-900 focus:bg-white focus:outline-none bg-stone-50 font-medium transition placeholder:text-stone-400">
-            <button type="button" id="clearSearchBtn" onclick="window.KasirApp.clearSearch()"
-              class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-stone-200 hover:bg-stone-300 text-stone-600 flex items-center justify-center transition active:scale-90"
-              title="Hapus pencarian">
-              <span class="material-symbols-rounded text-sm">close</span>
-            </button>
+              class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 group-focus-within:text-emerald-700 transition-colors text-lg pointer-events-none">search</span>
+            
+            <input type="text" id="searchInput" oninput="window.KasirApp.handleSearchInput(event)"
+              placeholder="Cari menu makanan, minuman, camilan..."
+              class="w-full h-10 pl-9 pr-16 text-xs sm:text-sm rounded-xl border border-stone-200/90 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:outline-none bg-stone-50 font-semibold text-stone-800 transition shadow-2xs placeholder:text-stone-400 placeholder:font-normal">
+
+            <div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              <span id="searchKbdHint"
+                class="hidden md:inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold text-stone-400 bg-stone-200/70 border border-stone-300/80 select-none cursor-pointer"
+                onclick="document.getElementById('searchInput')?.focus()"
+                title="Tekan tombol '/' di keyboard untuk mencari cepat">
+                /
+              </span>
+
+              <button type="button" id="clearSearchBtn" onclick="window.KasirApp.clearSearch()"
+                class="hidden w-6 h-6 rounded-full bg-stone-200 hover:bg-rose-100 hover:text-rose-600 text-stone-600 flex items-center justify-center transition active:scale-90"
+                title="Hapus pencarian (Esc)" aria-label="Hapus pencarian">
+                <span class="material-symbols-rounded text-xs">close</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -467,7 +480,7 @@
     <div id="mobileFloatingCart"
       class="md:hidden fixed bottom-16 left-2.5 right-2.5 z-35 transition-all duration-300 translate-y-28 opacity-0 pointer-events-none">
       <div
-        class="bg-stone-900/95 backdrop-blur-xl text-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.35)] p-2 sm:p-2.5 flex items-center justify-between border border-white/10 ring-1 ring-emerald-500/30 gap-2">
+        class="bg-stone-900 text-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.35)] p-2 sm:p-2.5 flex items-center justify-between border border-white/10 ring-1 ring-emerald-500/30 gap-2">
         <div onclick="toggleMobileCartDrawer()" class="flex items-center gap-2 cursor-pointer flex-1 min-w-0 active:opacity-80 transition">
           <div
             class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-black flex items-center justify-center shrink-0 shadow-xs">
@@ -497,7 +510,7 @@
 
     <!-- ==================== MOBILE CART DRAWER ==================== -->
     <div id="mobileCartDrawer"
-      class="md:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex flex-col justify-end transition-opacity">
+      class="md:hidden fixed inset-0 z-50 bg-black/50 hidden flex flex-col justify-end transition-opacity">
       <div
         class="bg-white w-full rounded-t-3xl shadow-2xl border-t border-stone-200 flex flex-col max-h-[85vh] animate-bottom-sheet">
 
@@ -553,7 +566,7 @@
 
     <!-- ==================== SCREEN 2: PAYMENT (TUNAI & QRIS) MODAL ==================== -->
     <div id="paymentModal"
-      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
+      class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
       <div
         class="bg-white w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[92vh] transition-all">
 
@@ -598,7 +611,7 @@
                   <div id="activeDiscountBadge" class="hidden items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 border border-rose-300 text-rose-900 text-xs font-black shadow-xs">
                     <span class="material-symbols-rounded text-sm text-rose-600">local_offer</span>
                     <span id="activeDiscountText">Diskon 10% (-Rp 5.000)</span>
-                    <button type="button" onclick="window.KasirApp.removeDiscount()" class="w-4 h-4 rounded-full bg-rose-200 hover:bg-rose-300 text-rose-800 flex items-center justify-center text-xs ml-0.5 cursor-pointer" title="Hapus Diskon">✕</button>
+                    <button type="button" onclick="window.KasirApp.removeDiscount()" class="w-4 h-4 rounded-full bg-rose-200 hover:bg-rose-300 text-rose-800 flex items-center justify-center ml-0.5 cursor-pointer" title="Hapus Diskon"><span class="material-symbols-rounded text-[10px] font-bold">close</span></button>
                   </div>
                 </div>
               </div>
@@ -816,7 +829,7 @@
 
     <!-- ==================== MINI MODAL: PILIH / INPUT DISKON ==================== -->
     <div id="discountSelectionModal"
-      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
+      class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
       <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-stone-200 p-4 sm:p-5 flex flex-col gap-3.5">
         <!-- Header -->
         <div class="flex items-center justify-between pb-2 border-b border-stone-100">
@@ -900,7 +913,7 @@
 
     <!-- ==================== MODAL BUKA SHIFT BARU (MODAL AWAL KAS) ==================== -->
     <div id="startShiftModal"
-      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
+      class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
       <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-stone-200 p-5 flex flex-col gap-4">
         <!-- Header -->
         <div class="flex items-center justify-between pb-2 border-b border-stone-100">
@@ -964,7 +977,7 @@
 
     <!-- ==================== MODAL TUTUP SHIFT & AUDIT KASIR (Z-REPORT) ==================== -->
     <div id="closeShiftModal"
-      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4 animate-in fade-in overflow-y-auto">
+      class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-3 sm:p-4 animate-in fade-in overflow-y-auto">
       <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-stone-200 p-4 sm:p-6 flex flex-col gap-3.5 my-auto max-h-[95vh] overflow-y-auto custom-scroll">
         <!-- Header -->
         <div class="flex items-center justify-between pb-2 border-b border-stone-100">
@@ -1089,10 +1102,10 @@
           </button>
           
           <button onclick="openBulkImportModal()"
-            class="px-3 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 touch-target-large cursor-pointer"
-            title="Tambah banyak menu sekaligus dari teks WA/catatan">
-            <span class="material-symbols-rounded text-base">playlist_add</span>
-            <span>Upload Teks</span>
+            class="px-3.5 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-95 touch-target-large cursor-pointer shadow-2xs"
+            title="Tambah banyak menu sekaligus (Tabel cepat atau tempel teks WA)">
+            <span class="material-symbols-rounded text-lg">playlist_add</span>
+            <span>+ Tambah Banyak (Bulk)</span>
           </button>
 
           <div class="flex items-center gap-1.5">
@@ -1125,38 +1138,53 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
-        <!-- Admin Table Search & Filter Toolbar -->
-        <div class="p-3 sm:p-4 bg-stone-50/70 border-b border-stone-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div class="bg-white rounded-2xl shadow-sm border border-stone-200">
+        <!-- Admin Table Search & Filter Toolbar (Sticky directly under top header) -->
+        <div id="adminSearchFilterStickyBar"
+          class="sticky top-[52px] sm:top-[58px] z-10 p-2.5 sm:p-3.5 bg-white border-b border-stone-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shadow-xs rounded-t-2xl transition-all duration-150">
           <!-- Search Bar -->
-          <div class="relative flex-1 max-w-md">
-            <span class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-lg">search</span>
+          <div class="relative flex-1 max-w-md group">
+            <span class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 group-focus-within:text-emerald-700 text-lg transition-colors pointer-events-none">search</span>
             <input type="text" id="adminProductSearch" oninput="window.KasirApp.handleAdminSearch(this.value)"
               placeholder="Cari nama menu atau kategori..."
-              class="w-full pl-9 pr-8 py-2 bg-white rounded-xl border border-stone-300 text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition shadow-2xs">
-            <button type="button" id="adminProductSearchClear" onclick="window.KasirApp.clearAdminSearch()"
-              class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-0.5">
-              <span class="material-symbols-rounded text-sm">close</span>
-            </button>
+              class="w-full pl-9 pr-14 py-2 bg-stone-50 group-focus-within:bg-white rounded-xl border border-stone-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none transition shadow-2xs">
+            
+            <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              <span id="adminSearchKbdHint"
+                class="hidden md:inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold text-stone-400 bg-stone-200/70 border border-stone-300/80 select-none cursor-pointer"
+                onclick="document.getElementById('adminProductSearch')?.focus()"
+                title="Tekan tombol '/' di keyboard untuk mencari cepat">
+                /
+              </span>
+              <button type="button" id="adminProductSearchClear" onclick="window.KasirApp.clearAdminSearch()"
+                class="hidden w-6 h-6 rounded-full bg-stone-200 hover:bg-rose-100 hover:text-rose-600 text-stone-600 flex items-center justify-center transition active:scale-90"
+                title="Hapus pencarian (Esc)" aria-label="Hapus pencarian">
+                <span class="material-symbols-rounded text-xs">close</span>
+              </button>
+            </div>
           </div>
 
           <!-- Category Filter Pills -->
           <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 custom-scroll text-xs">
             <button type="button" onclick="window.KasirApp.setAdminCategoryFilter('all')" data-cat="all"
-              class="admin-cat-pill px-3 py-1.5 rounded-xl font-bold bg-emerald-700 text-white shadow-2xs transition whitespace-nowrap">
+              class="admin-cat-pill px-3 py-1.5 rounded-xl font-bold bg-emerald-700 text-white shadow-2xs transition whitespace-nowrap cursor-pointer active:scale-95">
               Semua
             </button>
             <button type="button" onclick="window.KasirApp.setAdminCategoryFilter('makanan')" data-cat="makanan"
-              class="admin-cat-pill px-3 py-1.5 rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap">
+              class="admin-cat-pill px-3 py-1.5 rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap cursor-pointer active:scale-95">
               Makanan
             </button>
             <button type="button" onclick="window.KasirApp.setAdminCategoryFilter('minuman')" data-cat="minuman"
-              class="admin-cat-pill px-3 py-1.5 rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap">
+              class="admin-cat-pill px-3 py-1.5 rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap cursor-pointer active:scale-95">
               Minuman
             </button>
             <button type="button" onclick="window.KasirApp.setAdminCategoryFilter('camilan')" data-cat="camilan"
-              class="admin-cat-pill px-3 py-1.5 rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap">
+              class="admin-cat-pill px-3 py-1.5 rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap cursor-pointer active:scale-95">
               Camilan
+            </button>
+            <button type="button" onclick="window.KasirApp.setAdminCategoryFilter('topping')" data-cat="topping"
+              class="admin-cat-pill px-3 py-1.5 rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap cursor-pointer active:scale-95">
+              Topping
             </button>
           </div>
         </div>
@@ -1214,46 +1242,81 @@
     <div id="viewReport" class="hidden flex-1 flex-col gap-5 max-w-7xl mx-auto w-full pb-8">
 
       <!-- Top Action & Period Filter Toolbar -->
-      <div
-        class="bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-stone-200/80 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3.5">
+      <div class="bg-white p-3 sm:p-4 rounded-3xl shadow-sm border border-stone-200/80 flex flex-col gap-3">
 
-        <!-- Period Selector Tabs (Generous & High Contrast) -->
-        <div class="flex items-center gap-1.5 bg-stone-100 p-1.5 rounded-2xl border border-stone-200/60 self-start sm:self-auto">
-          <button onclick="setReportPeriod('today')" id="period-today"
-            class="period-btn px-4 py-2 rounded-xl font-black text-xs sm:text-sm bg-emerald-700 text-white shadow-sm transition">
-            Hari Ini
-          </button>
-          <button onclick="setReportPeriod('month')" id="period-month"
-            class="period-btn px-4 py-2 rounded-xl font-extrabold text-xs sm:text-sm text-stone-600 hover:text-stone-900 transition">
-            Bulan Ini
-          </button>
-          <button onclick="setReportPeriod('all')" id="period-all"
-            class="period-btn px-4 py-2 rounded-xl font-extrabold text-xs sm:text-sm text-stone-600 hover:text-stone-900 transition">
-            Semua Waktu
-          </button>
+        <!-- Baris 1: Filter Periode (Presets + Tombol Rentang Tanggal) + Toggle Tampilan -->
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <!-- Sisi Kiri: Presets + Rentang Tanggal -->
+          <div class="flex items-center gap-2 overflow-x-auto custom-scroll flex-1 min-w-0 py-0.5">
+            <span class="text-[11px] font-black uppercase tracking-wider text-stone-400 shrink-0">Periode</span>
+            <div class="flex items-center gap-0.5 bg-stone-100 p-1 rounded-full border border-stone-200/60 shrink-0" role="tablist" aria-label="Periode laporan">
+              <button onclick="setReportPeriod('today')" id="period-today"
+                class="period-btn pl-2.5 pr-3 py-1.5 rounded-full font-black text-xs sm:text-sm bg-stone-900 text-white shadow-sm transition whitespace-nowrap flex items-center gap-1 cursor-pointer">
+                <span class="seg-check material-symbols-rounded text-base leading-none">check</span><span>Hari Ini</span>
+              </button>
+              <button onclick="setReportPeriod('month')" id="period-month"
+                class="period-btn pl-2.5 pr-3 py-1.5 rounded-full font-bold text-xs sm:text-sm text-stone-600 hover:text-stone-900 transition whitespace-nowrap flex items-center gap-1 cursor-pointer">
+                <span class="seg-check material-symbols-rounded text-base leading-none hidden">check</span><span>Bulan Ini</span>
+              </button>
+              <button onclick="setReportPeriod('all')" id="period-all"
+                class="period-btn pl-2.5 pr-3 py-1.5 rounded-full font-bold text-xs sm:text-sm text-stone-600 hover:text-stone-900 transition whitespace-nowrap flex items-center gap-1 cursor-pointer">
+                <span class="seg-check material-symbols-rounded text-base leading-none hidden">check</span><span>Semua</span>
+              </button>
+            </div>
+
+            <!-- Tombol Rentang Tanggal (Date Range) -->
+            <button type="button" id="btnReportDateRange" onclick="KasirApp.openDatePicker('range')"
+              class="flex items-center gap-2 px-3.5 py-1.5 rounded-full border bg-white text-stone-700 border-stone-300 hover:border-stone-400 font-extrabold text-xs sm:text-sm transition shrink-0 shadow-2xs cursor-pointer"
+              title="Filter rentang tanggal khusus">
+              <span class="material-symbols-rounded text-base text-emerald-700">date_range</span>
+              <span id="reportRangeBtnLabel">Rentang Tanggal</span>
+            </button>
+          </div>
+
+          <!-- Toggle Ringkasan / Grafik -->
+          <div class="relative flex items-center bg-stone-100 p-1 rounded-2xl border border-stone-200/80 shadow-2xs shrink-0" id="reportViewSegmentedControl">
+            <!-- Sliding background pill indicator -->
+            <div id="reportToggleSlider" 
+                 class="absolute top-1 bottom-1 rounded-xl bg-white shadow-xs transition-all duration-200 ease-out pointer-events-none"
+                 style="left: 4px; width: calc(50% - 4px);"></div>
+
+            <button type="button" id="tabBtnReportData" onclick="window.KasirApp.switchReportViewMode('data')"
+              class="relative z-10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-black text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 transition-colors duration-200 text-stone-900 cursor-pointer">
+              <span class="material-symbols-rounded text-base sm:text-lg text-emerald-700">receipt_long</span>
+              <span>Ringkasan Data</span>
+            </button>
+            <button type="button" id="tabBtnReportVisual" onclick="window.KasirApp.switchReportViewMode('visual')"
+              class="relative z-10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 transition-colors duration-200 text-stone-500 hover:text-stone-800 cursor-pointer">
+              <span class="material-symbols-rounded text-base sm:text-lg text-indigo-600">insights</span>
+              <span>Grafik Usaha</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Action Buttons: Catat Pengeluaran, Shift Z-Report, WA Share, CSV Export -->
-        <div class="flex items-center gap-2 flex-wrap">
+        <div class="h-px bg-stone-100"></div>
+
+        <!-- Baris 2: Aksi Keuangan (4 Kolom Rapi & Proporsional Tanpa Tombol Redundan) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button onclick="openExpenseModal()"
+            class="h-11 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
+            title="Catat biaya belanja / operasional">
+            <span class="material-symbols-rounded text-lg">receipt_long</span>
+            <span>+ Catat Pengeluaran</span>
+          </button>
           <button onclick="window.KasirApp.handleShiftHeaderClick()"
-            class="px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-extrabold text-xs sm:text-sm flex items-center gap-1.5 border border-emerald-300 transition touch-target-large shadow-2xs"
+            class="h-11 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 border border-emerald-300 transition cursor-pointer"
             title="Kelola Shift & Rekap Tutup Kasir (Z-Report)">
             <span class="material-symbols-rounded text-lg text-emerald-700">schedule</span>
             <span>Shift & Laporan Z</span>
           </button>
-          <button onclick="openExpenseModal()"
-            class="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition touch-target-large active:scale-95">
-            <span class="material-symbols-rounded text-lg">receipt_long</span>
-            <span>+ Catat Pengeluaran</span>
-          </button>
           <button onclick="shareReportWhatsApp()"
-            class="px-3.5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs sm:text-sm flex items-center gap-1.5 border border-stone-200 transition touch-target-large"
+            class="h-11 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 border border-stone-200 transition cursor-pointer"
             title="Kirim rekap laporan ke WhatsApp">
             <span class="material-symbols-rounded text-lg text-emerald-700">chat</span>
             <span>Kirim WA</span>
           </button>
           <button onclick="exportReportCSV()"
-            class="px-3.5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs sm:text-sm flex items-center gap-1.5 border border-stone-200 transition touch-target-large"
+            class="h-11 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 border border-stone-200 transition cursor-pointer"
             title="Download Excel CSV">
             <span class="material-symbols-rounded text-lg text-stone-600">table_view</span>
             <span>Excel</span>
@@ -1261,8 +1324,11 @@
         </div>
       </div>
 
-      <!-- Core Financial Metric Cards (3 Spacious Cards) -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- ==================== REPORT DATA VIEW (RINGKASAN & RIWAYAT) ==================== -->
+      <div id="reportDataView" class="flex flex-col gap-5 report-slide-left">
+
+        <!-- Core Financial Metric Cards (3 Spacious Cards) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
         <!-- 1. Omset (Pemasukan) -->
         <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-stone-200/80 flex flex-col justify-between gap-4">
@@ -1417,6 +1483,246 @@
           </div>
         </div>
 
+      </div>
+      <!-- End of #reportDataView -->
+      </div>
+
+      <!-- ==================== REPORT VISUAL VIEW (GRAFIK & ANALITIK USAHA) ==================== -->
+      <div id="reportVisualView" class="hidden flex flex-col gap-5 report-slide-right">
+        
+        <!-- Visual Header Banner -->
+        <div class="bg-stone-900 text-white p-5 rounded-3xl shadow-sm border border-stone-800 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-white/10 text-emerald-400 flex items-center justify-center shrink-0 border border-white/10 shadow-inner">
+              <span class="material-symbols-rounded text-2xl">insights</span>
+            </div>
+            <div>
+              <h3 class="text-base sm:text-lg font-black leading-tight">Grafik Analisis Bisnis & Keputusan Usaha</h3>
+              <p id="insightPeriodLabel" class="text-xs text-stone-400 mt-0.5 font-medium">Visualisasi statistik penjualan, tren bulanan, dan jam ramai</p>
+            </div>
+          </div>
+          <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 border border-white/10 text-xs font-bold text-emerald-400">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Live Analytic</span>
+          </div>
+        </div>
+
+        <!-- Quick Statistics Cards Grid -->
+        <div id="insightSummary" class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <!-- Rendered dynamically by renderInsights() -->
+        </div>
+
+        <!-- KPI Pertumbuhan & Operasional -->
+        <div id="insightKpi" class="grid grid-cols-3 gap-2.5">
+          <!-- Rendered dynamically by renderInsights() -->
+        </div>
+
+        <!-- 1. Omzet Harian -->
+        <div class="bg-white border border-stone-200/80 rounded-3xl p-5 shadow-sm">
+          <div class="flex items-center justify-between gap-2 flex-wrap mb-3">
+            <div>
+              <h4 class="text-sm font-black text-stone-900">Grafik Omzet Harian</h4>
+              <p class="text-[11px] text-stone-500 font-medium">Ketuk / arahkan batang untuk detail</p>
+            </div>
+            <div id="insightRangeSeg" class="flex items-center gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200/60">
+              <button type="button" data-range="7" onclick="KasirApp.setInsightRange(7)"
+                class="px-3 py-1.5 rounded-lg font-bold text-xs transition text-stone-500 hover:text-stone-900">7 Hari</button>
+              <button type="button" data-range="14" onclick="KasirApp.setInsightRange(14)"
+                class="px-3 py-1.5 rounded-lg font-black text-xs transition bg-stone-900 text-white shadow-sm">14 Hari</button>
+              <button type="button" data-range="30" onclick="KasirApp.setInsightRange(30)"
+                class="px-3 py-1.5 rounded-lg font-bold text-xs transition text-stone-500 hover:text-stone-900">30 Hari</button>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <div id="insightDailyY" class="flex flex-col justify-between text-right text-[10px] font-bold text-stone-400 h-28 py-0.5 shrink-0 w-10 tabular-nums"></div>
+            <div class="flex-1 min-w-0 bg-stone-50/60 rounded-xl px-2">
+              <div id="insightDailyChart" class="flex items-end gap-1.5 h-28 overflow-x-auto custom-scroll"></div>
+            </div>
+          </div>
+          <p id="insightDayDetail" class="mt-2 text-xs font-bold text-stone-600">Arahkan kursor / ketuk batang untuk detail harian</p>
+        </div>
+
+        <!-- Grid 2 Kolom: Tren 12 Bulan & Jam Ramai Pembeli -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Tren 12 Bulan -->
+          <div class="bg-white border border-stone-200/80 rounded-3xl p-5 shadow-sm flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-sm font-black text-stone-900">Tren Penjualan 12 Bulan</h4>
+                <p class="text-[11px] text-stone-500 font-medium">Perbandingan omzet bulan ke bulan</p>
+              </div>
+              <span class="material-symbols-rounded text-xl text-stone-400">calendar_month</span>
+            </div>
+            <div id="insightMonthlyChart" class="flex flex-col gap-2 pt-1"></div>
+          </div>
+
+          <!-- Jam Ramai Pembeli -->
+          <div class="bg-white border border-stone-200/80 rounded-3xl p-5 shadow-sm flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-sm font-black text-stone-900">Puncak Jam Ramai Pembeli (06.00 - 21.00)</h4>
+                <p class="text-[11px] text-stone-500 font-medium">Ketahui jam sibuk toko untuk kesiapan stok & staf</p>
+              </div>
+              <span class="material-symbols-rounded text-xl text-amber-500">schedule</span>
+            </div>
+            <div id="insightHourlyChart" class="flex flex-col gap-2 pt-1"></div>
+          </div>
+        </div>
+
+        <!-- Grid: Laba per Bulan & Rata-rata Struk -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Laba per Bulan -->
+          <div class="bg-white border border-stone-200/80 rounded-3xl p-5 shadow-sm flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-sm font-black text-stone-900">Laba per Bulan</h4>
+                <p class="text-[11px] text-stone-500 font-medium">Omzet vs biaya 12 bulan terakhir</p>
+              </div>
+              <span class="material-symbols-rounded text-xl text-emerald-600">trending_up</span>
+            </div>
+            <div class="flex items-center gap-3 text-[11px] font-bold text-stone-500">
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>Omzet</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>Biaya</span>
+              <span class="ml-auto">Kanan: laba</span>
+            </div>
+            <div id="insightProfitChart" class="flex flex-col gap-1.5 pt-1"></div>
+          </div>
+
+          <!-- Rata-rata Struk per Bulan -->
+          <div class="bg-white border border-stone-200/80 rounded-3xl p-5 shadow-sm flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-sm font-black text-stone-900">Rata-rata Struk per Bulan</h4>
+                <p class="text-[11px] text-stone-500 font-medium">Besaran belanja tiap pembeli</p>
+              </div>
+              <span class="material-symbols-rounded text-xl text-teal-600">shopping_basket</span>
+            </div>
+            <div id="insightAvgChart" class="flex flex-col gap-2 pt-1"></div>
+          </div>
+        </div>
+
+        <!-- Grid: Pola Hari & Sebaran Nilai Struk -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Pola Hari Senin-Minggu -->
+          <div class="bg-white border border-stone-200/80 rounded-3xl p-5 shadow-sm flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-sm font-black text-stone-900">Pola Hari Senin–Minggu</h4>
+                <p class="text-[11px] text-stone-500 font-medium">Acuan stok & jadwal jaga</p>
+              </div>
+              <span class="material-symbols-rounded text-xl text-amber-500">calendar_view_week</span>
+            </div>
+            <div id="insightWeekdayChart" class="flex flex-col gap-2 pt-1"></div>
+          </div>
+
+          <!-- Sebaran Nilai Struk -->
+          <div class="bg-white border border-stone-200/80 rounded-3xl p-5 shadow-sm flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-sm font-black text-stone-900">Sebaran Nilai Struk</h4>
+                <p class="text-[11px] text-stone-500 font-medium">Pembeli belanja di kisaran mana</p>
+              </div>
+              <span class="material-symbols-rounded text-xl text-sky-600">receipt_long</span>
+            </div>
+            <div id="insightBasketChart" class="flex flex-col gap-2 pt-1"></div>
+          </div>
+        </div>
+
+        <!-- Tabel Rekap Bulanan -->
+        <div class="bg-white border border-stone-200/80 rounded-3xl p-5 shadow-sm flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <div>
+              <h4 class="text-sm font-black text-stone-900">Rekap Bulanan</h4>
+              <p class="text-[11px] text-stone-500 font-medium">12 bulan terakhir, terbaru di atas</p>
+            </div>
+            <button type="button" onclick="KasirApp.exportMonthlyCSV()"
+              class="h-9 px-3.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs flex items-center gap-1.5 border border-stone-200 transition">
+              <span class="material-symbols-rounded text-base text-stone-600">table_view</span>
+              <span>Unduh CSV</span>
+            </button>
+          </div>
+          <div class="overflow-x-auto custom-scroll -mx-1 px-1">
+            <table class="w-full text-xs min-w-[520px]">
+              <thead>
+                <tr class="text-[11px] font-bold text-stone-400 border-b border-stone-200">
+                  <th class="text-left py-2 pr-2">Bulan</th>
+                  <th class="text-right py-2 px-2">Struk</th>
+                  <th class="text-right py-2 px-2">Omzet</th>
+                  <th class="text-right py-2 px-2">Biaya</th>
+                  <th class="text-right py-2 pl-2">Laba</th>
+                </tr>
+              </thead>
+              <tbody id="insightMonthBody"></tbody>
+              <tfoot id="insightMonthFoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Grid 2 Kolom: Tunai vs QRIS & Pos Biaya Paling Besar -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Tunai vs QRIS -->
+          <div class="bg-white border border-stone-200/80 rounded-3xl p-5 shadow-sm flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-sm font-black text-stone-900">Metode Pembayaran (Tunai vs QRIS)</h4>
+                <p class="text-[11px] text-stone-500 font-medium">Proporsi uang tunai di kasir dibandingkan QRIS</p>
+              </div>
+              <span class="material-symbols-rounded text-xl text-emerald-600">account_balance_wallet</span>
+            </div>
+            <div id="insightPayChart" class="pt-1"></div>
+          </div>
+
+          <!-- Biaya Paling Besar -->
+          <div class="bg-white border border-stone-200/80 rounded-3xl p-5 shadow-sm flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-sm font-black text-stone-900">Distribusi Pengeluaran Terbesar</h4>
+                <p class="text-[11px] text-stone-500 font-medium">Pos pengeluaran belanja per kategori</p>
+              </div>
+              <span class="material-symbols-rounded text-xl text-rose-500">pie_chart</span>
+            </div>
+            <div id="insightExpenseChart" class="flex flex-col gap-2 pt-1"></div>
+          </div>
+        </div>
+
+        <!-- Menu Paling Cuan -->
+        <div class="bg-white border border-stone-200/80 rounded-3xl p-5 shadow-sm flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="text-sm font-black text-stone-900">Menu Paling Cuan (Penyumbang Omzet Terbesar)</h4>
+              <p class="text-[11px] text-stone-500 font-medium">Daftar menu dengan kontribusi rupiah paling tinggi bagi toko</p>
+            </div>
+            <span class="material-symbols-rounded text-xl text-amber-600">workspace_premium</span>
+          </div>
+          <div id="insightMenuChart" class="flex flex-col gap-2 pt-1"></div>
+        </div>
+
+      </div>
+
+      <!-- Saran Usaha (level halaman: tampil di tab Ringkasan & Grafik) -->
+      <div class="bg-emerald-50 border border-emerald-200/90 rounded-3xl p-5 shadow-sm flex flex-col gap-2.5">
+        <h4 class="text-sm font-black text-emerald-950 flex items-center gap-2">
+          <span class="material-symbols-rounded text-xl text-emerald-700">tips_and_updates</span>
+          <span>Saran Usaha</span>
+        </h4>
+        <!-- Analisis AI (model gratis, opsional) -->
+        <div class="rounded-2xl bg-white/80 border border-emerald-200 p-3 flex flex-col gap-2">
+          <div class="flex items-center gap-1.5 text-xs font-black text-emerald-950">
+            <span class="material-symbols-rounded text-base">smart_toy</span>
+            <span>Analisis AI</span>
+            <span id="aiStatusBadge" class="ml-auto text-[10px] font-bold text-stone-400">Siap</span>
+          </div>
+          <button type="button" id="aiAnalyzeBtn" onclick="KasirApp.requestAiInsight()"
+            class="h-10 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center justify-center gap-1.5 transition active:scale-95 disabled:opacity-40">
+            <span class="material-symbols-rounded text-base">auto_awesome</span>
+            <span>Minta analisis AI</span>
+          </button>
+          <div id="aiInsightResult" class="hidden rounded-xl bg-white border border-stone-200 p-3.5"></div>
+        </div>
+        <p class="text-[11px] font-bold text-emerald-800/70">Otomatis:</p>
+        <ul id="insightTips" class="flex flex-col gap-2 text-xs text-emerald-950 font-semibold leading-relaxed list-disc pl-5">
+          <!-- Rendered dynamically -->
+        </ul>
       </div>
 
     </div>
@@ -1612,7 +1918,7 @@
 
   <!-- ==================== MOBILE BOTTOM NAVIGATION BAR (MODERN FLOATING DOCK) ==================== -->
   <nav id="mobileBottomNav"
-    class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-stone-200/90 flex items-center justify-around py-1.5 px-3 shadow-[0_-4px_16px_rgba(0,0,0,0.04)]">
+    class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-stone-200 flex items-center justify-around py-1.5 px-3 shadow-[0_-4px_16px_rgba(0,0,0,0.04)]">
     <button onclick="switchView('pos')" id="btnNavPosMobile"
       class="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-xl text-emerald-800 bg-emerald-50 font-black text-xs touch-target-large transition active:scale-95 shadow-2xs">
       <span class="material-symbols-rounded text-xl">point_of_sale</span>
@@ -1632,7 +1938,7 @@
 
   <!-- ==================== MODAL: CUSTOM M3 CONFIRMATION DIALOG ==================== -->
   <div id="customConfirmModal"
-    class="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    class="fixed inset-0 z-[90] bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div
       class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col">
       <div class="p-5 sm:p-6 flex flex-col gap-3 text-center sm:text-left">
@@ -1655,7 +1961,7 @@
 
   <!-- ==================== MODAL: HAPUS SELURUH MENU (HIGH-SAFETY CONFIRMATION) ==================== -->
   <div id="deleteAllMenuModal"
-    class="fixed inset-0 z-[95] bg-black/70 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    class="fixed inset-0 z-[95] bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div
       class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col animate-scaleUp">
       <div class="p-5 sm:p-6 flex flex-col gap-3.5">
@@ -1710,7 +2016,7 @@
 
   <!-- ==================== MODAL: GANTI NAMA ANTRIAN / MEJA ==================== -->
   <div id="renameQueueModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div
       class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col">
       
@@ -1765,7 +2071,7 @@
 
   <!-- ==================== MODAL: BUAT TOKO UMKM BARU ==================== -->
   <div id="createStoreModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div
       class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col">
       
@@ -1805,7 +2111,7 @@
 
   <!-- ==================== MODAL: CATAT PENGELUARAN BARU ==================== -->
   <div id="expenseModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div
       class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col">
       
@@ -1861,12 +2167,12 @@
 
   <!-- ==================== MODAL: CATATAN RILIS / APA YANG BARU ==================== -->
   <div id="releaseNotesModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-stone-200 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]">
       <!-- Header -->
       <div class="px-6 py-4 border-b border-stone-200 flex items-center justify-between bg-gradient-to-r from-emerald-800 to-emerald-950 text-white">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-sm shadow-inner">
+          <div class="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center shadow-inner">
             <span class="material-symbols-rounded text-2xl text-emerald-300">campaign</span>
           </div>
           <div>
@@ -1963,7 +2269,7 @@
 
   <!-- ==================== MODAL: UBAH NAMA ANTRIAN / NOMOR MEJA ==================== -->
   <div id="renameQueueModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-stone-200 animate-in fade-in zoom-in-95 duration-150">
       <div class="px-5 py-4 border-b border-stone-200 flex items-center justify-between bg-stone-50">
         <div class="flex items-center gap-2.5">
@@ -2020,7 +2326,7 @@
 
   <!-- ==================== MODAL: ADD / EDIT PRODUCT ==================== -->
   <div id="productModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6">
     <div
       class="bg-white w-full sm:max-w-xl md:max-w-3xl lg:max-w-4xl max-h-[94vh] sm:max-h-[90vh] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col animate-in zoom-in-95">
       
@@ -2031,8 +2337,8 @@
             <span class="material-symbols-rounded text-2xl">restaurant_menu</span>
           </div>
           <div>
-            <h3 id="productModalTitle" class="text-sm sm:text-base font-black text-stone-900 leading-tight">Tambah Menu Baru</h3>
-            <p class="text-[11px] sm:text-xs text-stone-500 font-medium mt-0.5">Atur nama makanan, harga, stok, dan ketersediaan</p>
+            <h3 id="productModalTitle" class="text-sm sm:text-base font-black text-stone-900 leading-tight">Tambah Menu</h3>
+            <p class="text-[11px] sm:text-xs text-stone-500 font-medium mt-0.5">Nama, harga, stok</p>
           </div>
         </div>
         <button type="button" onclick="closeProductModal()" class="w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-800 flex items-center justify-center transition cursor-pointer" title="Tutup">
@@ -2052,8 +2358,8 @@
             <div class="md:col-span-6 flex flex-col gap-3">
               <!-- Nama Menu -->
               <div>
-                <label class="block text-stone-700 font-bold mb-1 text-xs sm:text-sm">Nama Menu / Produk *</label>
-                <input type="text" id="prodName" required placeholder="Contoh: Nasi Goreng Telur"
+                <label class="block text-stone-700 font-bold mb-1 text-xs sm:text-sm">Nama menu *</label>
+                <input type="text" id="prodName" required placeholder="cth: Nasi Goreng"
                   class="w-full px-3 py-2 sm:py-2.5 rounded-xl border border-stone-300 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 focus:outline-none text-xs sm:text-sm font-semibold transition">
               </div>
 
@@ -2062,7 +2368,7 @@
                 <label class="block text-stone-700 font-bold mb-1 text-xs sm:text-sm">Harga (Rp) *</label>
                 <div class="relative flex items-center">
                   <span class="absolute left-3 text-stone-400 font-black text-xs sm:text-sm">Rp</span>
-                  <input type="number" id="prodPrice" required min="0" step="any" placeholder="Contoh: 15000"
+                  <input type="number" id="prodPrice" required min="0" step="any" placeholder="15000"
                     class="w-full pl-9 pr-3 py-2 sm:py-2.5 rounded-xl border border-stone-300 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 focus:outline-none text-sm sm:text-base font-black text-emerald-700 transition">
                 </div>
               </div>
@@ -2081,7 +2387,7 @@
                 </div>
 
                 <div>
-                  <label class="block text-stone-700 font-bold mb-1 text-xs">Simbol Icon</label>
+                  <label class="block text-stone-700 font-bold mb-1 text-xs">Ikon</label>
                   <select id="prodIcon"
                     class="w-full px-2.5 py-2 rounded-xl border border-stone-300 focus:border-emerald-600 focus:outline-none text-xs font-semibold bg-white transition">
                     <option value="lunch_dining">Makanan</option>
@@ -2102,9 +2408,9 @@
                 <div class="flex items-center justify-between">
                   <label class="block text-stone-800 font-bold text-xs flex items-center gap-1.5">
                     <span class="material-symbols-rounded text-base text-emerald-700">photo_camera</span>
-                    <span>Foto Menu (Opsional)</span>
+                    <span>Foto (opsional)</span>
                   </label>
-                  <span class="text-[10px] font-semibold text-stone-400 bg-white px-2 py-0.5 rounded-full border border-stone-200">Auto compress ~20KB</span>
+                  <span class="text-[10px] font-semibold text-stone-400 bg-white px-2 py-0.5 rounded-full border border-stone-200">~20KB</span>
                 </div>
 
                 <div class="flex items-center gap-2.5">
@@ -2125,7 +2431,7 @@
                       <button type="button" onclick="window.KasirApp.triggerProductImageUpload()"
                         class="px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs flex items-center gap-1 transition shadow-2xs active:scale-95 cursor-pointer">
                         <span class="material-symbols-rounded text-sm">upload</span>
-                        <span>Pilih / Foto</span>
+                        <span>Pilih foto</span>
                       </button>
                       
                       <button type="button" id="btnRemoveProductImage" onclick="window.KasirApp.removeProductImage()"
@@ -2134,7 +2440,7 @@
                         <span>Hapus</span>
                       </button>
                     </div>
-                    <p class="text-[10px] text-stone-500 leading-tight">Foto dioptimalkan otomatis agar aplikasi tetap cepat & siap offline.</p>
+                    <p class="text-[10px] text-stone-500 leading-tight">Otomatis dikecilkan.</p>
                   </div>
                 </div>
               </div>
@@ -2146,8 +2452,7 @@
               <div class="bg-stone-50 p-3 rounded-2xl border border-stone-200 flex flex-col gap-2.5">
                 <div class="flex items-center justify-between">
                   <div>
-                    <span class="text-xs font-black text-stone-800">Status Menu</span>
-                    <p class="text-[10.5px] text-stone-500">Bisa langsung dipesan kasir</p>
+                    <span class="text-xs font-black text-stone-800">Tersedia</span>
                   </div>
                   <label class="flex items-center gap-1.5 cursor-pointer bg-white px-2.5 py-1.5 rounded-xl border border-stone-200 shadow-2xs">
                     <input type="checkbox" id="prodIsAvailable" class="w-4 h-4 accent-emerald-600 cursor-pointer" checked>
@@ -2158,8 +2463,8 @@
                 <div class="border-t border-stone-200 pt-2.5 flex flex-col gap-2">
                   <div class="flex items-center justify-between">
                     <div>
-                      <label for="prodStock" class="text-xs font-black text-stone-800">Sisa Stok (Porsi)</label>
-                      <p class="text-[10.5px] text-stone-500 font-medium">Kosongkan jika selalu ready</p>
+                      <label for="prodStock" class="text-xs font-black text-stone-800">Stok (porsi)</label>
+                      <p class="text-[10.5px] text-stone-500 font-medium">Kosong = selalu ada</p>
                     </div>
                     <div class="flex items-center gap-1.5">
                       <input type="number" id="prodStock" min="0" step="1" placeholder="Bebas"
@@ -2170,7 +2475,7 @@
 
                   <!-- Quick presets to set stock in 1 click -->
                   <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="text-[10.5px] text-stone-400 font-bold">Preset:</span>
+                    <span class="text-[10.5px] text-stone-400 font-bold">Cepat:</span>
                     <button type="button" onclick="document.getElementById('prodStock').value = 10" class="px-2 py-0.5 bg-white hover:bg-emerald-50 rounded-lg text-xs font-bold text-stone-700 border border-stone-200 active:scale-95 transition">10</button>
                     <button type="button" onclick="document.getElementById('prodStock').value = 25" class="px-2 py-0.5 bg-white hover:bg-emerald-50 rounded-lg text-xs font-bold text-stone-700 border border-stone-200 active:scale-95 transition">25</button>
                     <button type="button" onclick="document.getElementById('prodStock').value = 50" class="px-2 py-0.5 bg-white hover:bg-emerald-50 rounded-lg text-xs font-bold text-stone-700 border border-stone-200 active:scale-95 transition">50</button>
@@ -2183,11 +2488,11 @@
               <div class="bg-amber-50/70 p-3 rounded-2xl border border-amber-200/90 flex flex-col gap-2">
                 <div class="flex items-center justify-between">
                   <div>
-                    <span class="text-xs font-black text-amber-950 flex items-center gap-1">
-                      <span class="material-symbols-rounded text-base text-amber-700">add_circle</span>
-                      Pilihan Add-On / Topping
-                    </span>
-                    <p class="text-[10px] text-amber-800">Contoh: Telur (+3.000), Keju (+4.000)</p>
+                      <span class="text-xs font-black text-amber-950 flex items-center gap-1">
+                        <span class="material-symbols-rounded text-base text-amber-700">add_circle</span>
+                        Topping
+                      </span>
+                      <p class="text-[10px] text-amber-800">cth: Telur (+3rb)</p>
                   </div>
                   <button type="button" onclick="window.KasirApp.addNewAddOnRow()"
                     class="px-2.5 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 font-black text-xs flex items-center gap-1 border border-amber-300 transition active:scale-95 cursor-pointer shadow-2xs">
@@ -2200,7 +2505,6 @@
                 </div>
               </div>
             </div>
-
           </div>
         </div>
 
@@ -2222,41 +2526,113 @@
 
   <!-- ==================== BULK MENU TEXT IMPORTER MODAL ==================== -->
   <div id="bulkImportModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-2 sm:p-4">
     <div
-      class="bg-white w-full sm:max-w-2xl rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95">
+      class="bg-white w-full sm:max-w-3xl rounded-2xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[94vh] animate-in zoom-in-95">
       
       <!-- Modal Header -->
       <div class="p-4 sm:p-5 pb-3 flex items-start justify-between border-b border-stone-100 bg-white">
         <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center justify-center shrink-0">
+          <div class="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center justify-center shrink-0 shadow-2xs">
             <span class="material-symbols-rounded text-2xl">playlist_add</span>
           </div>
           <div>
-            <h3 class="text-base sm:text-lg font-black text-stone-900 leading-tight">Upload Teks Menu</h3>
-            <p class="text-xs text-stone-500 font-medium mt-0.5">Tempel daftar menu dari WhatsApp atau catatan</p>
+            <h3 class="text-base sm:text-lg font-black text-stone-900 leading-tight">Tambah Banyak</h3>
+            <p class="text-xs text-stone-500 font-medium mt-0.5">Tabel cepat atau tempel teks</p>
           </div>
         </div>
-        <button type="button" onclick="closeBulkImportModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition" title="Tutup">
+        <button type="button" onclick="closeBulkImportModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer" title="Tutup">
           <span class="material-symbols-rounded text-2xl">close</span>
+        </button>
+      </div>
+
+      <!-- Mode Switcher Tabs -->
+      <div class="flex items-center border-b border-stone-200 bg-stone-50/80 px-4 sm:px-5 pt-2 gap-2">
+        <button type="button" id="tabBtnBulkTable" onclick="switchBulkMode('table')"
+          class="px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-extrabold flex items-center gap-1.5 border-b-2 border-indigo-600 text-indigo-700 bg-white rounded-t-xl transition shadow-2xs cursor-pointer">
+          <span class="material-symbols-rounded text-lg">table_chart</span>
+            <span>Tabel</span>
+          <span id="bulkTableRowBadge" class="ml-1 px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-black">5 Baris</span>
+        </button>
+        <button type="button" id="tabBtnBulkText" onclick="switchBulkMode('text')"
+          class="px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-bold flex items-center gap-1.5 border-b-2 border-transparent text-stone-500 hover:text-stone-800 rounded-t-xl transition cursor-pointer">
+          <span class="material-symbols-rounded text-lg">content_paste</span>
+            <span>Tempel teks</span>
         </button>
       </div>
 
       <!-- Modal Body (Scrollable) -->
       <div class="p-4 sm:p-5 flex flex-col gap-4 overflow-y-auto custom-scroll flex-1">
         
-        <!-- Text Area Section -->
-        <div class="flex flex-col gap-1.5">
-          <div class="flex items-center justify-between">
+        <!-- View 1: Tabel Baris Cepat -->
+        <div id="bulkTableView" class="flex flex-col gap-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button type="button" onclick="addBulkRow(1)"
+                class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-extrabold text-xs rounded-xl flex items-center gap-1 transition shadow-2xs active:scale-95 cursor-pointer">
+                <span class="material-symbols-rounded text-base">add_circle</span>
+                <span>+ Baris</span>
+              </button>
+              <button type="button" onclick="addBulkRow(5)"
+                class="px-2.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs rounded-xl flex items-center gap-1 transition active:scale-95 cursor-pointer">
+                <span>+ 5 Baris</span>
+              </button>
+              <button type="button" onclick="clearEmptyBulkRows()"
+                class="px-2.5 py-1.5 bg-stone-50 hover:bg-stone-100 text-stone-500 hover:text-stone-700 font-bold text-xs rounded-xl border border-stone-200 transition active:scale-95 cursor-pointer"
+                title="Hapus baris yang namanya masih kosong">
+                <span class="material-symbols-rounded text-sm">cleaning_services</span>
+                <span>Bersihkan kosong</span>
+              </button>
+              <button type="button" onclick="window.KasirApp.clearAllBulkRows()"
+                class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs rounded-xl border border-red-200 transition active:scale-95 cursor-pointer"
+                title="Hapus seluruh baris di tabel">
+                <span class="material-symbols-rounded text-sm">delete_sweep</span>
+                <span>Hapus semua</span>
+              </button>
+            </div>
+            <span class="text-[11px] text-stone-400 font-medium hidden sm:inline">Tab = pindah kolom</span>
+          </div>
+
+          <!-- Table Container -->
+          <div class="border border-stone-200 rounded-2xl overflow-hidden shadow-2xs bg-white">
+            <div class="max-h-[360px] overflow-y-auto overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead class="sticky top-0 bg-stone-50 border-b border-stone-200 z-10 select-none">
+                  <tr>
+                    <th class="w-10 text-center py-2.5 px-2 text-stone-400 font-black text-[11px]">No</th>
+                    <th class="py-2.5 px-3 text-stone-700 font-black min-w-[180px]">Nama Menu</th>
+                    <th class="py-2.5 px-2 text-stone-700 font-black w-32 sm:w-36">Kategori</th>
+                    <th class="py-2.5 px-2 text-stone-700 font-black w-32 sm:w-36">Harga (Rp)</th>
+                    <th class="w-12 text-center py-2.5 px-2 text-stone-400 font-black text-[11px]">Hapus</th>
+                  </tr>
+                </thead>
+                <tbody id="bulkTableBody" class="divide-y divide-stone-100">
+                  <!-- Rendered dynamically by renderBulkTable() -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- View 2: Tempel Teks (WA / Catatan) -->
+        <div id="bulkTextView" class="hidden flex flex-col gap-2.5">
+          <div class="flex items-center justify-between flex-wrap gap-2">
             <label for="bulkMenuTextInput" class="text-xs font-black text-stone-800 flex items-center gap-1.5">
               <span>Teks Daftar Menu</span>
             </label>
-            <button type="button" onclick="loadUserSampleMenu()"
-              class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-lg border border-indigo-200 flex items-center gap-1 transition shadow-2xs"
-              title="Isi otomatis dengan 22 menu Anda">
-              <span class="material-symbols-rounded text-sm">content_paste</span>
-              <span>Tempel Menu Anda</span>
-            </button>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="document.getElementById('bulkMenuTextInput').value='';handleBulkTextInput()"
+                class="px-2.5 py-1 text-stone-500 hover:text-stone-700 font-bold text-xs rounded-lg hover:bg-stone-100 transition cursor-pointer"
+                title="Kosongkan teks">
+                <span>Hapus teks</span>
+              </button>
+              <button type="button" onclick="loadUserSampleMenu()"
+                class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-lg border border-indigo-200 flex items-center gap-1 transition shadow-2xs cursor-pointer"
+                title="Isi otomatis dengan contoh 22 menu">
+                <span class="material-symbols-rounded text-sm">content_paste</span>
+                <span>Tempel Contoh Menu (22)</span>
+              </button>
+            </div>
           </div>
           
           <textarea id="bulkMenuTextInput" rows="6" oninput="handleBulkTextInput()"
@@ -2269,25 +2645,34 @@ Aneka minuman saset 5k
 Kopi susu 7k"
             class="w-full p-3 rounded-xl border border-stone-300 focus:border-indigo-600 focus:outline-none text-xs font-mono leading-relaxed bg-stone-50/50 resize-y"></textarea>
           
-          <p class="text-[11px] text-stone-500">
-            Format bebas: sebut nama dan harga (misal: 15k, 15000, 15rb). Kategori otomatis terdeteksi (Makanan / Minuman / Camilan).
-          </p>
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-stone-50 border border-stone-200 text-[11px] text-stone-600">
+            <span>Format bebas: Cukup ketik nama & harga per baris (misal: 15k, 15000, 15rb).</span>
+            <button type="button" onclick="convertTextToTable()"
+              class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold flex items-center justify-center gap-1 shrink-0 transition active:scale-95 cursor-pointer shadow-2xs">
+              <span class="material-symbols-rounded text-sm">table_rows</span>
+              <span>Pindahkan ke Tabel</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Preview Section -->
-        <div class="flex flex-col gap-2">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-black text-stone-800">Hasil Deteksi Menu</span>
-            <span id="bulkPreviewCountBadge" class="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 font-black text-xs">0 Menu</span>
-          </div>
-
-          <div id="bulkImportPreviewList">
-            <!-- Rendered by renderBulkPreviewList() -->
+        <!-- Summary & Detection Card -->
+        <div id="bulkSummaryBox" class="p-3 bg-stone-50 rounded-2xl border border-stone-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 font-bold">
+              <span class="material-symbols-rounded text-lg">fact_check</span>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span id="bulkValidCountText" class="text-xs font-black text-stone-900">0 Menu Siap Disimpan</span>
+                <span id="bulkBreakdownPills" class="text-[11px] font-semibold text-stone-500"></span>
+              </div>
+              <p class="text-[11px] text-stone-400 mt-0.5">Baris dengan nama menu yang terisi akan otomatis disimpan.</p>
+            </div>
           </div>
         </div>
 
         <!-- Save Mode Option -->
-        <div class="bg-stone-50 p-3 rounded-xl border border-stone-200 flex flex-col gap-2">
+        <div class="bg-stone-50 p-3 rounded-2xl border border-stone-200 flex flex-col gap-2">
           <span class="text-xs font-black text-stone-800">Opsi Penyimpanan</span>
           <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 text-xs font-semibold text-stone-700">
             <label class="flex items-center gap-1.5 cursor-pointer">
@@ -2296,7 +2681,7 @@ Kopi susu 7k"
             </label>
             <label class="flex items-center gap-1.5 cursor-pointer">
               <input type="radio" name="bulkImportMode" value="replace" class="w-4 h-4 accent-indigo-600">
-              <span class="text-amber-700">Ganti seluruh menu (reset menu lama)</span>
+              <span class="text-amber-700 font-bold">Ganti seluruh menu (reset menu lama)</span>
             </label>
           </div>
         </div>
@@ -2306,13 +2691,13 @@ Kopi susu 7k"
       <!-- Modal Footer -->
       <div class="p-4 sm:p-5 pt-3 border-t border-stone-100 flex items-center justify-end gap-2 bg-stone-50/60">
         <button type="button" onclick="closeBulkImportModal()"
-          class="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 text-xs sm:text-sm transition touch-target-large">
+          class="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 text-xs sm:text-sm transition touch-target-large cursor-pointer">
           Batal
         </button>
         <button type="button" id="btnApplyBulkImport" onclick="applyBulkMenuImport()" disabled
-          class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-xs sm:text-sm flex items-center gap-1.5 transition touch-target-large shadow-sm">
+          class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-xs sm:text-sm flex items-center gap-1.5 transition touch-target-large shadow-sm cursor-pointer">
           <span class="material-symbols-rounded text-lg">check_circle</span>
-          <span id="btnApplyBulkImportText">Simpan & Terapkan</span>
+          <span id="btnApplyBulkImportText">Simpan & Terapkan (0 Menu)</span>
         </button>
       </div>
 
@@ -2321,7 +2706,7 @@ Kopi susu 7k"
 
   <!-- ==================== RECEIPT POPUP MODAL ==================== -->
   <div id="receiptModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-3">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-3">
     <div
       class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-stone-200 p-5 flex flex-col gap-3 text-center animate-in zoom-in-95">
       <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto border border-emerald-200">
@@ -2438,7 +2823,7 @@ Kopi susu 7k"
 
   <!-- ==================== MODAL: PENGATURAN PRINTER & STRUK ==================== -->
   <div id="printerConfigModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
     <div
       class="bg-white w-full sm:max-w-2xl md:max-w-4xl lg:max-w-5xl xl:max-w-5xl rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[95vh] animate-in zoom-in-95">
       
@@ -2968,7 +3353,7 @@ Kopi susu 7k"
 
   <!-- ==================== MODAL: UBAH NAMA PESANAN / MEJA ==================== -->
   <div id="renameQueueModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div
       class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-stone-200 animate-in zoom-in-95">
       <div class="px-5 py-4 border-b border-stone-200 flex items-center justify-between bg-stone-50">
@@ -3031,7 +3416,7 @@ Kopi susu 7k"
 
   <!-- ==================== MODAL: CATATAN PESANAN CEPAT (SENIOR-FRIENDLY QUICK CHIPS) ==================== -->
   <div id="itemNoteModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div
       class="bg-white w-full sm:max-w-lg md:max-w-xl max-h-[92vh] sm:max-h-[88vh] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col animate-in zoom-in-95">
       
@@ -3094,32 +3479,32 @@ Kopi susu 7k"
             </div>
           </div>
 
-          <!-- Senior-Friendly Quick Chips: Sekali Tap Langsung Nambah -->
+          <!-- Quick Chips: Sekali Ketuk -->
           <div>
-            <span class="block text-xs font-black text-stone-700 mb-2">Pilihan Cepat (Tinggal Klik):</span>
+            <span class="block text-xs font-black text-stone-700 mb-2">Cepat:</span>
             <div class="flex flex-wrap gap-2">
               <button type="button" onclick="KasirApp.appendQuickNote('Pedas')"
-                class="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-800 font-extrabold text-xs border border-red-200 active:scale-95 transition">🔥 Pedas</button>
+                class="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs border border-stone-200 active:scale-95 transition">Pedas</button>
               <button type="button" onclick="KasirApp.appendQuickNote('Sedang')"
-                class="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-extrabold text-xs border border-amber-200 active:scale-95 transition">🌶️ Sedang</button>
+                class="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs border border-stone-200 active:scale-95 transition">Sedang</button>
               <button type="button" onclick="KasirApp.appendQuickNote('Tidak Pedas')"
-                class="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs border border-stone-300 active:scale-95 transition">🍃 Tidak Pedas</button>
+                class="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs border border-stone-200 active:scale-95 transition">Tidak Pedas</button>
               <button type="button" onclick="KasirApp.appendQuickNote('Tanpa Bawang')"
-                class="px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-extrabold text-xs border border-orange-200 active:scale-95 transition">🧅 Tanpa Bawang</button>
+                class="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs border border-stone-200 active:scale-95 transition">Tanpa Bawang</button>
               <button type="button" onclick="KasirApp.appendQuickNote('Pisah Sambal')"
-                class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-extrabold text-xs border border-emerald-200 active:scale-95 transition">🥣 Pisah Sambal</button>
+                class="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs border border-stone-200 active:scale-95 transition">Pisah Sambal</button>
               <button type="button" onclick="KasirApp.appendQuickNote('Es Sedikit')"
-                class="px-3 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 font-extrabold text-xs border border-sky-200 active:scale-95 transition">🧊 Es Sedikit</button>
+                class="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs border border-stone-200 active:scale-95 transition">Es Sedikit</button>
               <button type="button" onclick="KasirApp.appendQuickNote('Kurang Manis')"
-                class="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 font-extrabold text-xs border border-purple-200 active:scale-95 transition">🧂 Kurang Manis</button>
+                class="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs border border-stone-200 active:scale-95 transition">Kurang Manis</button>
               <button type="button" onclick="KasirApp.appendQuickNote('Bungkus')"
-                class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 font-extrabold text-xs border border-rose-200 active:scale-95 transition">🥡 Bungkus</button>
+                class="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs border border-stone-200 active:scale-95 transition">Bungkus</button>
             </div>
           </div>
 
-          <!-- Custom Input Tanpa Batas Karakter (Bebas) -->
+          <!-- Catatan Bebas -->
           <div>
-            <label class="block text-xs font-black text-stone-700 mb-1.5">Catatan Khusus (Bebas tanpa batas karakter):</label>
+            <label class="block text-xs font-black text-stone-700 mb-1.5">Catatan:</label>
             <textarea id="itemNoteInput" rows="2"
               placeholder="Contoh: Pedas, Tanpa Seledri, Kuah dipisah, Sambal banyak..."
               class="w-full px-4 py-2 rounded-xl border-2 border-stone-300 focus:border-emerald-600 focus:outline-none text-xs sm:text-sm font-bold text-stone-900 bg-white shadow-sm transition resize-none"></textarea>
@@ -3150,7 +3535,7 @@ Kopi susu 7k"
 
   <!-- ==================== MODAL: PANDUAN & DIAGNOSTIK IZIN BLUETOOTH HP ==================== -->
   <div id="bluetoothTroubleshootModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
     <div
       class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col animate-in zoom-in-95">
       
@@ -3214,7 +3599,7 @@ Kopi susu 7k"
 
   <!-- ==================== MODAL: PENGATURAN QRIS TOKO ==================== -->
   <div id="qrisConfigModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
     <div
       class="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[95vh]">
       
@@ -3306,7 +3691,7 @@ Kopi susu 7k"
 
   <!-- ==================== MODAL: HUBUNGKAN PERANGKAT & PROFIL TOKO ==================== -->
   <div id="cloudModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-2 sm:p-4 overflow-y-auto">
     <div
       class="bg-white w-full sm:max-w-md rounded-2xl sm:rounded-3xl shadow-2xl border border-stone-200/90 overflow-hidden flex flex-col my-auto max-h-[90vh] sm:max-h-[85vh] animate-in zoom-in-95">
       
@@ -3431,7 +3816,7 @@ Kopi susu 7k"
 
   <!-- ==================== UNIVERSAL LOGIN & REGISTRATION MODAL ==================== -->
   <div id="universalLoginModal"
-    class="fixed inset-0 z-50 bg-black/70 backdrop-blur-md hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
     <div
       class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col animate-in zoom-in-95 my-auto max-h-[92vh]">
       
@@ -3559,7 +3944,7 @@ Kopi susu 7k"
 
   <!-- ==================== PIN SECURITY CHALLENGE MODAL ==================== -->
   <div id="pinSecurityModal"
-    class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-4">
     <div
       class="bg-white w-full max-w-xs rounded-3xl shadow-2xl border border-stone-200 p-5 flex flex-col gap-3 text-center animate-in zoom-in-95">
       <div class="w-12 h-12 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center mx-auto border border-amber-200">
@@ -3591,7 +3976,7 @@ Kopi susu 7k"
 
   <!-- ==================== SUPER ADMIN AUTHENTICATION GATE MODAL (MATERIAL DESIGN 3) ==================== -->
   <div id="superAdminAuthModal"
-    class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    class="fixed inset-0 z-50 bg-black/60 hidden flex items-center justify-center p-4">
     <div
       class="bg-white w-full max-w-sm rounded-[28px] shadow-2xl border border-stone-200 p-6 flex flex-col gap-4 text-center animate-in zoom-in-95">
       <div class="w-14 h-14 bg-amber-100 text-amber-900 rounded-2xl flex items-center justify-center mx-auto border border-amber-300 shadow-sm">
@@ -3631,7 +4016,7 @@ Kopi susu 7k"
 
   <!-- ==================== MODAL: M3 SUPER ADMIN CHANGE PIN ==================== -->
   <div id="superAdminChangePinModal"
-    class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div
       class="bg-white w-full sm:max-w-sm rounded-t-[28px] sm:rounded-[28px] shadow-2xl border border-stone-200/90 overflow-hidden flex flex-col animate-in zoom-in-95">
       
@@ -3690,7 +4075,7 @@ Kopi susu 7k"
 
   <!-- ==================== MODAL: M3 SUPER ADMIN ADD STORE ==================== -->
   <div id="superAdminAddStoreModal"
-    class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
     <div
       class="bg-white w-full sm:max-w-md rounded-t-[28px] sm:rounded-[28px] shadow-2xl border border-stone-200/90 overflow-hidden flex flex-col my-auto animate-in zoom-in-95">
       
@@ -3781,7 +4166,7 @@ Kopi susu 7k"
 
   <!-- ==================== MODAL: M3 SUPER ADMIN EDIT STORE ==================== -->
   <div id="superAdminEditStoreModal"
-    class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
     <div
       class="bg-white w-full sm:max-w-md rounded-t-[28px] sm:rounded-[28px] shadow-2xl border border-stone-200/90 overflow-hidden flex flex-col my-auto animate-in zoom-in-95">
       
@@ -3864,7 +4249,7 @@ Kopi susu 7k"
 
   <!-- ==================== MODAL: M3 SUPER ADMIN DELETE STORE ==================== -->
   <div id="superAdminDeleteStoreModal"
-    class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-4">
     <div
       class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-red-200 overflow-hidden flex flex-col animate-in zoom-in-95">
       
@@ -3929,20 +4314,20 @@ Kopi susu 7k"
 
   <!-- ==================== IN-APP AUTO-UPDATER MODAL ==================== -->
   <div id="updateAppModal"
-    class="fixed inset-0 z-50 bg-black/70 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-4 overflow-y-auto">
     <div
       class="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col animate-in zoom-in-95">
       
       <!-- Gradient Header -->
       <div class="bg-gradient-to-br from-emerald-600 to-teal-800 p-5 text-white flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0 overflow-hidden">
+          <div class="w-12 h-12 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center text-white shadow-inner shrink-0 overflow-hidden">
             <span class="material-symbols-rounded text-2xl w-8 h-8 flex items-center justify-center overflow-hidden">system_update</span>
           </div>
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.46</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.47</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -3999,7 +4384,7 @@ Kopi susu 7k"
 
   <!-- ==================== MODAL: QR PAIRING KASIR UTAMA ==================== -->
   <div id="hostQrPairingModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col animate-in zoom-in-95">
       
       <!-- Header -->
@@ -4050,7 +4435,7 @@ Kopi susu 7k"
 
   <!-- ==================== MODAL: SCANNER QR PELAYAN ==================== -->
   <div id="qrPairingScannerModal"
-    class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    class="fixed inset-0 z-50 bg-black/60 hidden flex items-center justify-center p-4">
     <div class="bg-stone-950 w-full max-w-sm rounded-3xl shadow-2xl border border-stone-800 overflow-hidden flex flex-col text-white animate-in zoom-in-95">
       
       <!-- Header -->
@@ -4102,7 +4487,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.46</span>
+    <span id="appVersionBadge" class="hidden">v1.2.47</span>
   </div>
 
   <!-- Main JavaScript App Module -->
