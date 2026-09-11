@@ -10,7 +10,11 @@ import {
   removeStoreFromDevice, 
   saveStoreAuth, 
   verifyStorePin, 
-  setUserRole 
+  setUserRole,
+  addCashierToStore,
+  updateCashierInStore,
+  removeCashierFromStore,
+  verifyCashierPin
 } from './state.js';
 import { getStorageKeys, GLOBAL_STORAGE_KEYS, DEFAULT_PRODUCTS, DEFAULT_PRINTER_CONFIG } from './config.js';
 import { showToast, playClick, escapeHtml, showConfirmDialog, triggerHaptic, initM3RippleSystem } from './utils.js';
@@ -37,7 +41,11 @@ import {
   unsubscribeAllListeners,
   authenticateStoreLogin,
   superAdminUpdateStorePin,
-  syncStoreToRegistry
+  syncStoreToRegistry,
+  loginWithGoogleOwner,
+  logoutGoogleOwner,
+  fetchStoresByOwner,
+  linkStoreToOwner
 } from './firebase.js';
 
 let pendingTargetView = null;
@@ -45,6 +53,13 @@ let pendingTargetView = null;
 // ================= VIEW NAVIGATION =================
 export function switchView(viewName) {
   playClick('switch');
+
+  // Proteksi Akses Role Kasir (Cashier Focus Mode)
+  if (state.userRole === 'cashier' && (viewName === 'admin' || viewName === 'report')) {
+    showToast('Akses dibatasi. Halaman ini khusus untuk Pemilik Toko (Owner).', 'warning', 3500);
+    openRoleSwitchModal('owner');
+    return;
+  }
 
   // Proteksi PIN untuk Menu & Laporan jika diaktifkan oleh pemilik toko
   if ((viewName === 'admin' || viewName === 'report') && state.auth?.requirePinForAdmin && !state.isUnlockedOwner) {
@@ -231,6 +246,7 @@ export function openCloudModal() {
       modalStatusEl.className = 'text-xs font-medium text-stone-500';
     }
     updatePinButtonUI();
+    updateCloudOwnerAccountUI();
     modal.classList.remove('hidden');
   }
 }
@@ -449,6 +465,7 @@ export function quickSelectStore(storeId) {
   admin.renderAdminTable();
   report.renderFinancialReport();
   updatePinButtonUI();
+  applyRoleUIPermissions();
   closeUniversalLoginModal();
   showToast(`Kasir [${state.storeProfile?.name || cleanId}] siap melayani`, 'success');
 }
@@ -797,6 +814,463 @@ function updatePinButtonUI() {
   }
 }
 
+// ================= ROLE-BASED ACCESS CONTROL (RBAC) & CASHIER FOCUS MODE =================
+
+/**
+ * Terapkan hak akses tampilan secara otomatis (Cashier Focus Mode)
+ */
+export function applyRoleUIPermissions() {
+  const isCashier = state.userRole === 'cashier';
+
+  // 1. Sembunyikan/Tampilkan Navigasi Rail Desktop
+  const railReport = document.getElementById('railNavReport');
+  const railAdmin = document.getElementById('railNavAdmin');
+  if (railReport) railReport.style.display = isCashier ? 'none' : '';
+  if (railAdmin) railAdmin.style.display = isCashier ? 'none' : '';
+
+  // 2. Sembunyikan/Tampilkan Navigasi Mobile (Bawah)
+  const mobileReport = document.getElementById('btnNavReportMobile');
+  const mobileAdmin = document.getElementById('btnNavAdminMobile');
+  if (mobileReport) mobileReport.style.display = isCashier ? 'none' : '';
+  if (mobileAdmin) mobileAdmin.style.display = isCashier ? 'none' : '';
+
+  // 3. Tombol Nav Desktop Kompatibilitas
+  const deskReport = document.getElementById('btnNavReportDesktop');
+  const deskAdmin = document.getElementById('btnNavAdminDesktop');
+  if (deskReport) deskReport.style.display = isCashier ? 'none' : '';
+  if (deskAdmin) deskAdmin.style.display = isCashier ? 'none' : '';
+
+  // 4. Perbarui Label & Badge di Header
+  updateHeaderRoleBadgeUI();
+
+  // 5. Jika saat ini sedang di view 'admin' atau 'report' dan role adalah kasir, kembalikan ke 'pos'
+  if (isCashier) {
+    const viewAdmin = document.getElementById('viewAdmin');
+    const viewReport = document.getElementById('viewReport');
+    if ((viewAdmin && !viewAdmin.classList.contains('hidden')) || 
+        (viewReport && !viewReport.classList.contains('hidden'))) {
+      switchView('pos');
+    }
+  }
+}
+
+/**
+ * Perbarui UI Indikator Peran Aktif di Header Kasir (Mobile & Desktop)
+ */
+export function updateHeaderRoleBadgeUI() {
+  const isCashier = state.userRole === 'cashier';
+  const cashierName = state.activeCashier?.name || 'Kasir';
+
+  // Desktop Role Button & Label
+  const desktopBtn = document.getElementById('desktopRoleSwitchBtn');
+  const desktopIcon = document.getElementById('desktopRoleIcon');
+  const desktopLabel = document.getElementById('desktopRoleLabel');
+
+  if (desktopBtn && desktopIcon && desktopLabel) {
+    if (isCashier) {
+      desktopBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-50 text-amber-900 border border-amber-200/90 text-xs font-black shadow-2xs hover:bg-amber-100 transition active:scale-95 cursor-pointer select-none shrink-0';
+      desktopIcon.textContent = 'badge';
+      desktopIcon.className = 'material-symbols-rounded text-base text-amber-700';
+      desktopLabel.textContent = `Kasir: ${cashierName}`;
+    } else {
+      desktopBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-emerald-50 text-emerald-900 border border-emerald-200/90 text-xs font-black shadow-2xs hover:bg-emerald-100 transition active:scale-95 cursor-pointer select-none shrink-0';
+      desktopIcon.textContent = 'shield_person';
+      desktopIcon.className = 'material-symbols-rounded text-base text-emerald-700';
+      desktopLabel.textContent = 'Mode Owner';
+    }
+  }
+
+  // Mobile Role Button & Label
+  const mobileBtn = document.getElementById('mobileRoleSwitchBtn');
+  const mobileIcon = document.getElementById('mobileRoleIcon');
+  const mobileLabel = document.getElementById('mobileRoleLabel');
+
+  if (mobileBtn && mobileIcon && mobileLabel) {
+    if (isCashier) {
+      mobileBtn.className = 'flex items-center gap-1 px-2 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-black shadow-2xs active:scale-95 transition cursor-pointer shrink-0';
+      mobileIcon.textContent = 'badge';
+      mobileIcon.className = 'material-symbols-rounded text-sm text-amber-700';
+      mobileLabel.textContent = cashierName;
+    } else {
+      mobileBtn.className = 'flex items-center gap-1 px-2 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-[11px] font-black shadow-2xs active:scale-95 transition cursor-pointer shrink-0';
+      mobileIcon.textContent = 'shield_person';
+      mobileIcon.className = 'material-symbols-rounded text-sm text-emerald-700';
+      mobileLabel.textContent = 'Owner';
+    }
+  }
+}
+
+let activeRoleModalMode = 'switch'; // 'switch_to_owner' | 'lock_to_cashier'
+
+/**
+ * Buka Modal Otorisasi / Alih Peran (Kasir <-> Owner)
+ */
+export function openRoleSwitchModal(preferredMode = null) {
+  playClick('pop');
+  const modal = document.getElementById('roleSwitchModal');
+  if (!modal) return;
+
+  const isCurrentCashier = state.userRole === 'cashier';
+  const mode = preferredMode || (isCurrentCashier ? 'switch_to_owner' : 'lock_to_cashier');
+  activeRoleModalMode = mode;
+
+  const titleEl = document.getElementById('roleSwitchModalTitle');
+  const subEl = document.getElementById('roleSwitchModalSub');
+  const ownerSection = document.getElementById('roleSwitchOwnerSection');
+  const cashierSection = document.getElementById('roleSwitchCashierSection');
+  const pinInput = document.getElementById('roleSwitchPinInput');
+  const submitBtn = document.getElementById('roleSwitchSubmitBtn');
+
+  if (pinInput) {
+    pinInput.value = '';
+    pinInput.placeholder = '••••••';
+  }
+
+  if (mode === 'switch_to_owner') {
+    if (titleEl) titleEl.textContent = 'Buka Akses Mode Owner';
+    if (subEl) subEl.textContent = 'Masukkan 6 Digit PIN Pemilik Toko untuk membuka seluruh menu & laporan keuangan.';
+    if (ownerSection) ownerSection.classList.remove('hidden');
+    if (cashierSection) cashierSection.classList.add('hidden');
+    if (submitBtn) submitBtn.textContent = 'Buka Akses Owner';
+  } else {
+    if (titleEl) titleEl.textContent = 'Kunci ke Mode Kasir';
+    if (subEl) subEl.textContent = 'Pilih staf kasir yang bertugas. Menu Laporan & Kelola Harga akan disembunyikan total.';
+    if (ownerSection) ownerSection.classList.add('hidden');
+    if (cashierSection) cashierSection.classList.remove('hidden');
+    if (submitBtn) submitBtn.textContent = 'Kunci ke Mode Kasir';
+
+    // Isi daftar kasir toko
+    renderRoleSwitchCashierOptions();
+  }
+
+  modal.classList.remove('hidden');
+  if (pinInput) {
+    requestAnimationFrame(() => pinInput.focus());
+  }
+}
+
+function renderRoleSwitchCashierOptions() {
+  const selectEl = document.getElementById('roleSwitchCashierSelect');
+  if (!selectEl) return;
+
+  const cashiers = (state.auth?.cashiers || []).filter(c => c.active !== false);
+  if (cashiers.length === 0) {
+    selectEl.innerHTML = `
+      <option value="default_cashier">Kasir Umum (Standar)</option>
+    `;
+  } else {
+    selectEl.innerHTML = cashiers.map(c => `
+      <option value="${c.id}">${escapeHtml(c.name)}</option>
+    `).join('');
+  }
+}
+
+export function closeRoleSwitchModal() {
+  playClick('pop');
+  const modal = document.getElementById('roleSwitchModal');
+  if (modal) modal.classList.add('hidden');
+  const pinInput = document.getElementById('roleSwitchPinInput');
+  if (pinInput) pinInput.value = '';
+}
+
+/**
+ * Handle submit pada modal ganti peran
+ */
+export async function handleRoleSwitchSubmit(e) {
+  if (e) e.preventDefault();
+  const pinInput = document.getElementById('roleSwitchPinInput');
+  const pinValue = pinInput ? pinInput.value.trim() : '';
+
+  if (activeRoleModalMode === 'switch_to_owner') {
+    if (!pinValue) {
+      showToast('Masukkan 6 digit PIN Owner', 'warning');
+      if (pinInput) pinInput.focus();
+      return;
+    }
+
+    const isOk = await verifyStorePin(pinValue);
+    if (isOk) {
+      setUserRole('owner', null);
+      applyRoleUIPermissions();
+      closeRoleSwitchModal();
+      showToast('Mode Pemilik (Owner) Aktif. Seluruh menu & laporan terbuka.', 'success', 3500);
+    } else {
+      showToast('PIN Owner salah. Pastikan memasukkan 6 digit yang sesuai.', 'danger');
+      if (pinInput) {
+        pinInput.value = '';
+        pinInput.focus();
+      }
+    }
+  } else {
+    // Kunci ke Mode Kasir
+    const selectEl = document.getElementById('roleSwitchCashierSelect');
+    const selectedId = selectEl ? selectEl.value : 'default_cashier';
+    const cashiers = state.auth?.cashiers || [];
+    const chosenCashier = cashiers.find(c => c.id === selectedId);
+
+    // Jika kasir terpilih memiliki PIN khusus, verifikasi PIN
+    if (chosenCashier && chosenCashier.pinHash) {
+      if (!pinValue) {
+        showToast(`Masukkan 6 digit PIN untuk ${chosenCashier.name}`, 'warning');
+        if (pinInput) pinInput.focus();
+        return;
+      }
+      const verifyRes = await verifyCashierPin(chosenCashier.id, pinValue);
+      if (!verifyRes.success) {
+        showToast(verifyRes.message, 'danger');
+        if (pinInput) {
+          pinInput.value = '';
+          pinInput.focus();
+        }
+        return;
+      }
+    }
+
+    const cashierObj = chosenCashier ? { id: chosenCashier.id, name: chosenCashier.name } : { id: 'default', name: 'Kasir' };
+    setUserRole('cashier', cashierObj);
+    applyRoleUIPermissions();
+    closeRoleSwitchModal();
+    showToast(`Mode Kasir Aktif (${cashierObj.name}). Menu & Laporan dikunci.`, 'info', 3500);
+  }
+}
+
+// ================= CASHIER MANAGEMENT MODAL (ADMIN SETTINGS) =================
+
+export function openCashierManageModal() {
+  playClick('pop');
+  const modal = document.getElementById('cashierManageModal');
+  if (modal) {
+    renderCashiersListInModal();
+    modal.classList.remove('hidden');
+  }
+}
+
+export function closeCashierManageModal() {
+  playClick('pop');
+  const modal = document.getElementById('cashierManageModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+export function renderCashiersListInModal() {
+  const container = document.getElementById('cashiersListContainer');
+  if (!container) return;
+
+  const cashiers = state.auth?.cashiers || [];
+  if (cashiers.length === 0) {
+    container.innerHTML = `
+      <div class="py-8 text-center text-stone-400 bg-stone-50 rounded-2xl border border-stone-200 p-4">
+        <span class="material-symbols-rounded text-3xl text-stone-300 mb-1">badge</span>
+        <p class="font-bold text-xs text-stone-600">Belum ada staf kasir khusus</p>
+        <p class="text-[11px] text-stone-400 mt-0.5">Tambah nama staf dan buat 6 digit PIN kasir mereka di bawah.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = cashiers.map((c, idx) => `
+    <div class="flex items-center justify-between p-3 rounded-2xl bg-white border border-stone-200/90 shadow-2xs hover:border-stone-300 transition">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-9 h-9 rounded-xl ${c.active !== false ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-stone-100 text-stone-400 border border-stone-200'} flex items-center justify-center font-black text-xs shrink-0">
+          ${idx + 1}
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <h4 class="font-black text-xs text-stone-900 truncate">${escapeHtml(c.name)}</h4>
+            <span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold ${c.active !== false ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-stone-100 text-stone-500 border border-stone-200'}">
+              ${c.active !== false ? 'Aktif' : 'Nonaktif'}
+            </span>
+          </div>
+          <p class="text-[10.5px] text-stone-500 font-mono mt-0.5">PIN: •••••• (6 Digit)</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1 shrink-0">
+        <button type="button" onclick="window.KasirApp.promptChangeCashierPin('${c.id}', '${escapeHtml(c.name)}')"
+          class="px-2.5 py-1.5 rounded-lg text-stone-600 hover:text-stone-900 hover:bg-stone-100 font-bold text-xs transition active:scale-95 cursor-pointer"
+          title="Ubah PIN 6 Digit">
+          Ubah PIN
+        </button>
+        <button type="button" onclick="window.KasirApp.handleDeleteCashier('${c.id}', '${escapeHtml(c.name)}')"
+          class="w-8 h-8 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition active:scale-90 cursor-pointer"
+          title="Hapus Kasir">
+          <span class="material-symbols-rounded text-lg">delete</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+export async function handleAddCashierSubmit(e) {
+  if (e) e.preventDefault();
+  const nameInput = document.getElementById('newCashierName');
+  const pinInput = document.getElementById('newCashierPin');
+
+  const name = nameInput ? nameInput.value.trim() : '';
+  const pin = pinInput ? pinInput.value.trim() : '';
+
+  if (!name) {
+    showToast('Nama kasir wajib diisi', 'warning');
+    if (nameInput) nameInput.focus();
+    return;
+  }
+  if (!/^\d{6}$/.test(pin)) {
+    showToast('PIN harus tepat 6 digit angka', 'warning');
+    if (pinInput) pinInput.focus();
+    return;
+  }
+
+  try {
+    await addCashierToStore(name, pin);
+    syncSaveStoreAuth(state.auth);
+    if (nameInput) nameInput.value = '';
+    if (pinInput) pinInput.value = '';
+    renderCashiersListInModal();
+    showToast(`Kasir "${name}" berhasil ditambahkan!`, 'success');
+  } catch (err) {
+    showToast(err.message, 'danger');
+  }
+}
+
+export async function promptChangeCashierPin(cashierId, cashierName) {
+  playClick('tap');
+  const newPin = prompt(`Masukkan 6 digit PIN baru untuk kasir "${cashierName}":`);
+  if (newPin === null) return;
+  const cleanPin = newPin.trim();
+  if (!/^\d{6}$/.test(cleanPin)) {
+    showToast('PIN kasir harus tepat 6 digit angka', 'danger');
+    return;
+  }
+
+  try {
+    await updateCashierInStore(cashierId, { pin6Digit: cleanPin });
+    syncSaveStoreAuth(state.auth);
+    showToast(`PIN kasir "${cashierName}" berhasil diperbarui`, 'success');
+  } catch (err) {
+    showToast(err.message, 'danger');
+  }
+}
+
+export async function handleDeleteCashier(cashierId, cashierName) {
+  playClick('pop');
+  const ok = await showConfirmDialog({
+    title: 'Hapus Akun Kasir',
+    message: `Hapus akun kasir "${cashierName}" dari toko ini?`,
+    confirmText: 'Ya, Hapus',
+    confirmType: 'danger',
+    icon: 'delete'
+  });
+
+  if (ok) {
+    removeCashierFromStore(cashierId);
+    syncSaveStoreAuth(state.auth);
+    renderCashiersListInModal();
+    showToast(`Kasir "${cashierName}" dihapus`, 'info');
+  }
+}
+
+// ================= GOOGLE SSO OWNER & MULTI-STORE CLOUD MANAGEMENT =================
+
+export async function handleGoogleSignInOwner() {
+  playClick('tap');
+  try {
+    showToast('Menghubungkan ke Akun Google...', 'info', 2000);
+    const user = await loginWithGoogleOwner();
+    if (user) {
+      if (state.storeId) {
+        await linkStoreToOwner(state.storeId, user);
+      }
+      updateCloudOwnerAccountUI();
+      showToast(`Masuk sebagai Owner (${user.displayName || user.email})!`, 'success', 3500);
+    }
+  } catch (err) {
+    console.warn('Google sign-in error:', err);
+    showToast('Gagal masuk dengan Google: ' + (err.message || 'Coba lagi'), 'danger');
+  }
+}
+
+export async function handleGoogleSignOutOwner() {
+  playClick('pop');
+  const ok = await showConfirmDialog({
+    title: 'Keluar Akun Google',
+    message: 'Keluar dari akun Google Pemilik Toko?',
+    confirmText: 'Keluar',
+    confirmType: 'danger',
+    icon: 'logout'
+  });
+  if (ok) {
+    await logoutGoogleOwner();
+    updateCloudOwnerAccountUI();
+    showToast('Telah keluar dari akun Google', 'info');
+  }
+}
+
+export async function updateCloudOwnerAccountUI() {
+  const user = state.currentUser;
+  const container = document.getElementById('googleOwnerAccountContainer');
+  const storesListEl = document.getElementById('googleOwnerStoresList');
+  if (!container) return;
+
+  if (user) {
+    container.innerHTML = `
+      <div class="p-3.5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <img src="${user.photoURL || 'icon-192.png'}" alt="${escapeHtml(user.displayName)}" class="w-9 h-9 rounded-full object-cover border border-stone-200 shrink-0" onerror="this.src='icon-192.png'">
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <span class="font-extrabold text-xs text-stone-900 truncate">${escapeHtml(user.displayName || 'Owner')}</span>
+              <span class="px-1.5 py-0.2 rounded text-[9.5px] font-extrabold bg-emerald-100 text-emerald-800">Google SSO</span>
+            </div>
+            <p class="text-[10.5px] text-stone-400 truncate">${escapeHtml(user.email || '')}</p>
+          </div>
+        </div>
+        <button type="button" onclick="window.KasirApp.handleGoogleSignOutOwner()"
+          class="px-2.5 py-1 rounded-lg text-stone-500 hover:text-rose-600 hover:bg-rose-50 text-[11px] font-bold transition shrink-0 cursor-pointer">
+          Keluar
+        </button>
+      </div>
+    `;
+
+    // Fetch and display all stores owned by this Google account
+    if (storesListEl) {
+      storesListEl.innerHTML = `<p class="text-xs text-stone-400 py-2">Memuat daftar cabang UMKM Anda...</p>`;
+      const stores = await fetchStoresByOwner(user.uid);
+      if (stores.length === 0) {
+        storesListEl.innerHTML = `
+          <div class="text-center py-3 text-stone-400 text-xs">
+            Belum ada cabang lain yang terhubung ke akun ini.
+          </div>
+        `;
+      } else {
+        storesListEl.innerHTML = stores.map(s => `
+          <div class="flex items-center justify-between p-2.5 rounded-xl bg-stone-50 hover:bg-stone-100 transition border border-stone-200/80">
+            <div class="min-w-0">
+              <h5 class="font-bold text-xs text-stone-900 truncate">${escapeHtml(s.name || s.id)}</h5>
+              <p class="text-[10px] text-stone-400 font-mono">ID: ${s.id}</p>
+            </div>
+            <button type="button" onclick="window.KasirApp.quickSelectStore('${s.id}')"
+              class="px-3 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition active:scale-95 cursor-pointer shadow-2xs">
+              Buka
+            </button>
+          </div>
+        `).join('');
+      }
+    }
+  } else {
+    container.innerHTML = `
+      <button type="button" onclick="window.KasirApp.handleGoogleSignInOwner()"
+        class="w-full py-3 px-4 rounded-2xl bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 font-extrabold text-xs flex items-center justify-center gap-2.5 shadow-2xs transition active:scale-95 cursor-pointer">
+        <svg class="w-4 h-4" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+        </svg>
+        <span>Masuk dengan Google (Akun Pemilik)</span>
+      </button>
+    `;
+    if (storesListEl) storesListEl.innerHTML = '';
+  }
+}
+
 export async function logoutStore() {
   playClick('pop');
   closeCloudModal();
@@ -1023,6 +1497,7 @@ export async function init() {
     // 7. Dismiss Splash Screen smoothly (Guaranteed)
     dismissSplashScreen();
     initHeaderClock();
+    applyRoleUIPermissions();
 
     // Setup global keyboard shortcut untuk kasir & kelola menu: Tekan '/' untuk cari menu, 'Escape' untuk bersihkan
     window.addEventListener('keydown', (e) => {
@@ -1342,6 +1817,8 @@ const MODAL_CLOSE_DISPATCHER = {
   'superAdminEditStoreModal': () => superadmin.closeSuperAdminEditStoreModal(),
   'superAdminDeleteStoreModal': () => superadmin.closeSuperAdminDeleteStoreModal(),
   'universalLoginModal': () => closeUniversalLoginModal(),
+  'roleSwitchModal': () => closeRoleSwitchModal(),
+  'cashierManageModal': () => closeCashierManageModal(),
   'customConfirmModal': () => {
     const cancelBtn = document.getElementById('customConfirmCancelBtn');
     if (cancelBtn) cancelBtn.click();
@@ -1734,7 +2211,27 @@ const KasirApp = {
 
   // Android Back & Backdrop Dismiss UX
   handleAppBackPress: handleAppBackPress,
-  dismissModalElement: dismissModalElement
+  dismissModalElement: dismissModalElement,
+
+  // Role & Cashier Focus Mode
+  applyRoleUIPermissions: applyRoleUIPermissions,
+  updateHeaderRoleBadgeUI: updateHeaderRoleBadgeUI,
+  openRoleSwitchModal: openRoleSwitchModal,
+  closeRoleSwitchModal: closeRoleSwitchModal,
+  handleRoleSwitchSubmit: handleRoleSwitchSubmit,
+
+  // Cashier Management (Admin)
+  openCashierManageModal: openCashierManageModal,
+  closeCashierManageModal: closeCashierManageModal,
+  renderCashiersListInModal: renderCashiersListInModal,
+  handleAddCashierSubmit: handleAddCashierSubmit,
+  promptChangeCashierPin: promptChangeCashierPin,
+  handleDeleteCashier: handleDeleteCashier,
+
+  // Google SSO & Multi-Store Owner Management
+  handleGoogleSignInOwner: handleGoogleSignInOwner,
+  handleGoogleSignOutOwner: handleGoogleSignOutOwner,
+  updateCloudOwnerAccountUI: updateCloudOwnerAccountUI
 };
 
 // Expose to window for inline onclick HTML handlers
