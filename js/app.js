@@ -252,6 +252,7 @@ export function openCloudModal() {
     }
     updatePinButtonUI();
     updateCloudOwnerAccountUI();
+    updateHeaderRoleBadgeUI();
     modal.classList.remove('hidden');
   }
 }
@@ -885,7 +886,66 @@ export function updateHeaderRoleBadgeUI() {
   const isCashier = state.userRole === 'cashier';
   const cashierName = state.activeCashier?.name || 'Kasir';
 
-  // Desktop Role Button & Label
+  // 1. Desktop Header Role Badge (in Store Selector Chip)
+  const desktopBadge = document.getElementById('desktopHeaderRoleBadge');
+  if (desktopBadge) {
+    if (isCashier) {
+      desktopBadge.className = 'px-2 py-0.5 rounded-lg bg-amber-100 text-amber-900 text-xs font-black shrink-0 border border-amber-200/80';
+      desktopBadge.textContent = `Kasir: ${cashierName}`;
+    } else {
+      desktopBadge.className = 'px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-900 text-xs font-black shrink-0 border border-emerald-200/80';
+      desktopBadge.textContent = 'Owner';
+    }
+  }
+
+  // 2. Mobile Header Role Badge (in Store Profile Capsule)
+  const mobileBadge = document.getElementById('mobileHeaderRoleBadge');
+  if (mobileBadge) {
+    if (isCashier) {
+      mobileBadge.className = 'px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[10px] font-black shrink-0 border border-amber-200/80 max-w-[80px] truncate';
+      mobileBadge.textContent = cashierName;
+    } else {
+      mobileBadge.className = 'px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-900 text-[10px] font-black shrink-0 border border-emerald-200/80';
+      mobileBadge.textContent = 'Owner';
+    }
+  }
+
+  // 3. Cloud Modal (Profil Toko) Active Role Card
+  const roleCard = document.getElementById('cloudModalRoleCard');
+  const roleAvatar = document.getElementById('cloudModalRoleAvatar');
+  const roleIcon = document.getElementById('cloudModalRoleIcon');
+  const roleBadge = document.getElementById('cloudModalRoleBadge');
+  const roleTitle = document.getElementById('cloudModalRoleTitle');
+  const roleSub = document.getElementById('cloudModalRoleSubtitle');
+  const roleListSub = document.getElementById('cloudModalRoleListSubtitle');
+
+  if (roleCard && roleTitle) {
+    if (isCashier) {
+      roleCard.className = 'p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200/90 flex items-center justify-between gap-3 shadow-2xs';
+      if (roleAvatar) roleAvatar.className = 'w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs';
+      if (roleIcon) roleIcon.textContent = 'badge';
+      if (roleBadge) {
+        roleBadge.className = 'px-1.5 py-0.5 rounded-md bg-amber-200 text-amber-950 text-[10px] font-black';
+        roleBadge.textContent = 'Kasir';
+      }
+      roleTitle.textContent = `Kasir: ${cashierName}`;
+      if (roleSub) roleSub.textContent = 'Akses terbatas operasional kasir & penjualan';
+      if (roleListSub) roleListSub.textContent = `Saat ini: Kasir (${cashierName})`;
+    } else {
+      roleCard.className = 'p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200/90 flex items-center justify-between gap-3 shadow-2xs';
+      if (roleAvatar) roleAvatar.className = 'w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs';
+      if (roleIcon) roleIcon.textContent = 'shield_person';
+      if (roleBadge) {
+        roleBadge.className = 'px-1.5 py-0.5 rounded-md bg-emerald-200 text-emerald-950 text-[10px] font-black';
+        roleBadge.textContent = 'Owner';
+      }
+      roleTitle.textContent = 'Mode Pemilik (Owner)';
+      if (roleSub) roleSub.textContent = 'Akses penuh ke semua laporan & pengaturan';
+      if (roleListSub) roleListSub.textContent = 'Saat ini: Mode Owner (Akses Penuh)';
+    }
+  }
+
+  // 4. Backward Compatibility for Standalone Buttons (if present)
   const desktopBtn = document.getElementById('desktopRoleSwitchBtn');
   const desktopIcon = document.getElementById('desktopRoleIcon');
   const desktopLabel = document.getElementById('desktopRoleLabel');
@@ -904,7 +964,6 @@ export function updateHeaderRoleBadgeUI() {
     }
   }
 
-  // Mobile Role Button & Label
   const mobileBtn = document.getElementById('mobileRoleSwitchBtn');
   const mobileIcon = document.getElementById('mobileRoleIcon');
   const mobileLabel = document.getElementById('mobileRoleLabel');
