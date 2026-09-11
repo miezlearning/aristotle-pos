@@ -1,11 +1,10 @@
-# Aristotle POS v1.2.58 Release Notes
+# Aristotle POS v1.2.59 Release Notes
 
 **Tanggal Rilis:** 2026-09-11
 
 ### Catatan Pembaruan:
-- Pindahkan tombol ganti role ke dalam modal Profil Toko untuk merapikan layout header
-- Integrasi kartu status peran dan tombol alih peran interaktif di modal Profil Toko
-- Sinkronisasi aset native Android
+- Desain modal struk transaksi lebih compact dan proporsional
+- Optimalisasi tata letak struk thermal 58mm dan grid tombol aksi
 
 ---
 *Pembaruan ini dapat diunduh dan dipasang langsung dari dalam aplikasi (In-App Auto-Updater).*

@@ -1,11 +1,10 @@
 {
-  "versionCode": 106,
-  "versionName": "1.2.58",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.58/Aristotle-POS.apk",
+  "versionCode": 107,
+  "versionName": "1.2.59",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.59/Aristotle-POS.apk",
   "changelog": [
-    "Pindahkan tombol ganti role ke dalam modal Profil Toko untuk merapikan layout header",
-    "Integrasi kartu status peran dan tombol alih peran interaktif di modal Profil Toko",
-    "Sinkronisasi aset native Android"
+    "Desain modal struk transaksi lebih compact dan proporsional",
+    "Optimalisasi tata letak struk thermal 58mm dan grid tombol aksi"
   ],
   "releaseDate": "2026-09-11"
 }
