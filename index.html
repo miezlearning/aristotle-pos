@@ -3705,7 +3705,7 @@ Kopi susu 7k"
   <div id="cloudModal"
     class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto transition-all">
     <div
-      class="bg-white w-full sm:max-w-[430px] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200/90 overflow-hidden flex flex-col my-auto max-h-[92vh] sm:max-h-[88vh] animate-in zoom-in-95">
+      class="bg-white w-full sm:max-w-[430px] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200/90 overflow-hidden flex flex-col my-auto max-h-[92vh] sm:max-h-[88vh] animate-in zoom-in-95 font-sans">
       
       <!-- Header -->
       <div class="bg-white p-4 flex items-center gap-3 border-b border-stone-200 shrink-0">
@@ -3714,7 +3714,7 @@ Kopi susu 7k"
         </div>
         <div class="min-w-0 flex-1">
           <h4 id="cloudStoreNameDisplay" class="font-extrabold text-stone-900 text-base leading-tight truncate">Toko Saya</h4>
-          <p class="text-xs text-stone-500 truncate mt-0.5"><span id="cloudStoreIdShort" class="font-mono">toko</span><span class="text-stone-300"> • </span><span id="cloudModalStatusDot" class="inline-block align-middle w-2 h-2 rounded-full bg-emerald-500"></span> <span id="cloudModalStatusText">Online</span></p>
+          <p class="text-xs text-stone-500 truncate mt-0.5"><span id="cloudStoreIdShort" class="font-bold text-stone-700">toko</span><span class="text-stone-300"> • </span><span id="cloudModalStatusDot" class="inline-block align-middle w-2 h-2 rounded-full bg-emerald-500"></span> <span id="cloudModalStatusText" class="font-medium text-stone-600">Online</span></p>
           <span id="cloudStoreIdDisplay" class="hidden"></span>
         </div>
         <button type="button" onclick="closeCloudModal()" class="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-800 flex items-center justify-center transition cursor-pointer" title="Tutup">
@@ -3740,16 +3740,16 @@ Kopi susu 7k"
               <p id="cloudModalRoleSubtitle" class="text-[10px] text-stone-500 truncate">Akses penuh menu & laporan</p>
             </div>
           </div>
-          <button type="button" onclick="closeCloudModal(); window.KasirApp.openRoleSwitchModal();"
+          <button type="button" id="cloudModalRoleCardBtn" onclick="closeCloudModal(); window.KasirApp.openRoleSwitchModal();"
             class="px-3 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-extrabold text-xs transition shadow-xs shrink-0 cursor-pointer flex items-center gap-1.5"
             title="Ganti Peran Kasir / Owner">
-            <span class="material-symbols-rounded text-base">sync_alt</span>
-            <span>Ganti Role</span>
+            <span id="cloudModalRoleCardBtnIcon" class="material-symbols-rounded text-base">sync_alt</span>
+            <span id="cloudModalRoleCardBtnText">Ganti Role</span>
           </button>
         </div>
 
-        <!-- Dual Quick Action Tiles -->
-        <div class="grid grid-cols-2 gap-2.5">
+        <!-- Dual Quick Action Tiles (HP Staf & Kirim Link - Owner Only) -->
+        <div id="cloudModalQuickActionsRow" class="grid grid-cols-2 gap-2.5">
           <button type="button" onclick="KasirApp.openHostQrPairingModal()"
             class="group flex items-center gap-2.5 p-3 rounded-2xl bg-white hover:bg-stone-50 active:scale-[0.98] border border-stone-200/90 shadow-2xs transition text-left cursor-pointer">
             <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200/70 group-hover:scale-105 transition">
@@ -3774,26 +3774,26 @@ Kopi susu 7k"
         </div>
 
         <!-- Grup 1: Keamanan & Akses Kasir -->
-        <div class="space-y-1.5">
-          <p class="text-[10px] font-extrabold uppercase tracking-wider text-stone-400 px-1 flex items-center gap-1.5">
+        <div id="cloudModalSecurityGroup" class="space-y-1.5">
+          <p id="cloudModalSecuritySectionTitle" class="text-[10px] font-extrabold uppercase tracking-wider text-stone-400 px-1 flex items-center gap-1.5">
             <span class="material-symbols-rounded text-xs">shield</span>
             <span>Keamanan & Akses Kasir</span>
           </p>
           <div class="bg-white rounded-2xl border border-stone-200/90 divide-y divide-stone-100 shadow-2xs overflow-hidden">
             <!-- Beralih Peran Kasir / Owner -->
-            <button type="button" onclick="closeCloudModal(); window.KasirApp.openRoleSwitchModal();"
+            <button type="button" id="cloudModalRoleSwitchRow" onclick="closeCloudModal(); window.KasirApp.openRoleSwitchModal();"
               class="w-full flex items-center gap-3 p-3 hover:bg-stone-50 transition text-left cursor-pointer active:bg-stone-100">
-              <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200/70 flex items-center justify-center shrink-0">
-                <span class="material-symbols-rounded text-lg">sync_alt</span>
+              <div id="cloudModalRoleSwitchIconContainer" class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200/70 flex items-center justify-center shrink-0">
+                <span id="cloudModalRoleSwitchIcon" class="material-symbols-rounded text-lg">sync_alt</span>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="font-bold text-stone-800 text-xs">Beralih Peran (Owner / Kasir)</p>
+                <p id="cloudModalRoleListTitle" class="font-bold text-stone-800 text-xs">Beralih Peran (Owner / Kasir)</p>
                 <p id="cloudModalRoleListSubtitle" class="text-[10.5px] text-stone-400 truncate">Saat ini: Mode Owner (Akses Penuh)</p>
               </div>
               <span class="material-symbols-rounded text-base text-stone-400 shrink-0">chevron_right</span>
             </button>
-            <!-- Staf Kasir & PIN -->
-            <button type="button" onclick="closeCloudModal(); window.KasirApp.openCashierManageModal();"
+            <!-- Staf Kasir & PIN (Owner Only) -->
+            <button type="button" id="cloudModalCashierManageRow" onclick="closeCloudModal(); window.KasirApp.openCashierManageModal();"
               class="w-full flex items-center gap-3 p-3 hover:bg-stone-50 transition text-left cursor-pointer active:bg-stone-100">
               <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-800 border border-amber-200/70 flex items-center justify-center shrink-0">
                 <span class="material-symbols-rounded text-lg">badge</span>
@@ -3805,8 +3805,8 @@ Kopi susu 7k"
               <span class="material-symbols-rounded text-base text-stone-400 shrink-0">chevron_right</span>
             </button>
 
-            <!-- Kunci Menu & Laporan -->
-            <div class="flex items-center gap-3 p-3">
+            <!-- Kunci Menu & Laporan (Owner Only) -->
+            <div id="cloudModalPinProtectionRow" class="flex items-center gap-3 p-3">
               <div class="w-8 h-8 rounded-xl bg-stone-100 text-stone-600 flex items-center justify-center shrink-0 border border-stone-200/60">
                 <span class="material-symbols-rounded text-lg">lock</span>
               </div>
@@ -3820,8 +3820,8 @@ Kopi susu 7k"
               </button>
             </div>
 
-            <!-- Ubah PIN Owner -->
-            <div class="flex items-center gap-3 p-3">
+            <!-- Ubah PIN Owner (Owner Only) -->
+            <div id="cloudModalChangeOwnerPinRow" class="flex items-center gap-3 p-3">
               <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-800 border border-purple-200/70 flex items-center justify-center shrink-0">
                 <span class="material-symbols-rounded text-lg">password</span>
               </div>
@@ -3837,8 +3837,8 @@ Kopi susu 7k"
           </div>
         </div>
 
-        <!-- Grup 2: Manajemen Toko & Gerai -->
-        <div class="space-y-1.5">
+        <!-- Grup 2: Manajemen Toko & Gerai (Owner Only) -->
+        <div id="cloudModalStoreManagementSection" class="space-y-1.5">
           <p class="text-[10px] font-extrabold uppercase tracking-wider text-stone-400 px-1 flex items-center gap-1.5">
             <span class="material-symbols-rounded text-xs">store</span>
             <span>Manajemen Toko</span>
@@ -3873,7 +3873,7 @@ Kopi susu 7k"
         </div>
 
         <!-- Grup 3: Sistem Kasir & Versi -->
-        <div class="space-y-1.5">
+        <div id="cloudModalSystemSection" class="space-y-1.5">
           <p class="text-[10px] font-extrabold uppercase tracking-wider text-stone-400 px-1 flex items-center gap-1.5">
             <span class="material-symbols-rounded text-xs">terminal</span>
             <span>Sistem Kasir</span>
@@ -3884,7 +3884,7 @@ Kopi susu 7k"
                 <span class="material-symbols-rounded text-lg">system_update</span>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="font-bold text-stone-800 text-xs">Aplikasi <span id="appVersionLabel" class="text-stone-400 font-normal">v1.2.56</span></p>
+                <p class="font-bold text-stone-800 text-xs">Aplikasi <span id="appVersionLabel" class="text-stone-400 font-normal">v1.2.59</span></p>
                 <p class="text-[10.5px] text-stone-400 truncate">Pembaruan sistem kasir otomatis</p>
               </div>
               <button type="button" onclick="KasirApp.checkForAppUpdates(true)"
@@ -3895,8 +3895,8 @@ Kopi susu 7k"
           </div>
         </div>
 
-        <!-- Keluar dari Toko -->
-        <button type="button" onclick="logoutStore()"
+        <!-- Keluar dari Toko (Owner Only) -->
+        <button type="button" id="cloudModalLogoutBtn" onclick="logoutStore()"
           class="w-full py-2.5 px-3 rounded-2xl text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200/90 font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer bg-white shadow-2xs">
           <span class="material-symbols-rounded text-base text-rose-500">logout</span>
           <span>Keluar dari Toko</span>
@@ -3912,7 +3912,7 @@ Kopi susu 7k"
               <span>Bantuan CS</span>
             </a>
           </div>
-          <button type="button" onclick="closeCloudModal(); window.KasirApp.openSuperAdmin();"
+          <button type="button" id="cloudModalSuperAdminBtn" onclick="closeCloudModal(); window.KasirApp.openSuperAdmin();"
             class="text-stone-500 hover:text-stone-900 font-bold text-[11px] transition flex items-center gap-1 cursor-pointer"
             title="Super Admin">
             <span class="material-symbols-rounded text-xs">shield_person</span>
@@ -4458,7 +4458,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.59</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.60</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -4618,7 +4618,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.59</span>
+    <span id="appVersionBadge" class="hidden">v1.2.60</span>
   </div>
 
   <!-- Main JavaScript App Module -->

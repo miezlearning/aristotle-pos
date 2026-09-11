@@ -1,10 +1,10 @@
-# Aristotle POS v1.2.59 Release Notes
+# Aristotle POS v1.2.60 Release Notes
 
 **Tanggal Rilis:** 2026-09-11
 
 ### Catatan Pembaruan:
-- Desain modal struk transaksi lebih compact dan proporsional
-- Optimalisasi tata letak struk thermal 58mm dan grid tombol aksi
+- Penyesuaian hirarki peran di profil toko: sembunyikan Ubah PIN Owner & Manajemen Toko pada mode kasir
+- Harmonisasi tipografi Plus Jakarta Sans di modal profil toko
 
 ---
 *Pembaruan ini dapat diunduh dan dipasang langsung dari dalam aplikasi (In-App Auto-Updater).*

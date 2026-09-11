@@ -318,6 +318,10 @@ export function switchStore(newStoreId) {
 // ================= UNIVERSAL LOGIN & REGISTRATION =================
 export function openUniversalLoginModal(defaultTab = 'login') {
   playClick('pop');
+  if (state.storeId && state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Beralih ke Mode Owner untuk ganti atau buat toko baru.', 'warning');
+    return;
+  }
   const modal = document.getElementById('universalLoginModal');
   if (!modal) return;
 
@@ -812,6 +816,10 @@ function closePinSecurityModalSilent() {
 
 export function togglePinProtectionSetting() {
   playClick('pop');
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Pengaturan keamanan hanya untuk Mode Owner.', 'warning');
+    return;
+  }
   // Jangan langsung toggle. Minta verifikasi PIN dulu.
   // Ini mencegah staf mematikan kunci seenaknya.
   if (!state.auth) return;
@@ -910,14 +918,31 @@ export function updateHeaderRoleBadgeUI() {
     }
   }
 
-  // 3. Cloud Modal (Profil Toko) Active Role Card
+  // 3. Cloud Modal (Profil Toko) Active Role Card & Section Hierarchy
   const roleCard = document.getElementById('cloudModalRoleCard');
   const roleAvatar = document.getElementById('cloudModalRoleAvatar');
   const roleIcon = document.getElementById('cloudModalRoleIcon');
   const roleBadge = document.getElementById('cloudModalRoleBadge');
   const roleTitle = document.getElementById('cloudModalRoleTitle');
   const roleSub = document.getElementById('cloudModalRoleSubtitle');
+  const roleCardBtn = document.getElementById('cloudModalRoleCardBtn');
+  const roleCardBtnIcon = document.getElementById('cloudModalRoleCardBtnIcon');
+  const roleCardBtnText = document.getElementById('cloudModalRoleCardBtnText');
+
+  const roleListTitle = document.getElementById('cloudModalRoleListTitle');
   const roleListSub = document.getElementById('cloudModalRoleListSubtitle');
+  const roleSwitchIcon = document.getElementById('cloudModalRoleSwitchIcon');
+  const roleSwitchIconContainer = document.getElementById('cloudModalRoleSwitchIconContainer');
+
+  // Hierarchy Sections & Rows (Strict Owner vs Cashier Separation)
+  const quickActionsRow = document.getElementById('cloudModalQuickActionsRow');
+  const securityTitle = document.getElementById('cloudModalSecuritySectionTitle');
+  const cashierManageRow = document.getElementById('cloudModalCashierManageRow');
+  const pinProtectionRow = document.getElementById('cloudModalPinProtectionRow');
+  const changeOwnerPinRow = document.getElementById('cloudModalChangeOwnerPinRow');
+  const storeManagementSection = document.getElementById('cloudModalStoreManagementSection');
+  const logoutBtn = document.getElementById('cloudModalLogoutBtn');
+  const superAdminBtn = document.getElementById('cloudModalSuperAdminBtn');
 
   if (roleCard && roleTitle) {
     if (isCashier) {
@@ -930,7 +955,17 @@ export function updateHeaderRoleBadgeUI() {
       }
       roleTitle.textContent = `Kasir: ${cashierName}`;
       if (roleSub) roleSub.textContent = 'Akses terbatas operasional kasir & penjualan';
-      if (roleListSub) roleListSub.textContent = `Saat ini: Kasir (${cashierName})`;
+      if (roleCardBtn) {
+        roleCardBtn.className = 'px-3 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 active:scale-95 text-white font-extrabold text-xs transition shadow-xs shrink-0 cursor-pointer flex items-center gap-1.5';
+        if (roleCardBtnIcon) roleCardBtnIcon.textContent = 'lock_open';
+        if (roleCardBtnText) roleCardBtnText.textContent = 'Beralih ke Owner';
+      }
+
+      if (roleListTitle) roleListTitle.textContent = 'Beralih ke Mode Owner';
+      if (roleListSub) roleListSub.textContent = 'Verifikasi PIN Owner untuk akses penuh';
+      if (roleSwitchIcon) roleSwitchIcon.textContent = 'lock_open';
+      if (roleSwitchIconContainer) roleSwitchIconContainer.className = 'w-8 h-8 rounded-xl bg-amber-50 text-amber-800 border border-amber-200/70 flex items-center justify-center shrink-0';
+      if (securityTitle) securityTitle.innerHTML = '<span class="material-symbols-rounded text-xs">verified_user</span><span>Akses & Hak Peran</span>';
     } else {
       roleCard.className = 'p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200/90 flex items-center justify-between gap-3 shadow-2xs';
       if (roleAvatar) roleAvatar.className = 'w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs';
@@ -941,9 +976,28 @@ export function updateHeaderRoleBadgeUI() {
       }
       roleTitle.textContent = 'Mode Pemilik (Owner)';
       if (roleSub) roleSub.textContent = 'Akses penuh ke semua laporan & pengaturan';
+      if (roleCardBtn) {
+        roleCardBtn.className = 'px-3 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-extrabold text-xs transition shadow-xs shrink-0 cursor-pointer flex items-center gap-1.5';
+        if (roleCardBtnIcon) roleCardBtnIcon.textContent = 'sync_alt';
+        if (roleCardBtnText) roleCardBtnText.textContent = 'Ganti Role';
+      }
+
+      if (roleListTitle) roleListTitle.textContent = 'Beralih Peran (Owner / Kasir)';
       if (roleListSub) roleListSub.textContent = 'Saat ini: Mode Owner (Akses Penuh)';
+      if (roleSwitchIcon) roleSwitchIcon.textContent = 'sync_alt';
+      if (roleSwitchIconContainer) roleSwitchIconContainer.className = 'w-8 h-8 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200/70 flex items-center justify-center shrink-0';
+      if (securityTitle) securityTitle.innerHTML = '<span class="material-symbols-rounded text-xs">shield</span><span>Keamanan & Akses Kasir</span>';
     }
   }
+
+  // Terapkan pembatasan hirarki pada modal Profil Toko
+  if (quickActionsRow) quickActionsRow.style.display = isCashier ? 'none' : '';
+  if (cashierManageRow) cashierManageRow.style.display = isCashier ? 'none' : '';
+  if (pinProtectionRow) pinProtectionRow.style.display = isCashier ? 'none' : '';
+  if (changeOwnerPinRow) changeOwnerPinRow.style.display = isCashier ? 'none' : '';
+  if (storeManagementSection) storeManagementSection.style.display = isCashier ? 'none' : '';
+  if (logoutBtn) logoutBtn.style.display = isCashier ? 'none' : '';
+  if (superAdminBtn) superAdminBtn.style.display = isCashier ? 'none' : '';
 
   // 4. Backward Compatibility for Standalone Buttons (if present)
   const desktopBtn = document.getElementById('desktopRoleSwitchBtn');
@@ -1319,6 +1373,10 @@ export function checkOwnerPinMatch() {
  */
 export function openChangeOwnerPinModal() {
   playClick('pop');
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Beralih ke Mode Owner untuk mengubah PIN Pemilik.', 'warning');
+    return;
+  }
   const modal = document.getElementById('changeOwnerPinModal');
   if (!modal) return;
 
@@ -1401,6 +1459,10 @@ export const promptChangeOwnerPin = openChangeOwnerPinModal;
 
 export function openCashierManageModal() {
   playClick('pop');
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Pengelolaan staf kasir hanya untuk Mode Owner.', 'warning');
+    return;
+  }
   const modal = document.getElementById('cashierManageModal');
   if (modal) {
     renderCashiersListInModal();
@@ -1710,6 +1772,10 @@ export async function updateCloudOwnerAccountUI() {
 
 export async function logoutStore() {
   playClick('pop');
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Beralih ke Mode Owner untuk keluar dari toko.', 'warning');
+    return;
+  }
   closeCloudModal();
   const storeName = state.storeProfile?.name || state.storeId || 'Toko';
   const ok = await showConfirmDialog({
@@ -2136,6 +2202,10 @@ export function handleBrandLogoClick(e) {
   if (brandSecretTapCount >= 3) {
     brandSecretTapCount = 0;
     if (brandSecretTapResetTimer) clearTimeout(brandSecretTapResetTimer);
+    if (state.userRole === 'cashier') {
+      showToast('Akses Super Admin dibatasi pada mode kasir.', 'warning');
+      return;
+    }
     playClick('pop');
     closeCloudModal();
     showToast('Membuka Autentikasi Super Admin...', 'info', 2000);
@@ -2198,6 +2268,10 @@ export function initHeaderClock() {
 
 export function openSuperAdmin() {
   playClick('pop');
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Beralih ke Mode Owner terlebih dahulu.', 'warning');
+    return;
+  }
   if (!superadmin.isSuperAdminAuthenticated()) {
     superadmin.openSuperAdminAuthModal();
   } else {
