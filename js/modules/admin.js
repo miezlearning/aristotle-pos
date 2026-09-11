@@ -47,9 +47,15 @@ export function getFilteredAdminProducts() {
 export function handleAdminSearch(val) {
   adminSearchQuery = (val || '').trim();
   const clearBtn = document.getElementById('adminProductSearchClear');
+  const kbdHint = document.getElementById('adminSearchKbdHint');
   if (clearBtn) {
-    if (adminSearchQuery) clearBtn.classList.remove('hidden');
-    else clearBtn.classList.add('hidden');
+    if (adminSearchQuery) {
+      clearBtn.classList.remove('hidden');
+      if (kbdHint) kbdHint.classList.add('hidden');
+    } else {
+      clearBtn.classList.add('hidden');
+      if (kbdHint) kbdHint.classList.remove('hidden');
+    }
   }
   renderAdminTable();
 }
@@ -58,9 +64,14 @@ export function clearAdminSearch() {
   playClick('tap');
   adminSearchQuery = '';
   const input = document.getElementById('adminProductSearch');
-  if (input) input.value = '';
+  if (input) {
+    input.value = '';
+    input.focus();
+  }
   const clearBtn = document.getElementById('adminProductSearchClear');
+  const kbdHint = document.getElementById('adminSearchKbdHint');
   if (clearBtn) clearBtn.classList.add('hidden');
+  if (kbdHint) kbdHint.classList.remove('hidden');
   renderAdminTable();
 }
 
@@ -170,16 +181,16 @@ export function renderAdminTable() {
         <div class="w-16 h-16 rounded-3xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shadow-sm">
           <span class="material-symbols-rounded text-3xl">restaurant_menu</span>
         </div>
-        <h3 class="text-base sm:text-lg font-black text-stone-900">Belum Ada Daftar Menu</h3>
+        <h3 class="text-base sm:text-lg font-black text-stone-900">Belum ada menu</h3>
         <p class="text-xs sm:text-sm text-stone-500 max-w-sm">
-          Daftar menu kasir masih kosong. Tambahkan menu baru satu per satu atau gunakan Upload Teks Menu untuk memasukkan banyak menu sekaligus.
+          Tambah satu-satu atau sekaligus.
         </p>
         <div class="flex items-center gap-2 mt-2 flex-wrap justify-center">
           <button onclick="window.KasirApp.openAddProductModal()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-stone-950 font-black text-xs sm:text-sm shadow-sm transition active:scale-95 touch-target-large">
-            + Tambah Menu Baru
+            + Tambah Menu
           </button>
           <button onclick="window.KasirApp.openBulkImportModal()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs sm:text-sm shadow-sm transition active:scale-95 touch-target-large">
-            Upload Teks Menu
+            Tambah Banyak
           </button>
         </div>
       </div>
@@ -283,7 +294,7 @@ export function toggleProductAvailability(id) {
   syncSaveProduct(p);
   renderAdminTable();
   renderProducts();
-  showToast(`Menu "${p.name}" sekarang ${p.isAvailable ? 'READY / TERSEDIA' : 'HABIS / KOSONG'}`, p.isAvailable ? 'success' : 'warning');
+  showToast(`Menu "${p.name}": ${p.isAvailable ? 'tersedia' : 'habis'}`, p.isAvailable ? 'success' : 'warning');
 }
 
 export function renderProductAddOns(addOns = []) {
@@ -378,12 +389,12 @@ export async function handleProductImageFile(event) {
   if (!file) return;
 
   try {
-    showToast('Mengompresi foto...', 'info', 1500);
+    showToast('Memproses foto…', 'info', 1500);
     const compressedDataUrl = await compressImageToDataUrl(file, 360, 0.75);
     currentProductImage = compressedDataUrl;
     updateProductImagePreviewUI(currentProductImage);
     playClick('pop');
-    showToast('Foto berhasil dimuat & dioptimasi!', 'success', 2000);
+    showToast('Foto tersimpan', 'success', 2000);
   } catch (err) {
     console.error('Compress image error:', err);
     showToast(err.message || 'Gagal memproses gambar', 'error');
@@ -396,7 +407,7 @@ export function removeProductImage() {
   updateProductImagePreviewUI('');
   const input = document.getElementById('prodImageInput');
   if (input) input.value = '';
-  showToast('Foto menu dihapus (kembali ke icon)', 'info', 2000);
+  showToast('Foto dihapus', 'info', 2000);
 }
 
 export function openAddProductModal() {
@@ -411,7 +422,7 @@ export function openAddProductModal() {
   const stockEl = document.getElementById('prodStock');
   const modal = document.getElementById('productModal');
 
-  if (titleEl) titleEl.innerText = 'Tambah Menu Baru';
+  if (titleEl) titleEl.innerText = 'Tambah Menu';
   if (editIdEl) editIdEl.value = '';
   if (nameEl) nameEl.value = '';
   if (priceEl) priceEl.value = '';
@@ -448,7 +459,7 @@ export function openEditProductModal(id) {
   const stockEl = document.getElementById('prodStock');
   const modal = document.getElementById('productModal');
 
-  if (titleEl) titleEl.innerText = `Ubah Menu: ${p.name}`;
+  if (titleEl) titleEl.innerText = `Ubah: ${p.name}`;
   if (editIdEl) editIdEl.value = p.id;
   if (nameEl) nameEl.value = p.name;
   if (priceEl) priceEl.value = p.price;
@@ -491,7 +502,7 @@ export function saveProduct(e) {
   const addOns = collectProductAddOns();
 
   if (!name || isNaN(price) || price <= 0) {
-    showToast('Harap isi nama dan harga menu dengan benar', 'warning');
+    showToast('Isi nama dan harga', 'warning');
     return;
   }
 
@@ -543,7 +554,7 @@ export function saveProduct(e) {
   closeProductModal();
   renderAdminTable();
   renderProducts();
-  showToast(`Menu "${name}" berhasil disimpan! ${addOns.length ? `(${addOns.length} Add-on)` : ''}`, 'success');
+  showToast(`"${name}" tersimpan${addOns.length ? ` (${addOns.length} topping)` : ''}`, 'success');
 }
 
 export async function deleteProduct(id) {
@@ -568,7 +579,7 @@ export async function deleteProduct(id) {
     renderAdminTable();
     renderProducts();
     renderCart();
-    showToast(`Menu "${prodName}" telah dihapus.`, 'info');
+    showToast(`"${prodName}" dihapus.`, 'info');
   }
 }
 
@@ -579,7 +590,7 @@ export async function deleteSelectedProducts() {
   playClick('pop');
   const count = selectedAdminProductIds.size;
   if (count === 0) {
-    showToast('Pilih setidaknya satu menu untuk dihapus', 'warning');
+    showToast('Pilih menu dulu', 'warning');
     return;
   }
 
@@ -614,7 +625,7 @@ export async function deleteSelectedProducts() {
     renderProducts();
     renderCart();
 
-    showToast(`${count} menu berhasil dihapus!`, 'success');
+    showToast(`${count} menu dihapus`, 'success');
   }
 }
 
@@ -680,7 +691,7 @@ export async function confirmDeleteAllProducts() {
   renderProducts();
   renderCart();
 
-  showToast(`Seluruh (${count}) menu berhasil dihapus dari kasir.`, 'info');
+  showToast(`${count} menu dihapus dari kasir.`, 'info');
 }
 
 // ================= QRIS SETTINGS & IMAGE UPLOAD =================
@@ -1006,14 +1017,38 @@ export function parseBulkMenuText(raw) {
   return items;
 }
 
+function createEmptyBulkItem(category = 'makanan') {
+  return {
+    id: 'p_' + Date.now() + '_' + Math.floor(Math.random() * 100000),
+    name: '',
+    price: 0,
+    category: category || 'makanan',
+    icon: category === 'minuman' ? 'local_drink' : (category === 'camilan' ? 'bakery_dining' : 'lunch_dining'),
+    isAvailable: true,
+    trackStock: false,
+    stock: null
+  };
+}
+
 export function openBulkImportModal(initialText = '') {
   playClick('pop');
   const modal = document.getElementById('bulkImportModal');
   const textarea = document.getElementById('bulkMenuTextInput');
-  if (textarea) {
-    textarea.value = initialText || '';
+  
+  if (initialText) {
+    if (textarea) textarea.value = initialText;
+    const parsed = parseBulkMenuText(initialText);
+    if (parsed.length > 0) {
+      bulkParsedProducts = parsed;
+    }
+    switchBulkMode('table');
+  } else {
+    if (!bulkParsedProducts || bulkParsedProducts.length === 0) {
+      bulkParsedProducts = Array.from({ length: 5 }, () => createEmptyBulkItem());
+    }
+    switchBulkMode('table');
   }
-  handleBulkTextInput();
+  
   if (modal) modal.classList.remove('hidden');
 }
 
@@ -1023,97 +1058,266 @@ export function closeBulkImportModal() {
   if (modal) modal.classList.add('hidden');
 }
 
+export function switchBulkMode(mode = 'table') {
+  playClick('tap');
+  const tabTable = document.getElementById('tabBtnBulkTable');
+  const tabText = document.getElementById('tabBtnBulkText');
+  const viewTable = document.getElementById('bulkTableView');
+  const viewText = document.getElementById('bulkTextView');
+
+  if (mode === 'table') {
+    if (tabTable) {
+      tabTable.className = 'px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-extrabold flex items-center gap-1.5 border-b-2 border-indigo-600 text-indigo-700 bg-white rounded-t-xl transition shadow-2xs cursor-pointer';
+    }
+    if (tabText) {
+      tabText.className = 'px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-bold flex items-center gap-1.5 border-b-2 border-transparent text-stone-500 hover:text-stone-800 rounded-t-xl transition cursor-pointer';
+    }
+    if (viewTable) viewTable.classList.remove('hidden');
+    if (viewText) viewText.classList.add('hidden');
+    renderBulkTable();
+  } else {
+    if (tabTable) {
+      tabTable.className = 'px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-bold flex items-center gap-1.5 border-b-2 border-transparent text-stone-500 hover:text-stone-800 rounded-t-xl transition cursor-pointer';
+    }
+    if (tabText) {
+      tabText.className = 'px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-extrabold flex items-center gap-1.5 border-b-2 border-indigo-600 text-indigo-700 bg-white rounded-t-xl transition shadow-2xs cursor-pointer';
+    }
+    if (viewTable) viewTable.classList.add('hidden');
+    if (viewText) viewText.classList.remove('hidden');
+  }
+  updateBulkSummary();
+}
+
+export function addBulkRow(count = 1) {
+  playClick('tap');
+  if (!Array.isArray(bulkParsedProducts)) bulkParsedProducts = [];
+  const prevLen = bulkParsedProducts.length;
+  for (let i = 0; i < count; i++) {
+    bulkParsedProducts.push(createEmptyBulkItem());
+  }
+  renderBulkTable();
+  updateBulkSummary();
+
+  // Focus input nama baris baru
+  setTimeout(() => {
+    const input = document.getElementById(`bulkRowName_${prevLen}`);
+    if (input) input.focus();
+  }, 50);
+}
+
+export function removeBulkRow(index) {
+  playClick('pop');
+  if (index >= 0 && index < bulkParsedProducts.length) {
+    bulkParsedProducts.splice(index, 1);
+    if (bulkParsedProducts.length === 0) {
+      bulkParsedProducts.push(createEmptyBulkItem());
+    }
+    renderBulkTable();
+    updateBulkSummary();
+  }
+}
+
+export function clearAllBulkRows() {
+  playClick('pop');
+  if (!Array.isArray(bulkParsedProducts) || bulkParsedProducts.length === 0) return;
+  const filled = bulkParsedProducts.filter(item => item.name && item.name.trim().length > 0).length;
+  const doClear = () => {
+    bulkParsedProducts = [createEmptyBulkItem()];
+    renderBulkTable();
+    updateBulkSummary();
+    showToast(filled > 0 ? `${filled} baris dihapus.` : 'Tabel sudah kosong.', 'info', 1500);
+  };
+  if (filled > 0) {
+    showConfirmDialog({
+      title: 'Hapus Semua Baris?',
+      message: `Hapus ${filled} baris menu dari tabel? (Menu yang sudah tersimpan di kasir tidak ikut terhapus).`,
+      confirmText: 'Hapus Semua',
+      confirmType: 'danger',
+      icon: 'delete_sweep'
+    }).then(ok => { if (ok) doClear(); });
+  } else {
+    doClear();
+  }
+}
+
+export function clearEmptyBulkRows() {
+  playClick('pop');
+  const beforeCount = bulkParsedProducts.length;
+  bulkParsedProducts = bulkParsedProducts.filter(item => item.name && item.name.trim().length > 0);
+  if (bulkParsedProducts.length === 0) {
+    bulkParsedProducts.push(createEmptyBulkItem());
+  }
+  const removed = beforeCount - bulkParsedProducts.length;
+  renderBulkTable();
+  updateBulkSummary();
+  if (removed > 0) {
+    showToast(`${removed} baris kosong dihapus.`, 'info', 1500);
+  } else {
+    showToast('Tidak ada baris kosong.', 'info', 1200);
+  }
+}
+
+export function updateBulkItem(index, field, value) {
+  if (!bulkParsedProducts[index]) return;
+  if (field === 'price') {
+    bulkParsedProducts[index].price = Math.max(0, parseInt(value, 10) || 0);
+  } else {
+    bulkParsedProducts[index][field] = value;
+  }
+  if (field === 'name' || field === 'category') {
+    bulkParsedProducts[index].icon = pickMenuIcon(bulkParsedProducts[index].name, bulkParsedProducts[index].category);
+    const iconEl = document.getElementById(`bulkRowIcon_${index}`);
+    if (iconEl) iconEl.textContent = bulkParsedProducts[index].icon;
+  }
+  updateBulkSummary();
+}
+
+export function handleBulkTextInput() {
+  const textarea = document.getElementById('bulkMenuTextInput');
+  const raw = textarea ? textarea.value : '';
+  const parsed = parseBulkMenuText(raw);
+  const validCountEl = document.getElementById('bulkValidCountText');
+  if (validCountEl && document.getElementById('bulkTextView') && !document.getElementById('bulkTextView').classList.contains('hidden')) {
+    validCountEl.textContent = `${parsed.length} Menu terdeteksi di teks`;
+  }
+}
+
+export function convertTextToTable() {
+  playClick('pop');
+  const textarea = document.getElementById('bulkMenuTextInput');
+  const raw = textarea ? textarea.value : '';
+  const parsed = parseBulkMenuText(raw);
+  if (parsed.length === 0) {
+    showToast('Tidak ada menu terbaca', 'warning', 2500);
+    return;
+  }
+  // Ambil menu yang sudah ada yang tidak kosong
+  const existing = bulkParsedProducts.filter(item => item.name && item.name.trim().length > 0);
+  bulkParsedProducts = [...existing, ...parsed];
+  switchBulkMode('table');
+  showToast(`${parsed.length} menu masuk tabel`, 'success', 2500);
+}
+
 export function loadUserSampleMenu() {
   playClick('tap');
   const textarea = document.getElementById('bulkMenuTextInput');
   if (textarea) {
     textarea.value = USER_SAMPLE_MENU_TEXT;
   }
-  handleBulkTextInput();
-  showToast('Daftar menu berhasil ditempel.', 'info', 2000);
+  const parsed = parseBulkMenuText(USER_SAMPLE_MENU_TEXT);
+  if (parsed.length > 0) {
+    bulkParsedProducts = parsed;
+    switchBulkMode('table');
+    showToast(`${parsed.length} contoh masuk tabel`, 'success', 2500);
+  }
 }
 
-export function handleBulkTextInput() {
-  const textarea = document.getElementById('bulkMenuTextInput');
-  const raw = textarea ? textarea.value : '';
-  bulkParsedProducts = parseBulkMenuText(raw);
-  renderBulkPreviewList();
-}
+export function renderBulkTable() {
+  const tbody = document.getElementById('bulkTableBody');
+  const badge = document.getElementById('bulkTableRowBadge');
+  if (badge) badge.textContent = `${bulkParsedProducts.length} Baris`;
+  if (!tbody) return;
 
-export function renderBulkPreviewList() {
-  const container = document.getElementById('bulkImportPreviewList');
-  const badge = document.getElementById('bulkPreviewCountBadge');
-  const applyBtn = document.getElementById('btnApplyBulkImport');
-  const btnText = document.getElementById('btnApplyBulkImportText');
-
-  const count = bulkParsedProducts.length;
-  if (badge) badge.textContent = `${count} Menu`;
-  if (btnText) btnText.textContent = count > 0 ? `Simpan & Terapkan (${count} Menu)` : 'Simpan & Terapkan';
-  if (applyBtn) applyBtn.disabled = count === 0;
-
-  if (!container) return;
-
-  if (count === 0) {
-    container.innerHTML = `
-      <div class="p-6 text-center text-stone-400 bg-stone-50 rounded-2xl border border-dashed border-stone-200">
-        <span class="material-symbols-rounded text-3xl mb-1 text-stone-300">receipt_long</span>
-        <p class="text-xs font-bold">Belum ada menu yang terdeteksi.</p>
-        <p class="text-[11px] text-stone-400 mt-0.5">Ketik atau tempel teks menu di atas, atau klik "Tempel Menu Anda".</p>
-      </div>
+  if (bulkParsedProducts.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="py-8 text-center text-stone-400">
+          <span class="material-symbols-rounded text-3xl mb-1 text-stone-300">table_rows</span>
+          <p class="font-bold text-xs">Belum ada baris menu.</p>
+          <button type="button" onclick="window.KasirApp.addBulkRow(1)" class="mt-2 text-xs text-indigo-600 font-black hover:underline cursor-pointer">+ Tambah Baris Pertama</button>
+        </td>
+      </tr>
     `;
     return;
   }
 
-  container.innerHTML = `
-    <div class="space-y-2 max-h-64 overflow-y-auto custom-scroll pr-1">
-      ${bulkParsedProducts.map((item, idx) => `
-        <div class="flex items-center gap-2 p-2 bg-stone-50 rounded-xl border border-stone-200">
-          <span class="material-symbols-rounded text-lg text-emerald-700 shrink-0 select-none">${item.icon}</span>
-          <select onchange="window.KasirApp.updateBulkPreviewRow(${idx}, 'category', this.value)"
-            class="p-1.5 rounded-lg bg-white border border-stone-300 text-xs font-bold text-stone-800 shrink-0">
-            <option value="makanan" ${item.category === 'makanan' ? 'selected' : ''}>Makanan</option>
-            <option value="minuman" ${item.category === 'minuman' ? 'selected' : ''}>Minuman</option>
-            <option value="camilan" ${item.category === 'camilan' ? 'selected' : ''}>Camilan</option>
-            <option value="topping" ${item.category === 'topping' ? 'selected' : ''}>Topping</option>
-          </select>
-          <input type="text" value="${escapeHtml(item.name)}" oninput="window.KasirApp.updateBulkPreviewRow(${idx}, 'name', this.value)"
-            class="flex-1 p-1.5 rounded-lg bg-white border border-stone-300 text-xs font-bold text-stone-900 outline-none focus:border-sky-600 shadow-2xs">
-          <div class="flex items-center gap-1 shrink-0">
-            <span class="text-[11px] font-bold text-stone-500">Rp</span>
-            <input type="number" value="${item.price}" oninput="window.KasirApp.updateBulkPreviewRow(${idx}, 'price', parseInt(this.value, 10) || 0)"
-              class="w-20 p-1.5 rounded-lg bg-white border border-stone-300 text-xs font-black text-emerald-800 outline-none focus:border-sky-600 shadow-2xs">
-          </div>
-          <button type="button" onclick="window.KasirApp.deleteBulkPreviewRow(${idx})"
-            class="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-100 flex items-center justify-center shrink-0 transition" title="Hapus">
-            <span class="material-symbols-rounded text-base">close</span>
-          </button>
+  tbody.innerHTML = bulkParsedProducts.map((item, idx) => `
+    <tr class="hover:bg-stone-50/70 transition-colors group">
+      <td class="text-center py-2 px-1 text-stone-400 font-bold text-[11px] select-none">
+        ${idx + 1}
+      </td>
+      <td class="py-1.5 px-2">
+        <div class="flex items-center gap-1.5">
+          <span id="bulkRowIcon_${idx}" class="material-symbols-rounded text-base text-stone-400 shrink-0 select-none hidden sm:inline-block">${item.icon}</span>
+          <input type="text" id="bulkRowName_${idx}" value="${escapeHtml(item.name)}"
+            placeholder="Contoh: Nasi Goreng Spesial"
+            oninput="window.KasirApp.updateBulkItem(${idx}, 'name', this.value)"
+            class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-stone-300 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none font-bold text-xs text-stone-900 shadow-2xs">
         </div>
-      `).join('')}
-    </div>
-  `;
+      </td>
+      <td class="py-1.5 px-2">
+        <select onchange="window.KasirApp.updateBulkItem(${idx}, 'category', this.value)"
+          class="w-full px-2 py-1.5 rounded-lg bg-white border border-stone-300 focus:border-indigo-600 focus:outline-none font-extrabold text-xs text-stone-800 shadow-2xs cursor-pointer">
+          <option value="makanan" ${item.category === 'makanan' ? 'selected' : ''}>Makanan</option>
+          <option value="minuman" ${item.category === 'minuman' ? 'selected' : ''}>Minuman</option>
+          <option value="camilan" ${item.category === 'camilan' ? 'selected' : ''}>Camilan</option>
+          <option value="topping" ${item.category === 'topping' ? 'selected' : ''}>Topping</option>
+        </select>
+      </td>
+      <td class="py-1.5 px-2">
+        <div class="relative flex items-center">
+          <span class="absolute left-2 text-[11px] font-bold text-stone-400 pointer-events-none select-none">Rp</span>
+          <input type="number" min="0" step="500" value="${item.price > 0 ? item.price : ''}" placeholder="0"
+            oninput="window.KasirApp.updateBulkItem(${idx}, 'price', this.value)"
+            class="w-full pl-7 pr-2 py-1.5 rounded-lg bg-white border border-stone-300 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none font-black text-xs text-emerald-800 shadow-2xs">
+        </div>
+      </td>
+      <td class="text-center py-1.5 px-1">
+        <button type="button" onclick="window.KasirApp.removeBulkRow(${idx})"
+          class="w-7 h-7 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center mx-auto transition cursor-pointer"
+          title="Hapus baris ini">
+          <span class="material-symbols-rounded text-base">close</span>
+        </button>
+      </td>
+    </tr>
+  `).join('');
 }
 
-export function updateBulkPreviewRow(index, field, value) {
-  if (bulkParsedProducts[index]) {
-    bulkParsedProducts[index][field] = value;
-    if (field === 'name' || field === 'category') {
-      bulkParsedProducts[index].icon = pickMenuIcon(bulkParsedProducts[index].name, bulkParsedProducts[index].category);
+export function updateBulkSummary() {
+  const validItems = bulkParsedProducts.filter(item => item.name && item.name.trim().length > 0);
+  const validCountText = document.getElementById('bulkValidCountText');
+  const breakdownEl = document.getElementById('bulkBreakdownPills');
+  const applyBtn = document.getElementById('btnApplyBulkImport');
+  const btnText = document.getElementById('btnApplyBulkImportText');
+  const badge = document.getElementById('bulkTableRowBadge');
+
+  if (badge) badge.textContent = `${bulkParsedProducts.length} Baris`;
+
+  const count = validItems.length;
+  if (validCountText) {
+    validCountText.textContent = `${count} Menu Siap Disimpan`;
+  }
+
+  if (breakdownEl) {
+    if (count > 0) {
+      const counts = { makanan: 0, minuman: 0, camilan: 0, topping: 0 };
+      validItems.forEach(i => {
+        counts[i.category] = (counts[i.category] || 0) + 1;
+      });
+      const parts = [];
+      if (counts.makanan) parts.push(`${counts.makanan} Makanan`);
+      if (counts.minuman) parts.push(`${counts.minuman} Minuman`);
+      if (counts.camilan) parts.push(`${counts.camilan} Camilan`);
+      if (counts.topping) parts.push(`${counts.topping} Topping`);
+      breakdownEl.textContent = `• ${parts.join(' • ')}`;
+    } else {
+      breakdownEl.textContent = '';
     }
   }
-}
 
-export function deleteBulkPreviewRow(index) {
-  playClick('pop');
-  if (index >= 0 && index < bulkParsedProducts.length) {
-    bulkParsedProducts.splice(index, 1);
-    renderBulkPreviewList();
+  if (btnText) {
+    btnText.textContent = count > 0 ? `Simpan & Terapkan (${count} Menu)` : 'Simpan & Terapkan (0 Menu)';
+  }
+  if (applyBtn) {
+    applyBtn.disabled = count === 0;
   }
 }
 
 export function applyBulkMenuImport() {
   playClick('pop');
-  if (!bulkParsedProducts || bulkParsedProducts.length === 0) {
-    showToast('Tidak ada menu untuk disimpan.', 'warning', 2000);
+  const validItems = bulkParsedProducts.filter(item => item.name && item.name.trim().length > 0);
+  if (validItems.length === 0) {
+    showToast('Isi 1 nama menu dulu.', 'warning', 2000);
     return;
   }
 
@@ -1126,15 +1330,26 @@ export function applyBulkMenuImport() {
     }
   }
 
+  // Pastikan setiap item memiliki ID unik dan nama bersih
+  const processedItems = validItems.map(item => ({
+    ...item,
+    id: item.id || ('p_' + Date.now() + '_' + Math.floor(Math.random() * 100000)),
+    name: cleanItemTitle(item.name),
+    price: Math.max(0, parseInt(item.price, 10) || 0),
+    category: item.category || 'makanan',
+    icon: item.icon || pickMenuIcon(item.name, item.category),
+    isAvailable: true,
+    trackStock: false,
+    stock: null
+  }));
+
   if (mode === 'replace') {
-    state.products = [...bulkParsedProducts];
+    state.products = [...processedItems];
     syncClearAllProducts();
   } else {
-    // Append (cek duplikasi nama agar tidak ganda persis)
-    const existingNames = new Set(state.products.map(p => p.name.toLowerCase()));
-    for (const item of bulkParsedProducts) {
-      if (existingNames.has(item.name.toLowerCase())) {
-        // Berikan ID baru jika tetap ditambahkan
+    const existingNames = new Set(state.products.map(p => p.name.toLowerCase().trim()));
+    for (const item of processedItems) {
+      if (existingNames.has(item.name.toLowerCase().trim())) {
         item.id = 'p_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
       }
       state.products.push(item);
@@ -1142,11 +1357,14 @@ export function applyBulkMenuImport() {
   }
 
   saveProducts();
-  bulkParsedProducts.forEach(p => syncSaveProduct(p));
+  processedItems.forEach(p => syncSaveProduct(p));
 
   closeBulkImportModal();
   renderAdminTable();
   renderProducts();
 
-  showToast(`${bulkParsedProducts.length} menu berhasil disimpan!`, 'success', 3000);
+  // Reset bulk rows untuk pembukaan selanjutnya
+  bulkParsedProducts = Array.from({ length: 5 }, () => createEmptyBulkItem());
+
+  showToast(`${processedItems.length} menu tersimpan`, 'success', 3000);
 }
