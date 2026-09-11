@@ -1,10 +1,9 @@
 {
-  "versionCode": 103,
-  "versionName": "1.2.55",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.55/Aristotle-POS.apk",
+  "versionCode": 104,
+  "versionName": "1.2.56",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.56/Aristotle-POS.apk",
   "changelog": [
-    "Sederhanakan Profil Toko tanpa glassmorphism dan badge",
-    "Perbaiki toolbar dan kartu Laporan di layar HP",
+    "Perbaiki dot status Profil Toko agar inline dengan teks",
     "Sinkronisasi aset native Android"
   ],
   "releaseDate": "2026-09-11"

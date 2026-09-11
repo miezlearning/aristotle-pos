@@ -1,10 +1,9 @@
-# Aristotle POS v1.2.55 Release Notes
+# Aristotle POS v1.2.56 Release Notes
 
 **Tanggal Rilis:** 2026-09-11
 
 ### Catatan Pembaruan:
-- Sederhanakan Profil Toko tanpa glassmorphism dan badge
-- Perbaiki toolbar dan kartu Laporan di layar HP
+- Perbaiki dot status Profil Toko agar inline dengan teks
 - Sinkronisasi aset native Android
 
 ---

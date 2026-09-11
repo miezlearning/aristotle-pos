@@ -132,7 +132,7 @@ export function updateSyncStatusUI(status, message) {
   }
   const modalStatusDot = document.getElementById('cloudModalStatusDot');
   if (modalStatusDot) {
-    modalStatusDot.className = `w-2 h-2 rounded-full shrink-0 ${current.dot}`;
+    modalStatusDot.className = `inline-block align-middle w-2 h-2 rounded-full ${current.dot}`;
   }
   if (modalStatusEl) {
     const label = (message || current.text).replace('Online & Terhubung', 'Online').replace('Mode Offline (Lokal)', 'Offline');
