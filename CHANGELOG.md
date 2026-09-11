@@ -4,6 +4,15 @@ Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant S
 
 Format dokumen ini mengacu pada panduan [Keep a Changelog](https://keepachangelog.com/id/1.0.0/) dan mematuhi aturan [Semantic Versioning](https://semver.org/).
 
+## [v1.2.46] - 2026-09-11
+
+### 🍔 Tata Letak Modal Menu Responsif 2-Kolom & Anti-Overflow (Tablet & HP)
+- **Desain Bounded Modal & Sticky Footer:** Memperbaiki modal Tambah/Ubah Menu (`#productModal`) dan Catatan/Add-on (`#itemNoteModal`) dengan batas aman tinggi layar (`max-h-[94vh] sm:max-h-[90vh]`) serta sticky action footer. Tombol **Simpan Menu** dan **Batal** selalu terkunci rapi di bagian bawah layar dan tidak akan pernah terdorong keluar layar (*overflow*) pada HP maupun layar kecil.
+- **Layout Adaptif 2-Kolom di Tablet/Desktop (`md:grid md:grid-cols-12`):** Memanfaatkan lebar layar tablet secara ergonomis. Kolom kiri memuat Nama Menu, Harga, Kategori/Ikon, dan Upload Foto Menu yang ringkas. Kolom kanan memuat Status Ready, Sisa Stok (preset 10, 25, 50, Bebas), dan Pengaturan Add-on/Topping.
+- **Header Kelola Menu & Baris Produk Lebih Kompak:** Kartu navigasi atas `viewAdmin` dibuat ramping horizontal sehingga daftar katalog menu langsung terlihat leluasa. Baris produk di HP dirampingkan dengan tombol aksi touch-friendly yang pas tanpa terpotong.
+
+---
+
 ## [v1.2.45] - 2026-09-10
 
 ### 📷 Perbaikan Universal QR Pairing & Auto-Login Staf (Zero-PIN Authentication)

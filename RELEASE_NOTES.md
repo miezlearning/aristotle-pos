@@ -1,10 +1,11 @@
-# Aristotle POS v1.2.45 Release Notes
+# Aristotle POS v1.2.46 Release Notes
 
-**Tanggal Rilis:** 2026-09-10
+**Tanggal Rilis:** 2026-09-11
 
 ### Catatan Pembaruan:
-- Perbaiki koneksi QR login dan auto-auth staf tanpa PIN
-- Standarisasi rute koneksi hotspot Wi-Fi dan warmup printer standby HP Staf
+- Desain responsif modal Tambah/Ubah Menu 2-kolom pada tablet & anti-overflow pada HP
+- Sticky action footer untuk tombol Simpan & Batal agar selalu terlihat
+- Header Kelola Menu dan modal Catatan/Add-on lebih compact dan ergonomis
 
 ---
 *Pembaruan ini dapat diunduh dan dipasang langsung dari dalam aplikasi (In-App Auto-Updater).*

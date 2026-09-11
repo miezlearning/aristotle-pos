@@ -1072,47 +1072,53 @@
 
     <!-- ==================== SCREEN 3: PRODUCT MANAGEMENT & DATA BACKUP ==================== -->
     <div id="viewAdmin" class="hidden flex-1 flex-col gap-3.5">
-      <div class="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 flex flex-col gap-4">
+      <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div>
-          <h2 class="text-lg sm:text-xl font-bold text-stone-900">Menu & Pengaturan</h2>
-          <p class="text-sm text-stone-500 mt-0.5">Atur jualan Mami di sini</p>
+          <div class="flex items-center gap-2">
+            <h2 class="text-base sm:text-lg font-black text-stone-900">Menu & Pengaturan</h2>
+            <span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Katalog Produk</span>
+          </div>
+          <p class="text-xs text-stone-500 mt-0.5">Atur menu makanan, minuman, dan pengaturan kasir</p>
         </div>
-        <div class="flex flex-col gap-2">
+        
+        <div class="flex items-center gap-2 flex-wrap">
           <button onclick="openAddProductModal()"
-            class="w-full h-12 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-sm flex items-center justify-center gap-2 transition active:scale-[0.98]">
-            <span class="material-symbols-rounded text-xl">add</span>
-            <span>Tambah Menu</span>
+            class="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm touch-target-large cursor-pointer">
+            <span class="material-symbols-rounded text-lg">add_circle</span>
+            <span>+ Tambah Menu</span>
           </button>
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-            <button onclick="openBulkImportModal()"
-              class="h-11 px-3 rounded-xl bg-white hover:bg-stone-50 text-stone-800 border border-stone-200 font-semibold text-sm flex items-center justify-center gap-2 transition active:scale-[0.98]"
-              title="Tambah banyak menu sekaligus">
-              <span class="material-symbols-rounded text-xl text-stone-500">playlist_add</span>
-              <span>Tambah Banyak</span>
-            </button>
+          
+          <button onclick="openBulkImportModal()"
+            class="px-3 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 touch-target-large cursor-pointer"
+            title="Tambah banyak menu sekaligus dari teks WA/catatan">
+            <span class="material-symbols-rounded text-base">playlist_add</span>
+            <span>Upload Teks</span>
+          </button>
+
+          <div class="flex items-center gap-1.5">
             <button type="button" onclick="window.KasirApp.openPrinterConfigModal()"
-              class="h-11 px-3 rounded-xl bg-white hover:bg-stone-50 text-stone-800 border border-stone-200 font-semibold text-sm flex items-center justify-center gap-2 transition active:scale-[0.98]"
-              title="Atur printer & struk">
-              <span class="material-symbols-rounded text-xl text-stone-500">print</span>
-              <span>Printer</span>
+              class="p-2 sm:px-2.5 sm:py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95 touch-target-large cursor-pointer"
+              title="Atur printer thermal & struk">
+              <span class="material-symbols-rounded text-base text-stone-500">print</span>
+              <span class="hidden md:inline">Printer</span>
             </button>
             <button onclick="openQrisModal()"
-              class="h-11 px-3 rounded-xl bg-white hover:bg-stone-50 text-stone-800 border border-stone-200 font-semibold text-sm flex items-center justify-center gap-2 transition active:scale-[0.98]"
+              class="p-2 sm:px-2.5 sm:py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95 touch-target-large cursor-pointer"
               title="Atur QRIS toko">
-              <span class="material-symbols-rounded text-xl text-stone-500">qr_code_2</span>
-              <span>QRIS Toko</span>
+              <span class="material-symbols-rounded text-base text-stone-500">qr_code_2</span>
+              <span class="hidden md:inline">QRIS</span>
             </button>
             <button onclick="exportDataBackup()"
-              class="h-11 px-3 rounded-xl bg-white hover:bg-stone-50 text-stone-800 border border-stone-200 font-semibold text-sm flex items-center justify-center gap-2 transition active:scale-[0.98]"
-              title="Simpan salinan data">
-              <span class="material-symbols-rounded text-xl text-stone-500">download</span>
-              <span>Simpan Data</span>
+              class="p-2 sm:px-2.5 sm:py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95 touch-target-large cursor-pointer"
+              title="Cadangkan seluruh data toko ke file JSON">
+              <span class="material-symbols-rounded text-base text-stone-500">download</span>
+              <span class="hidden md:inline">Cadangkan</span>
             </button>
             <button onclick="document.getElementById('importFileInput').click()"
-              class="h-11 px-3 rounded-xl bg-white hover:bg-stone-50 text-stone-800 border border-stone-200 font-semibold text-sm flex items-center justify-center gap-2 transition active:scale-[0.98] col-span-2 sm:col-span-1"
-              title="Kembalikan dari file simpanan">
-              <span class="material-symbols-rounded text-xl text-stone-500">upload</span>
-              <span>Kembalikan</span>
+              class="p-2 sm:px-2.5 sm:py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95 touch-target-large cursor-pointer"
+              title="Pulihkan data toko dari file JSON cadangan">
+              <span class="material-symbols-rounded text-base text-stone-500">upload</span>
+              <span class="hidden md:inline">Pulihkan</span>
             </button>
           </div>
           <input type="file" id="importFileInput" accept=".json" onchange="importDataBackup(event)" class="hidden">
@@ -2014,175 +2020,201 @@
 
   <!-- ==================== MODAL: ADD / EDIT PRODUCT ==================== -->
   <div id="productModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6">
     <div
-      class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col">
+      class="bg-white w-full sm:max-w-xl md:max-w-3xl lg:max-w-4xl max-h-[94vh] sm:max-h-[90vh] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col animate-in zoom-in-95">
       
-      <!-- Integrated Clean Header -->
-      <div class="p-5 pb-3 flex items-start justify-between border-b border-stone-100">
+      <!-- Integrated Clean Header (Sticky Top) -->
+      <div class="shrink-0 p-3.5 sm:p-4 px-4 sm:px-6 flex items-center justify-between border-b border-stone-100 bg-white">
         <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0">
+          <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0">
             <span class="material-symbols-rounded text-2xl">restaurant_menu</span>
           </div>
           <div>
-            <h3 id="productModalTitle" class="text-base sm:text-lg font-black text-stone-900 leading-tight">Tambah Menu Baru</h3>
-            <p class="text-xs text-stone-500 font-medium mt-0.5">Atur nama makanan, harga, dan ketersediaan</p>
+            <h3 id="productModalTitle" class="text-sm sm:text-base font-black text-stone-900 leading-tight">Tambah Menu Baru</h3>
+            <p class="text-[11px] sm:text-xs text-stone-500 font-medium mt-0.5">Atur nama makanan, harga, stok, dan ketersediaan</p>
           </div>
         </div>
-        <button onclick="closeProductModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition">
-          <span class="material-symbols-rounded text-2xl">close</span>
+        <button type="button" onclick="closeProductModal()" class="w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-800 flex items-center justify-center transition cursor-pointer" title="Tutup">
+          <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
 
-      <form id="productForm" onsubmit="saveProduct(event)" class="p-5 flex flex-col gap-3.5">
+      <!-- Main Form with Flex-1 Scrollable Body & Sticky Footer -->
+      <form id="productForm" onsubmit="saveProduct(event)" class="flex flex-col flex-1 min-h-0 overflow-hidden">
         <input type="hidden" id="editProductId">
 
-        <div>
-          <label class="block text-stone-700 font-bold mb-1 text-xs sm:text-sm">Nama Menu / Produk *</label>
-          <input type="text" id="prodName" required placeholder="Contoh: Nasi Goreng Telur"
-            class="w-full p-3 rounded-xl border border-stone-300 focus:border-emerald-600 focus:outline-none text-sm font-semibold">
-        </div>
-
-        <div>
-          <label class="block text-stone-700 font-bold mb-1 text-xs sm:text-sm">Harga (Rp) *</label>
-          <input type="number" id="prodPrice" required min="0" step="any" placeholder="Contoh: 15000"
-            class="w-full p-3 rounded-xl border border-stone-300 focus:border-emerald-600 focus:outline-none text-base font-black text-emerald-700">
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-stone-700 font-bold mb-1 text-xs">Kategori</label>
-            <select id="prodCategory"
-              class="w-full p-2.5 rounded-xl border border-stone-300 focus:border-emerald-600 focus:outline-none text-xs font-semibold bg-white">
-              <option value="makanan">Makanan</option>
-              <option value="minuman">Minuman</option>
-              <option value="camilan">Camilan</option>
-              <option value="topping">Topping & Ekstra</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-stone-700 font-bold mb-1 text-xs">Simbol Icon</label>
-            <select id="prodIcon"
-              class="w-full p-2.5 rounded-xl border border-stone-300 focus:border-emerald-600 focus:outline-none text-xs font-semibold bg-white">
-              <option value="lunch_dining">Makanan</option>
-              <option value="ramen_dining">Mie / Bakso</option>
-              <option value="local_cafe">Kopi / Teh</option>
-              <option value="local_drink">Minuman</option>
-              <option value="bakery_dining">Camilan</option>
-              <option value="add_circle">Topping / Tambahan</option>
-              <option value="egg">Telur / Lauk</option>
-              <option value="fastfood">Fastfood</option>
-              <option value="icecream">Manisan / Dessert</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Foto Menu Produk (Opsional - Auto Compress) -->
-        <div class="bg-stone-50 p-3.5 rounded-2xl border border-stone-200 flex flex-col gap-2.5">
-          <div class="flex items-center justify-between">
-            <label class="block text-stone-800 font-bold text-xs sm:text-sm flex items-center gap-1.5">
-              <span class="material-symbols-rounded text-base text-emerald-700">photo_camera</span>
-              <span>Foto Menu (Opsional)</span>
-            </label>
-            <span class="text-[10.5px] font-semibold text-stone-400">Kompresi otomatis</span>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <!-- Box Preview Foto -->
-            <div id="prodImagePreviewBox" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white border-2 border-dashed border-stone-300 flex items-center justify-center overflow-hidden shrink-0 relative shadow-xs">
-              <img id="prodImagePreviewImg" src="" alt="Preview" class="w-full h-full object-cover hidden">
-              <div id="prodImagePlaceholder" class="flex flex-col items-center justify-center text-stone-400 text-center p-1">
-                <span class="material-symbols-rounded text-2xl sm:text-3xl">add_a_photo</span>
-                <span class="text-[9px] font-bold mt-0.5">Belum ada</span>
-              </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex flex-col gap-1.5 flex-1 min-w-0">
-              <input type="file" id="prodImageInput" accept="image/*" class="hidden" onchange="window.KasirApp.handleProductImageFile(event)">
-              
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <button type="button" onclick="window.KasirApp.triggerProductImageUpload()"
-                  class="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs flex items-center gap-1 transition shadow-xs active:scale-95 cursor-pointer touch-target-large">
-                  <span class="material-symbols-rounded text-sm">upload</span>
-                  <span>Pilih / Ambil Foto</span>
-                </button>
-                
-                <button type="button" id="btnRemoveProductImage" onclick="window.KasirApp.removeProductImage()"
-                  class="hidden px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-black text-xs flex items-center gap-1 transition active:scale-95 cursor-pointer">
-                  <span class="material-symbols-rounded text-sm">delete</span>
-                  <span>Hapus</span>
-                </button>
-              </div>
-              <p class="text-[10px] text-stone-500 leading-tight">Foto dari kamera/galeri otomatis dioptimasi hemat kuota (~20KB) & siap offline.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Status Ketersediaan & Pelacakan Stok (Opsional) -->
-        <!-- Status Ketersediaan & Stok Menu (1 Tempat Jelas & Praktis) -->
-        <div class="bg-stone-50 p-4 rounded-2xl border border-stone-200 flex flex-col gap-3">
-          <div class="flex items-center justify-between">
-            <div>
-              <span class="text-xs font-black text-stone-800">Status Menu</span>
-              <p class="text-[11px] text-stone-500">Bisa langsung dipesan kasir</p>
-            </div>
-            <label class="flex items-center gap-1.5 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-stone-200 shadow-sm">
-              <input type="checkbox" id="prodIsAvailable" class="w-4 h-4 accent-emerald-600 cursor-pointer" checked>
-              <span id="prodIsAvailableLabel" class="text-xs font-black text-emerald-800 select-none">Ready / Tersedia</span>
-            </label>
-          </div>
-
-          <div class="border-t border-stone-200 pt-3 flex flex-col gap-2">
-            <div class="flex items-center justify-between">
+        <!-- Scrollable Body with 2-Column Grid on Tablet/Desktop -->
+        <div class="flex-1 overflow-y-auto custom-scroll p-3.5 sm:p-5 sm:px-6">
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5 sm:gap-4 items-start">
+            
+            <!-- LEFT COLUMN: Informasi Utama & Foto Produk -->
+            <div class="md:col-span-6 flex flex-col gap-3">
+              <!-- Nama Menu -->
               <div>
-                <label for="prodStock" class="text-xs font-black text-stone-800">Jumlah Sisa Stok (Porsi)</label>
-                <p class="text-[11px] text-stone-500 font-medium">Kosongkan jika stok bebas / selalu ready</p>
+                <label class="block text-stone-700 font-bold mb-1 text-xs sm:text-sm">Nama Menu / Produk *</label>
+                <input type="text" id="prodName" required placeholder="Contoh: Nasi Goreng Telur"
+                  class="w-full px-3 py-2 sm:py-2.5 rounded-xl border border-stone-300 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 focus:outline-none text-xs sm:text-sm font-semibold transition">
               </div>
-              <div class="flex items-center gap-1.5">
-                <input type="number" id="prodStock" min="0" step="1" placeholder="Bebas"
-                  class="w-24 p-2 rounded-xl border-2 border-stone-300 focus:border-emerald-600 focus:outline-none text-base font-black text-center text-emerald-900 bg-white">
-                <span class="text-xs font-bold text-stone-600">Porsi</span>
+
+              <!-- Harga Jual -->
+              <div>
+                <label class="block text-stone-700 font-bold mb-1 text-xs sm:text-sm">Harga (Rp) *</label>
+                <div class="relative flex items-center">
+                  <span class="absolute left-3 text-stone-400 font-black text-xs sm:text-sm">Rp</span>
+                  <input type="number" id="prodPrice" required min="0" step="any" placeholder="Contoh: 15000"
+                    class="w-full pl-9 pr-3 py-2 sm:py-2.5 rounded-xl border border-stone-300 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 focus:outline-none text-sm sm:text-base font-black text-emerald-700 transition">
+                </div>
+              </div>
+
+              <!-- Kategori & Icon -->
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-stone-700 font-bold mb-1 text-xs">Kategori</label>
+                  <select id="prodCategory"
+                    class="w-full px-2.5 py-2 rounded-xl border border-stone-300 focus:border-emerald-600 focus:outline-none text-xs font-semibold bg-white transition">
+                    <option value="makanan">Makanan</option>
+                    <option value="minuman">Minuman</option>
+                    <option value="camilan">Camilan</option>
+                    <option value="topping">Topping & Ekstra</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-stone-700 font-bold mb-1 text-xs">Simbol Icon</label>
+                  <select id="prodIcon"
+                    class="w-full px-2.5 py-2 rounded-xl border border-stone-300 focus:border-emerald-600 focus:outline-none text-xs font-semibold bg-white transition">
+                    <option value="lunch_dining">Makanan</option>
+                    <option value="ramen_dining">Mie / Bakso</option>
+                    <option value="local_cafe">Kopi / Teh</option>
+                    <option value="local_drink">Minuman</option>
+                    <option value="bakery_dining">Camilan</option>
+                    <option value="add_circle">Topping / Tambahan</option>
+                    <option value="egg">Telur / Lauk</option>
+                    <option value="fastfood">Fastfood</option>
+                    <option value="icecream">Manisan / Dessert</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Foto Menu Produk (Opsional - Compact Horizontal Layout) -->
+              <div class="bg-stone-50 p-3 rounded-2xl border border-stone-200 flex flex-col gap-2">
+                <div class="flex items-center justify-between">
+                  <label class="block text-stone-800 font-bold text-xs flex items-center gap-1.5">
+                    <span class="material-symbols-rounded text-base text-emerald-700">photo_camera</span>
+                    <span>Foto Menu (Opsional)</span>
+                  </label>
+                  <span class="text-[10px] font-semibold text-stone-400 bg-white px-2 py-0.5 rounded-full border border-stone-200">Auto compress ~20KB</span>
+                </div>
+
+                <div class="flex items-center gap-2.5">
+                  <!-- Box Preview Foto -->
+                  <div id="prodImagePreviewBox" class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-white border-2 border-dashed border-stone-300 flex items-center justify-center overflow-hidden shrink-0 relative shadow-2xs">
+                    <img id="prodImagePreviewImg" src="" alt="Preview" class="w-full h-full object-cover hidden">
+                    <div id="prodImagePlaceholder" class="flex flex-col items-center justify-center text-stone-400 text-center p-1">
+                      <span class="material-symbols-rounded text-xl sm:text-2xl">add_a_photo</span>
+                      <span class="text-[8.5px] font-bold mt-0.5">Kosong</span>
+                    </div>
+                  </div>
+
+                  <!-- Action Buttons & Info -->
+                  <div class="flex flex-col gap-1 flex-1 min-w-0">
+                    <input type="file" id="prodImageInput" accept="image/*" class="hidden" onchange="window.KasirApp.handleProductImageFile(event)">
+                    
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <button type="button" onclick="window.KasirApp.triggerProductImageUpload()"
+                        class="px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs flex items-center gap-1 transition shadow-2xs active:scale-95 cursor-pointer">
+                        <span class="material-symbols-rounded text-sm">upload</span>
+                        <span>Pilih / Foto</span>
+                      </button>
+                      
+                      <button type="button" id="btnRemoveProductImage" onclick="window.KasirApp.removeProductImage()"
+                        class="hidden px-2 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-black text-xs flex items-center gap-1 transition active:scale-95 cursor-pointer">
+                        <span class="material-symbols-rounded text-sm">delete</span>
+                        <span>Hapus</span>
+                      </button>
+                    </div>
+                    <p class="text-[10px] text-stone-500 leading-tight">Foto dioptimalkan otomatis agar aplikasi tetap cepat & siap offline.</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- Quick presets to set stock in 1 click -->
-            <div class="flex items-center gap-1.5 mt-1">
-              <span class="text-[11px] text-stone-400 font-bold">Cepat:</span>
-              <button type="button" onclick="document.getElementById('prodStock').value = 10" class="px-2.5 py-1 bg-white hover:bg-emerald-50 rounded-lg text-xs font-bold text-stone-700 border border-stone-200">10</button>
-              <button type="button" onclick="document.getElementById('prodStock').value = 25" class="px-2.5 py-1 bg-white hover:bg-emerald-50 rounded-lg text-xs font-bold text-stone-700 border border-stone-200">25</button>
-              <button type="button" onclick="document.getElementById('prodStock').value = 50" class="px-2.5 py-1 bg-white hover:bg-emerald-50 rounded-lg text-xs font-bold text-stone-700 border border-stone-200">50</button>
-              <button type="button" onclick="document.getElementById('prodStock').value = ''" class="px-2.5 py-1 bg-white hover:bg-stone-100 rounded-lg text-xs font-bold text-stone-500 border border-stone-200">Bebas</button>
+            <!-- RIGHT COLUMN: Ketersediaan, Stok, & Add-on Topping -->
+            <div class="md:col-span-6 flex flex-col gap-3">
+              <!-- Status Ketersediaan & Sisa Stok Menu -->
+              <div class="bg-stone-50 p-3 rounded-2xl border border-stone-200 flex flex-col gap-2.5">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <span class="text-xs font-black text-stone-800">Status Menu</span>
+                    <p class="text-[10.5px] text-stone-500">Bisa langsung dipesan kasir</p>
+                  </div>
+                  <label class="flex items-center gap-1.5 cursor-pointer bg-white px-2.5 py-1.5 rounded-xl border border-stone-200 shadow-2xs">
+                    <input type="checkbox" id="prodIsAvailable" class="w-4 h-4 accent-emerald-600 cursor-pointer" checked>
+                    <span id="prodIsAvailableLabel" class="text-xs font-black text-emerald-800 select-none">Ready</span>
+                  </label>
+                </div>
+
+                <div class="border-t border-stone-200 pt-2.5 flex flex-col gap-2">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <label for="prodStock" class="text-xs font-black text-stone-800">Sisa Stok (Porsi)</label>
+                      <p class="text-[10.5px] text-stone-500 font-medium">Kosongkan jika selalu ready</p>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <input type="number" id="prodStock" min="0" step="1" placeholder="Bebas"
+                        class="w-20 sm:w-24 p-1.5 rounded-xl border-2 border-stone-300 focus:border-emerald-600 focus:outline-none text-sm sm:text-base font-black text-center text-emerald-900 bg-white">
+                      <span class="text-xs font-bold text-stone-600">Porsi</span>
+                    </div>
+                  </div>
+
+                  <!-- Quick presets to set stock in 1 click -->
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[10.5px] text-stone-400 font-bold">Preset:</span>
+                    <button type="button" onclick="document.getElementById('prodStock').value = 10" class="px-2 py-0.5 bg-white hover:bg-emerald-50 rounded-lg text-xs font-bold text-stone-700 border border-stone-200 active:scale-95 transition">10</button>
+                    <button type="button" onclick="document.getElementById('prodStock').value = 25" class="px-2 py-0.5 bg-white hover:bg-emerald-50 rounded-lg text-xs font-bold text-stone-700 border border-stone-200 active:scale-95 transition">25</button>
+                    <button type="button" onclick="document.getElementById('prodStock').value = 50" class="px-2 py-0.5 bg-white hover:bg-emerald-50 rounded-lg text-xs font-bold text-stone-700 border border-stone-200 active:scale-95 transition">50</button>
+                    <button type="button" onclick="document.getElementById('prodStock').value = ''" class="px-2 py-0.5 bg-white hover:bg-stone-100 rounded-lg text-xs font-bold text-stone-500 border border-stone-200 active:scale-95 transition">Bebas</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pilihan Add-On / Topping Ekstra per Menu -->
+              <div class="bg-amber-50/70 p-3 rounded-2xl border border-amber-200/90 flex flex-col gap-2">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <span class="text-xs font-black text-amber-950 flex items-center gap-1">
+                      <span class="material-symbols-rounded text-base text-amber-700">add_circle</span>
+                      Pilihan Add-On / Topping
+                    </span>
+                    <p class="text-[10px] text-amber-800">Contoh: Telur (+3.000), Keju (+4.000)</p>
+                  </div>
+                  <button type="button" onclick="window.KasirApp.addNewAddOnRow()"
+                    class="px-2.5 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 font-black text-xs flex items-center gap-1 border border-amber-300 transition active:scale-95 cursor-pointer shadow-2xs">
+                    <span class="material-symbols-rounded text-sm">add</span>
+                    <span>Tambah</span>
+                  </button>
+                </div>
+                <div id="productAddOnsContainer" class="flex flex-col gap-1.5 max-h-36 sm:max-h-44 overflow-y-auto custom-scroll">
+                  <!-- Row Add-on dirender dinamis -->
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
 
-        <!-- Pilihan Add-On / Topping Ekstra per Menu -->
-        <div class="bg-amber-50/80 p-3.5 rounded-2xl border border-amber-200/90 flex flex-col gap-2">
-          <div class="flex items-center justify-between">
-            <div>
-              <span class="text-xs font-black text-amber-950 flex items-center gap-1">
-                <span class="material-symbols-rounded text-base text-amber-700">add_circle</span>
-                Pilihan Add-On / Topping (+Harga)
-              </span>
-              <p class="text-[10.5px] text-amber-800">Contoh: Telur (+3.000), Extra Pedas (+0), Keju (+4.000)</p>
-            </div>
-            <button type="button" onclick="window.KasirApp.addNewAddOnRow()"
-              class="px-2.5 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 font-black text-[11px] flex items-center gap-1 border border-amber-300 transition active:scale-95 cursor-pointer">
-              <span class="material-symbols-rounded text-sm">add</span> + Tambah
-            </button>
-          </div>
-          <div id="productAddOnsContainer" class="flex flex-col gap-1.5 max-h-36 overflow-y-auto custom-scroll">
-            <!-- Row Add-on dirender dinamis -->
-          </div>
-        </div>
-
-        <div class="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+        <!-- Sticky Modal Footer (Selalu Terlihat di Layar Bawah) -->
+        <div class="shrink-0 p-3 sm:p-4 px-4 sm:px-6 bg-stone-50/90 border-t border-stone-200 flex items-center justify-end gap-2.5">
           <button type="button" onclick="closeProductModal()"
-            class="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 text-xs touch-target-large">Batal</button>
+            class="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 text-xs sm:text-sm transition cursor-pointer">
+            Batal
+          </button>
           <button type="submit"
-            class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs sm:text-sm touch-target-large shadow-sm">Simpan Menu</button>
+            class="px-5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs sm:text-sm shadow-sm transition active:scale-95 cursor-pointer flex items-center gap-1.5">
+            <span class="material-symbols-rounded text-base">save</span>
+            <span>Simpan Menu</span>
+          </button>
         </div>
       </form>
     </div>
@@ -2999,111 +3031,114 @@ Kopi susu 7k"
 
   <!-- ==================== MODAL: CATATAN PESANAN CEPAT (SENIOR-FRIENDLY QUICK CHIPS) ==================== -->
   <div id="itemNoteModal"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
+    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div
-      class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col animate-in zoom-in-95">
+      class="bg-white w-full sm:max-w-lg md:max-w-xl max-h-[92vh] sm:max-h-[88vh] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col animate-in zoom-in-95">
       
-      <!-- Modal Header -->
-      <div class="p-5 pb-3 flex items-start justify-between border-b border-stone-100">
+      <!-- Modal Header (Sticky Top) -->
+      <div class="shrink-0 p-3.5 sm:p-4 px-4 sm:px-6 flex items-center justify-between border-b border-stone-100 bg-white">
         <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shrink-0">
+          <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shrink-0">
             <span class="material-symbols-rounded text-2xl">edit_note</span>
           </div>
           <div>
-            <h3 id="itemNoteModalTitle" class="text-base sm:text-lg font-black text-stone-900 leading-tight">Catatan Pesanan</h3>
+            <h3 id="itemNoteModalTitle" class="text-sm sm:text-base font-black text-stone-900 leading-tight">Catatan Pesanan</h3>
             <p id="itemNoteProductName" class="text-xs text-stone-500 font-bold mt-0.5">Nama Menu</p>
           </div>
         </div>
         <button type="button" onclick="KasirApp.closeItemNoteModal()"
-          class="w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition">
+          class="w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition cursor-pointer">
           <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
 
-      <form onsubmit="KasirApp.saveItemNote(event)" class="p-5 flex flex-col gap-3.5">
+      <form onsubmit="KasirApp.saveItemNote(event)" class="flex flex-col flex-1 min-h-0 overflow-hidden">
         <input type="hidden" id="itemNoteProductId">
         <input type="hidden" id="itemNoteLineId">
         <input type="hidden" id="itemNoteScope" value="all">
 
-        <!-- Section Add-On Pilihan Menu (Render dinamis jika produk punya add-on) -->
-        <div id="itemNoteAddOnSection" class="hidden flex flex-col gap-1.5 bg-amber-50/70 p-3 rounded-2xl border border-amber-200">
-          <label class="block text-xs font-black text-amber-950 flex items-center justify-between">
-            <span class="flex items-center gap-1">
-              <span class="material-symbols-rounded text-base text-amber-700">add_circle</span>
-              Pilihan Add-On / Topping:
-            </span>
-            <span class="text-[10px] text-amber-800 font-bold">Pilih sesuai selera</span>
-          </label>
-          <div id="itemNoteAddOnList" class="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto custom-scroll">
-            <!-- Chip checklist add-on -->
+        <!-- Scrollable Form Body -->
+        <div class="flex-1 overflow-y-auto custom-scroll p-4 sm:p-5 flex flex-col gap-3">
+          <!-- Section Add-On Pilihan Menu (Render dinamis jika produk punya add-on) -->
+          <div id="itemNoteAddOnSection" class="hidden flex flex-col gap-1.5 bg-amber-50/70 p-3 rounded-2xl border border-amber-200">
+            <label class="block text-xs font-black text-amber-950 flex items-center justify-between">
+              <span class="flex items-center gap-1">
+                <span class="material-symbols-rounded text-base text-amber-700">add_circle</span>
+                Pilihan Add-On / Topping:
+              </span>
+              <span class="text-[10px] text-amber-800 font-bold">Pilih sesuai selera</span>
+            </label>
+            <div id="itemNoteAddOnList" class="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto custom-scroll">
+              <!-- Chip checklist add-on -->
+            </div>
+            <div id="itemNoteLivePrice" class="mt-1 px-3 py-1.5 rounded-xl bg-amber-100/90 border border-amber-300/90 text-xs font-bold text-amber-950 flex items-center justify-between">
+            </div>
           </div>
-          <div id="itemNoteLivePrice" class="mt-1 px-3 py-1.5 rounded-xl bg-amber-100/90 border border-amber-300/90 text-xs font-bold text-amber-950 flex items-center justify-between">
+
+          <!-- Section Split Item / Pisahkan Porsi jika qty > 1 (Solusi Industri untuk Beda Rasa/Pedas) -->
+          <div id="itemNoteSplitSection" class="hidden bg-stone-50 border border-stone-200 rounded-2xl p-3 flex flex-col gap-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-stone-700">Pesanan ini ada <span id="itemNoteQtyDisplay" class="font-black text-emerald-800">2</span> porsi</span>
+              <span class="text-[10px] text-stone-500 font-semibold">Terapkan catatan & topping untuk:</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <button type="button" id="btnApplyAllPortions" onclick="window.KasirApp.setItemNoteScope('all')"
+                class="py-2 px-2 rounded-xl bg-emerald-100 text-emerald-900 font-black border-2 border-emerald-400 text-center transition active:scale-95 cursor-pointer">
+                Semua Porsi (<span id="btnApplyAllQtyText">2</span>x)
+              </button>
+              <button type="button" id="btnSplitOnePortion" onclick="window.KasirApp.setItemNoteScope('split')"
+                class="py-2 px-2 rounded-xl bg-white text-stone-700 hover:bg-stone-100 font-bold border border-stone-300 text-center transition active:scale-95 cursor-pointer flex items-center justify-center gap-1">
+                <span class="material-symbols-rounded text-sm text-amber-700">call_split</span>
+                Pisah 1 Porsi Ini
+              </button>
+            </div>
+          </div>
+
+          <!-- Senior-Friendly Quick Chips: Sekali Tap Langsung Nambah -->
+          <div>
+            <span class="block text-xs font-black text-stone-700 mb-2">Pilihan Cepat (Tinggal Klik):</span>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" onclick="KasirApp.appendQuickNote('Pedas')"
+                class="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-800 font-extrabold text-xs border border-red-200 active:scale-95 transition">🔥 Pedas</button>
+              <button type="button" onclick="KasirApp.appendQuickNote('Sedang')"
+                class="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-extrabold text-xs border border-amber-200 active:scale-95 transition">🌶️ Sedang</button>
+              <button type="button" onclick="KasirApp.appendQuickNote('Tidak Pedas')"
+                class="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs border border-stone-300 active:scale-95 transition">🍃 Tidak Pedas</button>
+              <button type="button" onclick="KasirApp.appendQuickNote('Tanpa Bawang')"
+                class="px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-extrabold text-xs border border-orange-200 active:scale-95 transition">🧅 Tanpa Bawang</button>
+              <button type="button" onclick="KasirApp.appendQuickNote('Pisah Sambal')"
+                class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-extrabold text-xs border border-emerald-200 active:scale-95 transition">🥣 Pisah Sambal</button>
+              <button type="button" onclick="KasirApp.appendQuickNote('Es Sedikit')"
+                class="px-3 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 font-extrabold text-xs border border-sky-200 active:scale-95 transition">🧊 Es Sedikit</button>
+              <button type="button" onclick="KasirApp.appendQuickNote('Kurang Manis')"
+                class="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 font-extrabold text-xs border border-purple-200 active:scale-95 transition">🧂 Kurang Manis</button>
+              <button type="button" onclick="KasirApp.appendQuickNote('Bungkus')"
+                class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 font-extrabold text-xs border border-rose-200 active:scale-95 transition">🥡 Bungkus</button>
+            </div>
+          </div>
+
+          <!-- Custom Input Tanpa Batas Karakter (Bebas) -->
+          <div>
+            <label class="block text-xs font-black text-stone-700 mb-1.5">Catatan Khusus (Bebas tanpa batas karakter):</label>
+            <textarea id="itemNoteInput" rows="2"
+              placeholder="Contoh: Pedas, Tanpa Seledri, Kuah dipisah, Sambal banyak..."
+              class="w-full px-4 py-2 rounded-xl border-2 border-stone-300 focus:border-emerald-600 focus:outline-none text-xs sm:text-sm font-bold text-stone-900 bg-white shadow-sm transition resize-none"></textarea>
           </div>
         </div>
 
-        <!-- Section Split Item / Pisahkan Porsi jika qty > 1 (Solusi Industri untuk Beda Rasa/Pedas) -->
-        <div id="itemNoteSplitSection" class="hidden bg-stone-50 border border-stone-200 rounded-2xl p-3 flex flex-col gap-2">
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-bold text-stone-700">Pesanan ini ada <span id="itemNoteQtyDisplay" class="font-black text-emerald-800">2</span> porsi</span>
-            <span class="text-[10px] text-stone-500 font-semibold">Terapkan catatan & topping untuk:</span>
-          </div>
-          <div class="grid grid-cols-2 gap-2 text-xs">
-            <button type="button" id="btnApplyAllPortions" onclick="window.KasirApp.setItemNoteScope('all')"
-              class="py-2 px-2 rounded-xl bg-emerald-100 text-emerald-900 font-black border-2 border-emerald-400 text-center transition active:scale-95 cursor-pointer">
-              Semua Porsi (<span id="btnApplyAllQtyText">2</span>x)
-            </button>
-            <button type="button" id="btnSplitOnePortion" onclick="window.KasirApp.setItemNoteScope('split')"
-              class="py-2 px-2 rounded-xl bg-white text-stone-700 hover:bg-stone-100 font-bold border border-stone-300 text-center transition active:scale-95 cursor-pointer flex items-center justify-center gap-1">
-              <span class="material-symbols-rounded text-sm text-amber-700">call_split</span>
-              Pisah 1 Porsi Ini
-            </button>
-          </div>
-        </div>
-
-        <!-- Senior-Friendly Quick Chips: Sekali Tap Langsung Nambah -->
-        <div>
-          <span class="block text-xs font-black text-stone-700 mb-2">Pilihan Cepat (Tinggal Klik):</span>
-          <div class="flex flex-wrap gap-2">
-            <button type="button" onclick="KasirApp.appendQuickNote('Pedas')"
-              class="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-800 font-extrabold text-xs border border-red-200 active:scale-95 transition">🔥 Pedas</button>
-            <button type="button" onclick="KasirApp.appendQuickNote('Sedang')"
-              class="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-extrabold text-xs border border-amber-200 active:scale-95 transition">🌶️ Sedang</button>
-            <button type="button" onclick="KasirApp.appendQuickNote('Tidak Pedas')"
-              class="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs border border-stone-300 active:scale-95 transition">🍃 Tidak Pedas</button>
-            <button type="button" onclick="KasirApp.appendQuickNote('Tanpa Bawang')"
-              class="px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-extrabold text-xs border border-orange-200 active:scale-95 transition">🧅 Tanpa Bawang</button>
-            <button type="button" onclick="KasirApp.appendQuickNote('Pisah Sambal')"
-              class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-extrabold text-xs border border-emerald-200 active:scale-95 transition">🥣 Pisah Sambal</button>
-            <button type="button" onclick="KasirApp.appendQuickNote('Es Sedikit')"
-              class="px-3 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 font-extrabold text-xs border border-sky-200 active:scale-95 transition">🧊 Es Sedikit</button>
-            <button type="button" onclick="KasirApp.appendQuickNote('Kurang Manis')"
-              class="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 font-extrabold text-xs border border-purple-200 active:scale-95 transition">🧂 Kurang Manis</button>
-            <button type="button" onclick="KasirApp.appendQuickNote('Bungkus')"
-              class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 font-extrabold text-xs border border-rose-200 active:scale-95 transition">🥡 Bungkus</button>
-          </div>
-        </div>
-
-        <!-- Custom Input Tanpa Batas Karakter (Bebas) -->
-        <div>
-          <label class="block text-xs font-black text-stone-700 mb-1.5">Catatan Khusus (Bebas tanpa batas karakter):</label>
-          <textarea id="itemNoteInput" rows="2"
-            placeholder="Contoh: Pedas, Tanpa Seledri, Kuah dipisah, Sambal banyak..."
-            class="w-full px-4 py-2.5 rounded-xl border-2 border-stone-300 focus:border-emerald-600 focus:outline-none text-sm font-bold text-stone-900 bg-white shadow-sm transition resize-none"></textarea>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="flex items-center justify-between gap-2 pt-2 border-t border-stone-100">
+        <!-- Sticky Action Buttons Footer -->
+        <div class="shrink-0 p-3 sm:p-4 px-4 sm:px-6 bg-stone-50/90 border-t border-stone-100 flex items-center justify-between gap-2">
           <button type="button" onclick="KasirApp.clearItemNote()"
-            class="px-3.5 py-2.5 rounded-xl text-rose-700 hover:bg-rose-50 font-bold text-xs sm:text-sm transition">
+            class="px-3 py-2 rounded-xl text-rose-700 hover:bg-rose-50 font-bold text-xs sm:text-sm transition cursor-pointer">
             Hapus Catatan
           </button>
           <div class="flex items-center gap-2">
             <button type="button" onclick="KasirApp.closeItemNoteModal()"
-              class="px-4 py-2.5 rounded-xl border border-stone-300 font-bold text-stone-700 hover:bg-stone-100 text-xs sm:text-sm transition">
+              class="px-4 py-2 rounded-xl border border-stone-300 font-bold text-stone-700 hover:bg-stone-100 text-xs sm:text-sm transition cursor-pointer">
               Batal
             </button>
             <button type="submit"
-              class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center gap-1.5">
+              class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center gap-1.5 cursor-pointer">
               <span class="material-symbols-rounded text-base">check</span>
               <span>Simpan</span>
             </button>
@@ -3907,7 +3942,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.45</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.46</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -4067,7 +4102,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.45</span>
+    <span id="appVersionBadge" class="hidden">v1.2.46</span>
   </div>
 
   <!-- Main JavaScript App Module -->

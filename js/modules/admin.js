@@ -207,8 +207,8 @@ export function renderAdminTable() {
     const isSelected = selectedAdminProductIds.has(p.id);
 
     return `
-      <div class="p-3 sm:p-4 flex items-center justify-between gap-2.5 sm:gap-3 hover:bg-stone-50 transition border-b border-stone-100 last:border-0 ${isSelected ? 'bg-emerald-50/70 border-l-4 border-l-emerald-600' : (!isReady ? 'bg-stone-50/60' : '')}">
-        <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+      <div class="p-2.5 sm:p-3.5 flex items-center justify-between gap-2 sm:gap-3 hover:bg-stone-50 transition border-b border-stone-100 last:border-0 ${isSelected ? 'bg-emerald-50/70 border-l-4 border-l-emerald-600' : (!isReady ? 'bg-stone-50/60' : '')}">
+        <div class="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
           <!-- Checkbox seleksi per baris -->
           <label class="flex items-center justify-center p-1 cursor-pointer rounded-lg hover:bg-stone-200/60 transition touch-target-large shrink-0" onclick="event.stopPropagation()">
             <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="window.KasirApp.toggleSelectAdminProduct('${p.id}')"
@@ -216,40 +216,40 @@ export function renderAdminTable() {
           </label>
 
           ${p.image ? `
-            <img src="${p.image}" alt="${escapeHtml(p.name)}" class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl object-cover shrink-0 border border-stone-200 shadow-2xs" loading="lazy">
+            <img src="${p.image}" alt="${escapeHtml(p.name)}" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover shrink-0 border border-stone-200 shadow-2xs" loading="lazy">
           ` : `
-            <span class="material-symbols-rounded text-xl sm:text-2xl text-stone-950 p-2 sm:p-2.5 ${isReady ? 'bg-emerald-100/80' : 'bg-stone-200 text-stone-500'} rounded-2xl shrink-0 border border-emerald-200">${p.icon || 'lunch_dining'}</span>
+            <span class="material-symbols-rounded text-xl sm:text-2xl text-stone-950 p-2 sm:p-2.5 ${isReady ? 'bg-emerald-100/80' : 'bg-stone-200 text-stone-500'} rounded-xl shrink-0 border border-emerald-200">${p.icon || 'lunch_dining'}</span>
           `}
           
           <div class="truncate flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-              <h4 class="font-extrabold text-stone-900 text-sm sm:text-base truncate ${!isReady ? 'line-through text-stone-500' : ''}">${escapeHtml(p.name)}</h4>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <h4 class="font-black text-stone-900 text-xs sm:text-sm truncate ${!isReady ? 'line-through text-stone-500' : ''}">${escapeHtml(p.name)}</h4>
               ${p.trackStock ? `
-                <span class="px-2 py-0.5 rounded-lg text-xs font-black ${(p.stock || 0) > 0 ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-red-100 text-red-700 border border-red-300'}">
-                  Stok: ${p.stock || 0} Porsi
+                <span class="px-1.5 py-0.5 rounded-md text-[10.5px] font-black ${(p.stock || 0) > 0 ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-red-100 text-red-700 border border-red-300'}">
+                  Stok: ${p.stock || 0}
                 </span>
               ` : `
-                <span class="px-2 py-0.5 rounded-lg text-xs font-extrabold bg-stone-100 text-stone-600 border border-stone-200">
-                  Stok Bebas (Ready)
+                <span class="px-1.5 py-0.5 rounded-md text-[10.5px] font-bold bg-stone-100 text-stone-600 border border-stone-200">
+                  Ready
                 </span>
               `}
             </div>
-            <p class="font-black text-emerald-800 text-xs sm:text-sm mt-0.5">${formatRp(p.price)} <span class="text-[11px] text-stone-400 font-medium">(${escapeHtml(p.category)})</span></p>
+            <p class="font-black text-emerald-800 text-xs mt-0.5">${formatRp(p.price)} <span class="text-[10.5px] text-stone-400 font-medium">(${escapeHtml(p.category)})</span></p>
           </div>
         </div>
 
-        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
           <!-- 1-Tap Toggle Status Ready / Habis -->
           <button onclick="window.KasirApp.toggleProductAvailability('${p.id}')" 
-            class="px-2.5 sm:px-3 py-2 rounded-xl font-black text-xs transition touch-target-large flex items-center gap-1 border ${isReady ? 'bg-emerald-50 text-emerald-950 border-emerald-300 hover:bg-emerald-100' : 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100'}"
+            class="px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-xl font-black text-xs transition touch-target-large flex items-center gap-1 border cursor-pointer ${isReady ? 'bg-emerald-50 text-emerald-950 border-emerald-300 hover:bg-emerald-100' : 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100'}"
             title="Klik untuk ubah status Ready/Habis">
             <span class="material-symbols-rounded text-base">${isReady ? 'check_circle' : 'cancel'}</span>
-            <span class="hidden xs:inline">${isReady ? 'Ready' : 'Habis'}</span>
+            <span class="hidden sm:inline">${isReady ? 'Ready' : 'Habis'}</span>
           </button>
           
           <!-- Tombol Ubah Menu -->
           <button onclick="window.KasirApp.openEditProductModal('${p.id}')" 
-            class="px-2.5 sm:px-3 py-2 rounded-xl bg-stone-100 text-stone-800 hover:bg-emerald-100 hover:text-emerald-900 border border-stone-200 font-black text-xs flex items-center gap-1 transition touch-target-large" 
+            class="px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-xl bg-stone-100 text-stone-800 hover:bg-emerald-100 hover:text-emerald-900 border border-stone-200 font-black text-xs flex items-center gap-1 transition touch-target-large cursor-pointer" 
             title="Ubah nama, harga, atau stok menu">
             <span class="material-symbols-rounded text-base">edit</span>
             <span class="hidden sm:inline">Ubah</span>
@@ -257,7 +257,7 @@ export function renderAdminTable() {
           
           <!-- Hapus Menu Tunggal -->
           <button onclick="window.KasirApp.deleteProduct('${p.id}')" 
-            class="p-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 font-bold touch-target-large" 
+            class="p-1.5 sm:p-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 font-bold touch-target-large cursor-pointer" 
             title="Hapus menu">
             <span class="material-symbols-rounded text-base">delete</span>
           </button>
@@ -423,7 +423,14 @@ export function openAddProductModal() {
   currentProductImage = '';
   updateProductImagePreviewUI('');
   renderProductAddOns([]);
-  if (modal) modal.classList.remove('hidden');
+  if (modal) {
+    modal.classList.remove('hidden');
+    const scrollBody = modal.querySelector('.overflow-y-auto');
+    if (scrollBody) scrollBody.scrollTop = 0;
+    setTimeout(() => {
+      if (nameEl) nameEl.focus();
+    }, 120);
+  }
 }
 
 export function openEditProductModal(id) {
@@ -455,7 +462,14 @@ export function openEditProductModal(id) {
   currentProductImage = p.image || '';
   updateProductImagePreviewUI(currentProductImage);
   renderProductAddOns(p.addOns || []);
-  if (modal) modal.classList.remove('hidden');
+  if (modal) {
+    modal.classList.remove('hidden');
+    const scrollBody = modal.querySelector('.overflow-y-auto');
+    if (scrollBody) scrollBody.scrollTop = 0;
+    setTimeout(() => {
+      if (nameEl) nameEl.focus();
+    }, 120);
+  }
 }
 
 export function closeProductModal() {
