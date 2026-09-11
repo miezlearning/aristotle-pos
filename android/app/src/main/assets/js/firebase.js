@@ -716,7 +716,7 @@ export async function authenticateStoreLogin(storeId, inputPin) {
       success: false,
       exists: true,
       storeName,
-      message: `PIN salah untuk toko "${storeName}". Masukkan 6 digit PIN yang sesuai.`
+      message: `PIN salah untuk toko "${storeName}". Masukkan PIN / sandi toko yang sesuai.`
     };
   }
 

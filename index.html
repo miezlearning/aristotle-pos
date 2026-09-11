@@ -3970,9 +3970,16 @@ Kopi susu 7k"
           </div>
 
           <div>
-            <label class="block text-stone-700 font-bold mb-1 text-xs">PIN Toko (Default: 123456):</label>
-            <input type="password" id="loginPinInput" placeholder="••••••" maxlength="8" required
-              class="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-emerald-600 font-mono font-black text-stone-900 text-center tracking-widest text-lg outline-none">
+            <label class="block text-stone-700 font-bold mb-1 text-xs">PIN / Sandi Toko (Default: 123456):</label>
+            <div class="relative">
+              <input type="password" id="loginPinInput" placeholder="Ketik PIN / Sandi Toko" maxlength="32" required
+                class="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-emerald-600 font-mono font-bold text-stone-900 text-center tracking-wider text-base outline-none">
+              <button type="button" onclick="window.KasirApp.togglePasswordVisibility('loginPinInput', this)"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1 flex items-center justify-center"
+                title="Tampilkan / Sembunyikan PIN">
+                <span class="material-symbols-rounded text-lg">visibility</span>
+              </button>
+            </div>
           </div>
 
           <button type="submit"
@@ -4005,10 +4012,17 @@ Kopi susu 7k"
           </div>
 
           <div>
-            <label class="block text-stone-700 font-bold mb-1 text-xs">Buat 6 Digit PIN Keamanan Toko:</label>
-            <input type="password" id="regPin" maxlength="6" inputmode="numeric" pattern="[0-9]*" value="123456" required placeholder="123456"
-              class="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-emerald-600 font-mono font-bold text-stone-900 text-center tracking-widest text-base outline-none">
-            <p class="text-[10px] text-stone-500 mt-0.5">PIN 6 digit angka untuk mengunci menu & laporan dari kasir</p>
+            <label class="block text-stone-700 font-bold mb-1 text-xs">Buat PIN / Sandi Keamanan Toko:</label>
+            <div class="relative">
+              <input type="password" id="regPin" maxlength="32" value="123456" required placeholder="Minimal 6 karakter"
+                class="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-emerald-600 font-mono font-bold text-stone-900 text-center tracking-wider text-base outline-none">
+              <button type="button" onclick="window.KasirApp.togglePasswordVisibility('regPin', this)"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1 flex items-center justify-center"
+                title="Tampilkan / Sembunyikan PIN">
+                <span class="material-symbols-rounded text-lg">visibility</span>
+              </button>
+            </div>
+            <p class="text-[10px] text-stone-500 mt-0.5">PIN / Sandi untuk mengunci menu & laporan dari kasir (min. 6 karakter)</p>
           </div>
 
           <button type="submit"
@@ -4043,8 +4057,15 @@ Kopi susu 7k"
       </div>
 
       <form id="pinSecurityForm" onsubmit="handlePinSecuritySubmit(event)" class="flex flex-col gap-3 mt-1">
-        <input type="password" id="pinSecurityInput" autofocus placeholder="••••••" maxlength="8"
-          class="w-full px-3 py-2.5 rounded-xl bg-stone-100 border border-stone-300 focus:bg-white focus:border-emerald-600 font-mono font-black text-stone-900 text-center tracking-widest text-xl outline-none">
+        <div class="relative">
+          <input type="password" id="pinSecurityInput" autofocus placeholder="Ketik PIN / Sandi..." maxlength="32"
+            class="w-full pl-3 pr-10 py-2.5 rounded-xl bg-stone-100 border border-stone-300 focus:bg-white focus:border-emerald-600 font-mono font-bold text-stone-900 text-center tracking-wider text-base outline-none">
+          <button type="button" onclick="window.KasirApp.togglePasswordVisibility('pinSecurityInput', this)"
+            class="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1 flex items-center justify-center"
+            title="Tampilkan / Sembunyikan PIN">
+            <span class="material-symbols-rounded text-lg">visibility</span>
+          </button>
+        </div>
 
         <div class="grid grid-cols-2 gap-2 pt-1">
           <button type="button" onclick="closePinSecurityModal()"
@@ -4125,10 +4146,10 @@ Kopi susu 7k"
         <input type="hidden" id="saPinTargetStoreId" value="">
         
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-black text-stone-700">PIN Baru Toko (6 Digit Angka):</label>
+          <label class="text-xs font-black text-stone-700">PIN / Sandi Baru Toko:</label>
           <div class="relative">
-            <input type="text" id="saNewPinInput" required maxlength="8" placeholder="Contoh: 123456"
-              class="w-full px-4 py-3 rounded-2xl bg-stone-50 border-2 border-stone-200 focus:border-amber-600 font-mono font-black text-center text-xl tracking-widest text-stone-900 outline-none transition">
+            <input type="text" id="saNewPinInput" required maxlength="32" placeholder="Minimal 6 karakter"
+              class="w-full px-4 py-3 rounded-2xl bg-stone-50 border-2 border-stone-200 focus:border-amber-600 font-mono font-bold text-center text-lg tracking-wider text-stone-900 outline-none transition">
           </div>
           <!-- Quick Presets -->
           <div class="flex items-center justify-center gap-2 mt-1">
@@ -4218,9 +4239,9 @@ Kopi susu 7k"
               class="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-stone-900 font-medium text-stone-900 text-xs outline-none transition">
           </div>
           <div>
-            <label class="block text-xs font-bold text-stone-700 mb-1">PIN Toko (6 Digit) <span class="text-rose-500">*</span></label>
-            <input type="text" id="saAddPin" maxlength="8" value="123456" required placeholder="123456"
-              class="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-stone-900 font-mono font-black text-center text-stone-900 text-xs tracking-widest outline-none transition">
+            <label class="block text-xs font-bold text-stone-700 mb-1">PIN / Sandi Toko <span class="text-rose-500">*</span></label>
+            <input type="text" id="saAddPin" maxlength="32" value="123456" required placeholder="123456"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-stone-900 font-mono font-bold text-center text-stone-900 text-xs tracking-wider outline-none transition">
           </div>
         </div>
 
@@ -4311,9 +4332,9 @@ Kopi susu 7k"
               class="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-stone-900 font-medium text-stone-900 text-xs outline-none transition">
           </div>
           <div>
-            <label class="block text-xs font-bold text-stone-700 mb-1">PIN Toko (6 Digit)</label>
-            <input type="text" id="saEditPin" maxlength="8" placeholder="123456"
-              class="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-stone-900 font-mono font-black text-center text-stone-900 text-xs tracking-widest outline-none transition">
+            <label class="block text-xs font-bold text-stone-700 mb-1">PIN / Sandi Toko</label>
+            <input type="text" id="saEditPin" maxlength="32" placeholder="123456"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-stone-900 font-mono font-bold text-center text-stone-900 text-xs tracking-wider outline-none transition">
           </div>
         </div>
 
@@ -4413,7 +4434,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.56</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.57</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -4573,7 +4594,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.56</span>
+    <span id="appVersionBadge" class="hidden">v1.2.57</span>
   </div>
 
   <!-- Main JavaScript App Module -->
@@ -4639,9 +4660,14 @@ Kopi susu 7k"
             <span id="roleSwitchPinHint" class="text-[10px] text-stone-400 font-normal">Min. 6 digit / karakter</span>
           </label>
           <div class="relative">
-            <input type="password" id="roleSwitchPinInput" maxlength="20"
-              placeholder="••••••" autocomplete="off"
-              class="w-full px-4 py-3 rounded-xl border-2 border-stone-300 focus:border-emerald-600 focus:outline-none text-center text-xl sm:text-2xl tracking-[0.3em] font-black text-stone-900 bg-stone-50">
+            <input type="password" id="roleSwitchPinInput" maxlength="32"
+              placeholder="Ketik PIN / sandi..." autocomplete="off"
+              class="w-full pl-4 pr-10 py-3 rounded-xl border-2 border-stone-300 focus:border-emerald-600 focus:outline-none text-center text-base sm:text-lg tracking-wider font-bold text-stone-900 bg-stone-50">
+            <button type="button" onclick="window.KasirApp.togglePasswordVisibility('roleSwitchPinInput', this)"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1 flex items-center justify-center"
+              title="Tampilkan / Sembunyikan PIN">
+              <span class="material-symbols-rounded text-lg">visibility</span>
+            </button>
           </div>
         </div>
 
@@ -4779,7 +4805,7 @@ Kopi susu 7k"
             <span class="text-[10px] text-stone-400 font-normal">Default awal: 123456</span>
           </label>
           <div class="relative">
-            <input type="password" id="ownerCurrentPinInput" maxlength="20" placeholder="Ketik PIN lama..." required autocomplete="current-password"
+            <input type="password" id="ownerCurrentPinInput" maxlength="32" placeholder="Ketik PIN lama..." required autocomplete="current-password"
               class="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-stone-300 font-bold text-stone-900 text-sm focus:outline-none focus:border-emerald-600 bg-stone-50">
             <button type="button" onclick="window.KasirApp.togglePasswordVisibility('ownerCurrentPinInput', this)"
               class="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1">
@@ -4795,7 +4821,7 @@ Kopi susu 7k"
             <span class="text-[10px] text-stone-400 font-normal">Min. 6 digit / karakter</span>
           </label>
           <div class="relative">
-            <input type="password" id="ownerNewPinInput" maxlength="20" placeholder="Ketik PIN / sandi baru..." required autocomplete="new-password"
+            <input type="password" id="ownerNewPinInput" maxlength="32" placeholder="Ketik PIN / sandi baru..." required autocomplete="new-password"
               oninput="window.KasirApp.evaluateNewOwnerPinStrength(this.value)"
               class="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-stone-300 font-bold text-stone-900 text-sm focus:outline-none focus:border-emerald-600 bg-stone-50">
             <button type="button" onclick="window.KasirApp.togglePasswordVisibility('ownerNewPinInput', this)"
@@ -4836,7 +4862,7 @@ Kopi susu 7k"
             <span id="ownerPinMatchStatus" class="text-[10.5px] font-bold text-stone-400"></span>
           </label>
           <div class="relative">
-            <input type="password" id="ownerConfirmPinInput" maxlength="20" placeholder="Ulangi PIN baru..." required autocomplete="new-password"
+            <input type="password" id="ownerConfirmPinInput" maxlength="32" placeholder="Ulangi PIN baru..." required autocomplete="new-password"
               oninput="window.KasirApp.checkOwnerPinMatch()"
               class="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-stone-300 font-bold text-stone-900 text-sm focus:outline-none focus:border-emerald-600 bg-stone-50">
             <button type="button" onclick="window.KasirApp.togglePasswordVisibility('ownerConfirmPinInput', this)"

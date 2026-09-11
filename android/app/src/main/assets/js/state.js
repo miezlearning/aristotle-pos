@@ -497,8 +497,8 @@ export function validatePinStrength(pinInput) {
   if (pin.length < 6) {
     return { isStrong: false, message: 'PIN minimal 6 digit atau karakter.' };
   }
-  if (pin.length > 20) {
-    return { isStrong: false, message: 'PIN maksimal 20 digit atau karakter.' };
+  if (pin.length > 32) {
+    return { isStrong: false, message: 'PIN maksimal 32 digit atau karakter.' };
   }
 
   // Jika angka murni, analisis pola (entropi rendah)

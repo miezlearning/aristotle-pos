@@ -460,7 +460,7 @@ export function selectStoreForLogin(storeId, storeName) {
     pinInput.value = '';
     pinInput.focus();
   }
-  showToast(`Ketik 6 digit PIN toko [${storeName || storeId}] lalu klik Buka Kasir`, 'info', 3000);
+  showToast(`Ketik PIN / sandi toko [${storeName || storeId}] lalu klik Buka Kasir`, 'info', 3000);
 }
 
 export function quickSelectStore(storeId) {

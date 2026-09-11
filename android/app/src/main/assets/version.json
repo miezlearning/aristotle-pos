@@ -1,10 +1,11 @@
 {
-  "versionCode": 104,
-  "versionName": "1.2.56",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.56/Aristotle-POS.apk",
+  "versionCode": 105,
+  "versionName": "1.2.57",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.57/Aristotle-POS.apk",
   "changelog": [
-    "Perbaiki dot status Profil Toko agar inline dengan teks",
-    "Sinkronisasi aset native Android"
+    "Dukungan PIN/Sandi toko alfanumerik hingga 32 karakter (seperti #kedaiusahamami123)",
+    "Fitur intip kata sandi (visibility toggle) pada form login dan modal PIN",
+    "Penyelarasan arsitektur validasi PIN owner dan sinkronisasi aset Android"
   ],
   "releaseDate": "2026-09-11"
 }
