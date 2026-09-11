@@ -4,6 +4,15 @@ Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant S
 
 Format dokumen ini mengacu pada panduan [Keep a Changelog](https://keepachangelog.com/id/1.0.0/) dan mematuhi aturan [Semantic Versioning](https://semver.org/).
 
+## [v1.2.48] - 2026-09-11
+
+### 📱 Tata Letak Responsif Laporan Usaha di Layar HP (Mobile-First Layout)
+- **Kartu Metrik Keuangan 2-Kolom di Ponsel:** Mengoptimalkan tata letak kartu metrik finansial pada tampilan ponsel (`grid-cols-2 lg:grid-cols-3`). Kartu **Omset** dan **Total Pengeluaran** kini bersanding rapi dalam 2 kolom, sedangkan kartu **Laba Bersih** membentang penuh (*col-span-2*) sebagai *hero card* di bagian bawah dengan padding yang lebih ergonomis.
+- **Segmented Toggle Adaptif Layar Kecil:** Pada layar ponsel, kontrol alih *Ringkasan Data* vs *Grafik Usaha* diposisikan membentang penuh di bagian atas (`w-full order-1 lg:order-2`), memberikan area ketuk (*touch target*) yang sangat nyaman bagi ibu jari tanpa terdesak oleh bilah filter periode tanggal di bawahnya.
+- **Tipografi Angka Monospasi Tabular (`tabular-nums`):** Menyelaraskan tipografi angka nominal rupiah dengan kelas `tabular-nums` dan ukuran font responsif (`text-xl sm:text-2xl lg:text-3xl`) agar angka tidak bergeser atau berantakan saat terjadi pembaruan live transaksi.
+
+---
+
 ## [v1.2.47] - 2026-09-11
 
 ### 🗑️ Pembersihan Menyeluruh Antrian Pesanan & UI Kasir Bersih (Anti-Glassmorphism)
