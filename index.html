@@ -3800,8 +3800,8 @@ Kopi susu 7k"
               <span class="material-symbols-rounded text-lg">lock</span>
             </div>
             <div class="flex-1 min-w-0">
-              <p class="font-bold text-stone-800 text-xs">PIN Owner</p>
-              <p class="text-[10.5px] text-stone-400 truncate">Ubah perlu PIN Owner</p>
+              <p class="font-bold text-stone-800 text-xs">Kunci Menu & Laporan</p>
+              <p class="text-[10.5px] text-stone-400 truncate">Wajib PIN untuk akses laporan/menu</p>
             </div>
             <button onclick="togglePinProtectionSetting()" id="btnTogglePinSetting"
               class="px-2.5 py-1 rounded-lg font-bold text-[11px] transition shrink-0 bg-stone-100 text-stone-500 border border-stone-200">
@@ -3810,34 +3810,31 @@ Kopi susu 7k"
           </div>
 
           <div class="flex items-center gap-3 p-3.5">
+            <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 flex items-center justify-center shrink-0">
+              <span class="material-symbols-rounded text-lg">password</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-bold text-stone-800 text-xs">Ubah PIN Owner</p>
+              <p class="text-[10.5px] text-stone-400 truncate">Anti Brute-Force & Entropi Tinggi</p>
+            </div>
+            <button type="button" onclick="closeCloudModal(); window.KasirApp.promptChangeOwnerPin();"
+              class="px-2.5 py-1 rounded-lg font-bold text-[11px] transition shrink-0 bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200 cursor-pointer active:scale-95">
+              Ubah PIN
+            </button>
+          </div>
+
+          <div class="flex items-center gap-3 p-3.5">
             <div class="w-8 h-8 rounded-xl bg-stone-100 text-stone-600 flex items-center justify-center shrink-0">
               <span class="material-symbols-rounded text-lg">system_update</span>
             </div>
             <div class="flex-1 min-w-0">
-              <p class="font-bold text-stone-800 text-xs">Aplikasi <span id="appVersionLabel" class="text-stone-400 font-normal">v1.2.20</span></p>
+              <p class="font-bold text-stone-800 text-xs">Aplikasi <span id="appVersionLabel" class="text-stone-400 font-normal">v1.2.51</span></p>
               <p class="text-[10.5px] text-stone-400 truncate">Pembaruan sistem kasir otomatis</p>
             </div>
             <button onclick="KasirApp.checkForAppUpdates(true)"
               class="px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-700 font-bold text-[11px] transition shrink-0 active:scale-95">
               Cek Update
             </button>
-          </div>
-        </div>
-
-                <!-- Cadangan Akun Google Pemilik (Opsional) -->
-        <div class="p-3 bg-stone-50 border border-stone-200/80 rounded-2xl flex flex-col gap-2">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-black uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
-              <span class="material-symbols-rounded text-sm text-stone-400">cloud_sync</span>
-              Cadangan Cloud (Opsional)
-            </span>
-            <span class="text-[10px] text-stone-400">Multi-cabang</span>
-          </div>
-          <div id="googleOwnerAccountContainer">
-            <!-- Rendered by updateCloudOwnerAccountUI() -->
-          </div>
-          <div id="googleOwnerStoresList" class="flex flex-col gap-1.5 empty:hidden pt-0.5">
-            <!-- Rendered with stores owned by Google user -->
           </div>
         </div>
 
@@ -4378,7 +4375,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.50</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.51</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -4538,7 +4535,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.50</span>
+    <span id="appVersionBadge" class="hidden">v1.2.51</span>
   </div>
 
   <!-- Main JavaScript App Module -->
@@ -4588,16 +4585,25 @@ Kopi susu 7k"
           </div>
         </div>
 
-        <!-- Input PIN 6 Digit -->
+        <!-- Anti Brute-Force Lockout Notice -->
+        <div id="roleSwitchLockoutBanner" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2 text-xs text-rose-900 font-bold">
+          <span class="material-symbols-rounded text-base text-rose-600 shrink-0 mt-0.5">lock_clock</span>
+          <div class="flex-1">
+            <p id="roleSwitchLockoutText">Akses diblokir sementara karena proteksi brute force.</p>
+            <p class="text-[10.5px] text-rose-700 font-normal mt-0.5">Sistem kasir otomatis mengunci untuk mencegah tebakan PIN ilegal.</p>
+          </div>
+        </div>
+
+        <!-- Input PIN / Password -->
         <div class="flex flex-col gap-1.5">
           <label class="block text-xs font-black text-stone-700 flex items-center justify-between">
-            <span>PIN Keamanan (6 Digit Angka)</span>
-            <span class="text-[10px] text-stone-400 font-normal">Wajib 6 digit</span>
+            <span id="roleSwitchPinLabel">PIN / Password Keamanan</span>
+            <span id="roleSwitchPinHint" class="text-[10px] text-stone-400 font-normal">Min. 6 digit / karakter</span>
           </label>
           <div class="relative">
-            <input type="password" id="roleSwitchPinInput" maxlength="6" inputmode="numeric" pattern="[0-9]{6}"
+            <input type="password" id="roleSwitchPinInput" maxlength="20"
               placeholder="••••••" autocomplete="off"
-              class="w-full px-4 py-3 rounded-xl border-2 border-stone-300 focus:border-emerald-600 focus:outline-none text-center text-2xl tracking-[0.5em] font-black text-stone-900 bg-stone-50">
+              class="w-full px-4 py-3 rounded-xl border-2 border-stone-300 focus:border-emerald-600 focus:outline-none text-center text-xl sm:text-2xl tracking-[0.3em] font-black text-stone-900 bg-stone-50">
           </div>
         </div>
 
