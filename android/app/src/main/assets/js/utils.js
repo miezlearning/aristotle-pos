@@ -225,7 +225,7 @@ export function showToast(message, type = 'success', duration = 3000, action = n
     sound: 600
   };
 
-  toast.className = `toast-item px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md flex items-center justify-between gap-3 w-full select-none ${config.bg}`;
+  toast.className = `toast-item px-4 py-3 rounded-2xl shadow-2xl border flex items-center justify-between gap-3 w-full select-none ${config.bg}`;
   toast.innerHTML = `
     <div class="flex items-center gap-2.5 min-w-0 flex-1">
       <span class="material-symbols-rounded text-2xl shrink-0 ${config.iconColor}">${config.icon}</span>

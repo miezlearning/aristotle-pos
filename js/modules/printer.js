@@ -965,7 +965,7 @@ export function openNativeBluetoothDevicePickerModal(devices = []) {
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'nativeBtPickerModal';
-    modal.className = 'fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4';
+    modal.className = 'fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-4';
     document.body.appendChild(modal);
   }
 

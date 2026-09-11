@@ -13,7 +13,9 @@ export function renderOrderQueueTabs(autoScrollTab = false) {
 
   container.innerHTML = state.orderQueues.map((q) => {
     const isActive = q.id === state.activeQueueId;
-    const itemCount = Object.values(q.cart).reduce((a, b) => a + b, 0);
+    const itemCount = (Array.isArray(q.items) && q.items.length > 0)
+      ? q.items.reduce((a, b) => a + (b.qty || 0), 0)
+      : Object.values(q.cart || {}).reduce((a, b) => a + b, 0);
 
     let tabStyle = '';
     let badgeStyle = '';
@@ -219,35 +221,41 @@ export async function deleteCurrentActiveQueue() {
   const cur = getActiveQueue();
   if (!cur) return;
 
-  const itemCount = Object.values(cur.cart).reduce((a, b) => a + b, 0);
-  const { total } = calculateCartTotal();
+  const { total, count } = calculateCartTotal();
+  const itemCount = count;
   const backedUpQueue = { 
     id: cur.id,
     name: cur.name,
-    cart: { ...cur.cart }
+    cart: { ...(cur.cart || {}) },
+    notes: { ...(cur.notes || {}) },
+    items: JSON.parse(JSON.stringify(cur.items || []))
   };
 
   if (state.orderQueues.length <= 1) {
     if (itemCount > 0) {
       const ok = await showConfirmDialog({
-        title: 'Kosongkan Pesanan',
-        message: `Kosongkan ${itemCount} pesanan senilai ${formatRp(total)} pada "${cur.name}"?`,
-        confirmText: 'Kosongkan Pesanan',
+        title: 'Hapus Antrian & Isi Pesanan',
+        message: `Hapus antrian "${cur.name}" beserta ${itemCount} pesanan di dalamnya (Total: ${formatRp(total)})? Seluruh isi pesanan akan ikut terhapus.`,
+        confirmText: 'Hapus Antrian & Pesanan',
         confirmType: 'danger',
-        icon: 'remove_shopping_cart'
+        icon: 'delete_sweep'
       });
       if (ok) {
+        cur.items = [];
         cur.cart = {};
+        cur.notes = {};
         cur.name = 'Pesanan #1';
         saveQueues();
         syncSaveQueues(state.orderQueues);
         renderOrderQueueTabs();
         renderCart();
         renderProducts();
-        showToast(`Pesanan dikosongkan dan direset ke "Pesanan #1".`, 'info', 5000, {
+        showToast(`Antrian dan seluruh isi pesanan telah dihapus.`, 'info', 5000, {
           label: 'URUNGKAN',
           onClick: () => {
             cur.cart = { ...backedUpQueue.cart };
+            cur.notes = { ...backedUpQueue.notes };
+            cur.items = JSON.parse(JSON.stringify(backedUpQueue.items || []));
             cur.name = backedUpQueue.name;
             saveQueues();
             syncSaveQueues(state.orderQueues);
@@ -266,15 +274,15 @@ export async function deleteCurrentActiveQueue() {
 
   if (itemCount > 0) {
     const ok = await showConfirmDialog({
-      title: 'Tutup Antrian Pesanan',
-      message: `"${cur.name}" masih berisi ${itemCount} pesanan senilai ${formatRp(total)}. Yakin ingin menutup dan menghapus antrian ini?`,
-      confirmText: 'Tutup & Hapus',
+      title: 'Tutup Antrian & Hapus Pesanan',
+      message: `"${cur.name}" masih berisi ${itemCount} pesanan senilai ${formatRp(total)}. Yakin ingin menutup dan menghapus antrian ini beserta seluruh isinya?`,
+      confirmText: 'Tutup & Hapus Semua',
       confirmType: 'danger',
       icon: 'delete_sweep'
     });
     if (ok) {
       deleteOrderQueue(cur.id);
-      showToast(`Antrian "${cur.name}" ditutup.`, 'info', 5000, {
+      showToast(`Antrian "${cur.name}" dan seluruh isinya telah dihapus.`, 'info', 5000, {
         label: 'URUNGKAN',
         onClick: () => {
           state.orderQueues.push(backedUpQueue);
@@ -311,13 +319,19 @@ export function deleteOrderQueue(queueId, event) {
   const qToDelete = state.orderQueues.find(q => q.id === queueId);
   if (!qToDelete) return;
   
+  // Bersihkan data pesanan di antrian yang akan dihapus
+  qToDelete.items = [];
+  qToDelete.cart = {};
+  qToDelete.notes = {};
+
   state.orderQueues = state.orderQueues.filter(q => q.id !== queueId);
 
   if (state.orderQueues.length === 0) {
-    state.orderQueues = [{ id: 'q_' + Date.now(), name: 'Pesanan #1', cart: {}, items: [] }];
+    state.orderQueues = [{ id: 'q_' + Date.now(), name: 'Pesanan #1', cart: {}, items: [], notes: {} }];
   } else if (
     state.orderQueues.length === 1 &&
-    Object.keys(state.orderQueues[0].cart).length === 0 &&
+    Object.keys(state.orderQueues[0].cart || {}).length === 0 &&
+    (!state.orderQueues[0].items || state.orderQueues[0].items.length === 0) &&
     state.orderQueues[0].name.startsWith('Pesanan #')
   ) {
     state.orderQueues[0].name = 'Pesanan #1';
@@ -476,17 +490,17 @@ export function renderSingleProductCardHTML(product, qty) {
           <img src="${product.image}" alt="${escapeHtml(product.name)}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" onerror="this.parentElement.style.display='none'">
           <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none"></div>
           <div class="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start">
-            <span class="text-[9px] sm:text-[10px] font-bold text-white capitalize px-2 py-0.5 rounded-lg bg-black/40 backdrop-blur-md border border-white/20">${escapeHtml(product.category)}</span>
+            <span class="text-[9px] sm:text-[10px] font-extrabold text-white capitalize px-2 py-0.5 rounded-md bg-stone-900/85 shadow-xs">${escapeHtml(product.category)}</span>
           </div>
           <div class="absolute bottom-1.5 right-1.5 flex flex-col gap-1 items-end">
             ${Array.isArray(product.addOns) && product.addOns.length > 0 ? `
-              <span class="text-[9px] font-extrabold text-amber-950 bg-amber-300/95 backdrop-blur-xs px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+              <span class="text-[9px] font-extrabold text-amber-950 bg-amber-300 px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5 border border-amber-400/50">
                 <span class="material-symbols-rounded text-[11px] text-amber-800">add_circle</span>
                 <span>Add-on</span>
               </span>
             ` : ''}
             ${product.trackStock && isReady ? `
-              <span class="text-[9px] font-extrabold text-white bg-black/50 backdrop-blur-xs px-1.5 py-0.5 rounded-md border border-white/20">
+              <span class="text-[9px] font-extrabold text-white bg-stone-900/90 px-1.5 py-0.5 rounded-md border border-stone-700 shadow-xs">
                 Sisa ${product.stock}
               </span>
             ` : ''}
@@ -494,21 +508,21 @@ export function renderSingleProductCardHTML(product, qty) {
         </div>
       ` : `
         <div class="relative w-full h-24 sm:h-28 rounded-xl sm:rounded-2xl overflow-hidden mb-2 shrink-0 ${vis.gradClass} border border-black/[0.04] flex items-center justify-center shadow-2xs">
-          <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/75 backdrop-blur-xs shadow-xs flex items-center justify-center ${vis.accentColor} transition-transform group-hover:scale-110">
+          <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white shadow-xs flex items-center justify-center ${vis.accentColor} transition-transform group-hover:scale-110 border border-stone-200/60">
             <span class="material-symbols-rounded text-2xl sm:text-3xl">${vis.icon}</span>
           </div>
           <div class="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start">
-            <span class="text-[9px] sm:text-[10px] font-bold capitalize px-2 py-0.5 rounded-lg bg-white/85 backdrop-blur-xs text-stone-700 shadow-2xs border border-white/40">${escapeHtml(product.category)}</span>
+            <span class="text-[9px] sm:text-[10px] font-bold capitalize px-2 py-0.5 rounded-md bg-white text-stone-700 shadow-2xs border border-stone-200">${escapeHtml(product.category)}</span>
           </div>
           <div class="absolute bottom-1.5 right-1.5 flex flex-col gap-1 items-end">
             ${Array.isArray(product.addOns) && product.addOns.length > 0 ? `
-              <span class="text-[9px] font-extrabold text-amber-950 bg-amber-200/90 backdrop-blur-xs px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5">
+              <span class="text-[9px] font-extrabold text-amber-950 bg-amber-100 px-1.5 py-0.5 rounded-md shadow-2xs flex items-center gap-0.5 border border-amber-300">
                 <span class="material-symbols-rounded text-[11px] text-amber-800">add_circle</span>
                 <span>Add-on</span>
               </span>
             ` : ''}
             ${product.trackStock && isReady ? `
-              <span class="text-[9px] font-extrabold text-emerald-900 bg-white/85 backdrop-blur-xs px-1.5 py-0.5 rounded-md shadow-2xs">
+              <span class="text-[9px] font-extrabold text-emerald-900 bg-white px-1.5 py-0.5 rounded-md shadow-2xs border border-stone-200">
                 Sisa ${product.stock}
               </span>
             ` : ''}
@@ -618,14 +632,31 @@ export function renderProducts() {
     return matchesCat && matchesSearch;
   });
 
+  // Perbarui indikator jumlah hasil pencarian & filter kategori
+  const countBadge = document.getElementById('posSearchResultCount');
+  if (countBadge) {
+    if (search) {
+      countBadge.innerHTML = `<span class="text-stone-900 font-extrabold">${filtered.length}</span> menu ditemukan`;
+    } else if (state.currentCategory && state.currentCategory !== 'all') {
+      countBadge.innerHTML = `<span class="text-stone-900 font-extrabold">${filtered.length}</span> menu (${state.currentCategory})`;
+    } else {
+      countBadge.innerHTML = `<span class="text-stone-900 font-extrabold">${filtered.length}</span> menu tersedia`;
+    }
+  }
+
   if (filtered.length === 0) {
     grid.innerHTML = `
-      <div class="col-span-full py-14 text-center text-stone-400 flex flex-col items-center justify-center gap-2 bg-white rounded-3xl border border-stone-200/80 shadow-2xs">
-        <div class="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-400 mb-1">
+      <div class="col-span-full py-12 text-center text-stone-400 flex flex-col items-center justify-center gap-2.5 bg-white rounded-3xl border border-stone-200/80 shadow-2xs p-6">
+        <div class="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-400 mb-0.5">
           <span class="material-symbols-rounded text-3xl">search_off</span>
         </div>
         <p class="font-extrabold text-stone-700 text-sm">Menu tidak ditemukan</p>
-        <p class="text-xs text-stone-400">Coba ubah kata kunci pencarian atau pilih kategori lain.</p>
+        <p class="text-xs text-stone-400 max-w-xs">Tidak ada menu yang cocok dengan kata kunci "${escapeHtml(search || state.currentCategory)}".</p>
+        <button type="button" onclick="window.KasirApp.clearSearch(); window.KasirApp.setCategory('all');"
+          class="mt-2 px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs transition active:scale-95 touch-target-large flex items-center gap-1.5">
+          <span class="material-symbols-rounded text-sm">refresh</span>
+          <span>Reset Pencarian & Kategori</span>
+        </button>
       </div>
     `;
     return;
