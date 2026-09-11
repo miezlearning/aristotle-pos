@@ -1,11 +1,12 @@
 {
-  "versionCode": 96,
-  "versionName": "1.2.48",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.48/Aristotle-POS.apk",
+  "versionCode": 97,
+  "versionName": "1.2.49",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.49/Aristotle-POS.apk",
   "changelog": [
-    "Tata letak responsif 2-kolom kartu metrik keuangan (Omset, Biaya, Laba Bersih) di HP",
-    "Segmented toggle Ringkasan Data vs Grafik Usaha adaptif penuh di layar kecil",
-    "Optimasi tipografi angka monospasi tabular pada kartu metrik laporan"
+    "Sistem peran dan izin akses Kasir vs Owner",
+    "Mode Kasir terfokus (sembunyikan kelola menu & laporan keuangan)",
+    "PIN 6-digit kasir & integrasi Google SSO Pemilik Toko",
+    "Sinkronisasi penuh aset web dengan aplikasi Android"
   ],
   "releaseDate": "2026-09-11"
 }

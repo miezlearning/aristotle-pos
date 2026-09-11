@@ -252,6 +252,14 @@
             <span class="material-symbols-rounded text-sm text-stone-400 shrink-0">unfold_more</span>
           </button>
           <button id="mobileStoreTitleBtn" type="button" onclick="window.KasirApp.handleBrandLogoClick(event)" class="hidden"></button>
+
+          <!-- Mobile Role Switch Pill Button -->
+          <button id="mobileRoleSwitchBtn" type="button" onclick="window.KasirApp.openRoleSwitchModal()"
+            class="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-[11px] font-black shadow-2xs active:scale-95 transition cursor-pointer shrink-0"
+            title="Ganti Peran Kasir / Owner">
+            <span id="mobileRoleIcon" class="material-symbols-rounded text-sm text-emerald-700">shield_person</span>
+            <span id="mobileRoleLabel" class="max-w-[70px] truncate">Owner</span>
+          </button>
         </div>
 
         <!-- 2. TABLET & DESKTOP (>= md): Expansive Store Identity & Header Info -->
@@ -265,6 +273,15 @@
               Toko Saya
             </span>
             <span class="material-symbols-rounded text-lg text-stone-500 group-hover:text-stone-900 transition shrink-0">arrow_drop_down</span>
+          </button>
+
+          <!-- Desktop Role Switcher Button -->
+          <button id="desktopRoleSwitchBtn" type="button" onclick="window.KasirApp.openRoleSwitchModal()"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-emerald-50 text-emerald-900 border border-emerald-200/90 text-xs font-black shadow-2xs hover:bg-emerald-100 transition active:scale-95 cursor-pointer select-none shrink-0"
+            title="Ganti Peran / Beralih Akses">
+            <span id="desktopRoleIcon" class="material-symbols-rounded text-base text-emerald-700">shield_person</span>
+            <span id="desktopRoleLabel">Mode Owner</span>
+            <span class="material-symbols-rounded text-sm text-emerald-600">sync_alt</span>
           </button>
         </div>
 
@@ -1109,6 +1126,12 @@
           </button>
 
           <div class="flex items-center gap-1.5">
+            <button type="button" onclick="window.KasirApp.openCashierManageModal()"
+              class="p-2 sm:px-2.5 sm:py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95 touch-target-large cursor-pointer shadow-2xs"
+              title="Kelola Akun Kasir & PIN 6 Digit">
+              <span class="material-symbols-rounded text-base text-amber-700">badge</span>
+              <span class="hidden md:inline">Staf Kasir</span>
+            </button>
             <button type="button" onclick="window.KasirApp.openPrinterConfigModal()"
               class="p-2 sm:px-2.5 sm:py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95 touch-target-large cursor-pointer"
               title="Atur printer thermal & struk">
@@ -3736,7 +3759,34 @@ Kopi susu 7k"
         </div>
 
         <!-- Daftar menu -->
+        <!-- Google SSO Owner & Multi-Store Section -->
+        <div class="flex flex-col gap-2 p-3 bg-stone-50 border border-stone-200/90 rounded-2xl">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-black uppercase tracking-wider text-stone-600 flex items-center gap-1.5">
+              <span class="material-symbols-rounded text-sm text-emerald-600">admin_panel_settings</span>
+              Akun Pemilik (Google SSO)
+            </span>
+          </div>
+          <div id="googleOwnerAccountContainer">
+            <!-- Rendered by updateCloudOwnerAccountUI() -->
+          </div>
+          <div id="googleOwnerStoresList" class="flex flex-col gap-1.5 empty:hidden pt-1">
+            <!-- Rendered with stores owned by Google user -->
+          </div>
+        </div>
+
         <div class="border border-stone-200 rounded-2xl divide-y divide-stone-100 overflow-hidden text-xs bg-white shadow-2xs">
+          <button onclick="closeCloudModal(); window.KasirApp.openCashierManageModal();"
+            class="w-full flex items-center gap-3 p-3.5 hover:bg-stone-50 transition text-left cursor-pointer active:bg-stone-100">
+            <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center shrink-0 border border-amber-200">
+              <span class="material-symbols-rounded text-lg">badge</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-bold text-stone-800 text-xs">Staf Kasir & PIN</p>
+              <p class="text-[10.5px] text-stone-400 truncate">Kelola staf kasir dan PIN 6-digit</p>
+            </div>
+            <span class="material-symbols-rounded text-base text-stone-400 shrink-0">chevron_right</span>
+          </button>
           <button onclick="openUniversalLoginModal('login')"
             class="w-full flex items-center gap-3 p-3.5 hover:bg-stone-50 transition text-left cursor-pointer active:bg-stone-100">
             <div class="w-8 h-8 rounded-xl bg-stone-100 text-stone-600 flex items-center justify-center shrink-0">
@@ -4327,7 +4377,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.48</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.49</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -4487,11 +4537,170 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.48</span>
+    <span id="appVersionBadge" class="hidden">v1.2.49</span>
   </div>
 
   <!-- Main JavaScript App Module -->
   <script type="module" src="js/app.js"></script>
+
+  <!-- ==================== MODAL: GANTI PERAN (OWNER / KASIR) ==================== -->
+  <div id="roleSwitchModal"
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div
+      class="bg-white w-full sm:max-w-md rounded-2xl sm:rounded-3xl shadow-2xl border border-stone-200/90 overflow-hidden flex flex-col my-auto animate-in zoom-in-95">
+      
+      <!-- Header -->
+      <div class="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center">
+            <span class="material-symbols-rounded text-xl">shield_person</span>
+          </div>
+          <div>
+            <h3 id="roleSwitchModalTitle" class="text-sm sm:text-base font-black text-stone-900 leading-tight">Ganti Akses Peran</h3>
+            <p id="roleSwitchModalSub" class="text-[11px] text-stone-500 font-medium">Beralih antara Mode Kasir dan Mode Owner</p>
+          </div>
+        </div>
+        <button type="button" onclick="window.KasirApp.closeRoleSwitchModal()"
+          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition" title="Tutup">
+          <span class="material-symbols-rounded text-xl">close</span>
+        </button>
+      </div>
+
+      <!-- Form -->
+      <form onsubmit="window.KasirApp.handleRoleSwitchSubmit(event)" class="p-5 flex flex-col gap-4">
+        <!-- Section Kunci ke Mode Kasir (Pilih Kasir) -->
+        <div id="roleSwitchCashierSection" class="flex flex-col gap-2">
+          <label class="block text-xs font-black text-stone-700">Pilih Staf Kasir yang Bertugas</label>
+          <div class="relative">
+            <select id="roleSwitchCashierSelect"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-white font-bold text-xs text-stone-900 focus:outline-none focus:border-emerald-600 cursor-pointer shadow-2xs">
+              <!-- Rendered dynamically -->
+            </select>
+          </div>
+          <p class="text-[11px] text-stone-500">Dalam Mode Kasir, menu Kelola Harga, Laporan Omzet, dan Pengaturan Usaha otomatis disembunyikan total.</p>
+        </div>
+
+        <!-- Section Mode Owner Info -->
+        <div id="roleSwitchOwnerSection" class="hidden flex flex-col gap-2">
+          <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-950 font-medium leading-relaxed">
+            <span class="font-bold">Mode Pemilik Toko:</span> Memberikan akses penuh ke semua laporan omzet harian/bulanan, ekspor CSV, kelola menu & harga, dan pengaturan printer.
+          </div>
+        </div>
+
+        <!-- Input PIN 6 Digit -->
+        <div class="flex flex-col gap-1.5">
+          <label class="block text-xs font-black text-stone-700 flex items-center justify-between">
+            <span>PIN Keamanan (6 Digit Angka)</span>
+            <span class="text-[10px] text-stone-400 font-normal">Wajib 6 digit</span>
+          </label>
+          <div class="relative">
+            <input type="password" id="roleSwitchPinInput" maxlength="6" inputmode="numeric" pattern="[0-9]{6}"
+              placeholder="••••••" autocomplete="off"
+              class="w-full px-4 py-3 rounded-xl border-2 border-stone-300 focus:border-emerald-600 focus:outline-none text-center text-2xl tracking-[0.5em] font-black text-stone-900 bg-stone-50">
+          </div>
+        </div>
+
+        <!-- Quick Mode Switch Pills -->
+        <div class="flex items-center justify-between pt-1 text-xs">
+          <button type="button" onclick="window.KasirApp.openRoleSwitchModal('switch_to_owner')"
+            class="text-stone-500 hover:text-emerald-700 font-bold hover:underline">
+            Mode Owner
+          </button>
+          <button type="button" onclick="window.KasirApp.openRoleSwitchModal('lock_to_cashier')"
+            class="text-stone-500 hover:text-emerald-700 font-bold hover:underline">
+            Mode Kasir
+          </button>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+          <button type="button" onclick="window.KasirApp.closeRoleSwitchModal()"
+            class="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 text-xs touch-target-large transition">
+            Batal
+          </button>
+          <button type="submit" id="roleSwitchSubmitBtn"
+            class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs sm:text-sm touch-target-large shadow-sm transition active:scale-95">
+            Konfirmasi
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: KELOLA STAF KASIR & PIN 6-DIGIT ==================== -->
+  <div id="cashierManageModal"
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div
+      class="bg-white w-full sm:max-w-lg rounded-2xl sm:rounded-3xl shadow-2xl border border-stone-200/90 overflow-hidden flex flex-col my-auto max-h-[90vh] animate-in zoom-in-95">
+      
+      <!-- Header -->
+      <div class="px-5 py-4 border-b border-stone-100 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 flex items-center justify-center">
+            <span class="material-symbols-rounded text-xl">badge</span>
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-black text-stone-900 leading-tight">Kelola Staf Kasir</h3>
+            <p class="text-[11px] text-stone-500 font-medium">Tambah kasir dan kelola PIN 6-digit tiap petugas</p>
+          </div>
+        </div>
+        <button type="button" onclick="window.KasirApp.closeCashierManageModal()"
+          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition" title="Tutup">
+          <span class="material-symbols-rounded text-xl">close</span>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-5 flex flex-col gap-4 overflow-y-auto custom-scroll">
+        <!-- Form Tambah Kasir Baru -->
+        <form onsubmit="window.KasirApp.handleAddCashierSubmit(event)" class="p-4 bg-stone-50 border border-stone-200 rounded-2xl flex flex-col gap-3">
+          <h4 class="text-xs font-black text-stone-800 uppercase tracking-wider flex items-center gap-1.5">
+            <span class="material-symbols-rounded text-base text-emerald-600">person_add</span>
+            Tambah Kasir Baru
+          </h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="block text-[11px] font-bold text-stone-600 mb-1">Nama Kasir / Staf *</label>
+              <input type="text" id="newCashierName" placeholder="Contoh: Siti / Budi" required
+                class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold text-stone-900 focus:outline-none focus:border-emerald-600 bg-white">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-stone-600 mb-1">PIN Kasir (6 Digit Angka) *</label>
+              <input type="password" id="newCashierPin" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" placeholder="6 digit angka" required
+                class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold text-stone-900 focus:outline-none focus:border-emerald-600 bg-white">
+            </div>
+          </div>
+          <div class="flex justify-end pt-1">
+            <button type="submit"
+              class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs flex items-center gap-1.5 shadow-2xs transition active:scale-95 cursor-pointer">
+              <span class="material-symbols-rounded text-sm">add</span>
+              <span>Tambah Kasir</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Daftar Staf Kasir -->
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-black text-stone-800 uppercase tracking-wider">Daftar Staf Aktif</h4>
+            <span class="text-[11px] text-stone-400">PIN tersimpan aman (enkripsi hash)</span>
+          </div>
+          <div id="cashiersListContainer" class="flex flex-col gap-2">
+            <!-- Injected by renderCashiersListInModal() -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="p-3.5 bg-stone-50 border-t border-stone-100 flex items-center justify-end shrink-0">
+        <button type="button" onclick="window.KasirApp.closeCashierManageModal()"
+          class="px-4 py-2 rounded-xl bg-white border border-stone-200 hover:bg-stone-100 font-bold text-stone-700 text-xs transition">
+          Selesai
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 </html>

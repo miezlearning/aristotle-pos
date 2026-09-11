@@ -1,11 +1,12 @@
-# Aristotle POS v1.2.48 Release Notes
+# Aristotle POS v1.2.49 Release Notes
 
 **Tanggal Rilis:** 2026-09-11
 
 ### Catatan Pembaruan:
-- Tata letak responsif 2-kolom kartu metrik keuangan (Omset, Biaya, Laba Bersih) di HP
-- Segmented toggle Ringkasan Data vs Grafik Usaha adaptif penuh di layar kecil
-- Optimasi tipografi angka monospasi tabular pada kartu metrik laporan
+- Sistem peran dan izin akses Kasir vs Owner
+- Mode Kasir terfokus (sembunyikan kelola menu & laporan keuangan)
+- PIN 6-digit kasir & integrasi Google SSO Pemilik Toko
+- Sinkronisasi penuh aset web dengan aplikasi Android
 
 ---
 *Pembaruan ini dapat diunduh dan dipasang langsung dari dalam aplikasi (In-App Auto-Updater).*

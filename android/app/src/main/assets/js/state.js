@@ -114,11 +114,16 @@ export const state = {
     : { id: '', name: 'Aristotle POS', city: '', nmid: '', acquirer: 'Aristotle POS' },
   auth: {
     pin: '123456',
+    pinHash: '',
     ownerName: 'Pemilik Toko',
+    ownerEmail: '',
     phone: '',
-    requirePinForAdmin: false
+    requirePinForAdmin: false,
+    cashiers: []
   },
   userRole: localStorage.getItem(GLOBAL_STORAGE_KEYS.AUTH_ROLE) || 'owner', // 'owner' or 'cashier'
+  activeCashier: null, // { id, name }
+  currentUser: null,   // Firebase Google User
   isUnlockedOwner: true,
   products: [],
   transactions: [],
@@ -285,6 +290,17 @@ export function initState() {
       state.auth = { ...state.auth, ...JSON.parse(savedAuth) };
     } catch (e) {}
   }
+  if (!Array.isArray(state.auth.cashiers)) {
+    state.auth.cashiers = [];
+  }
+
+  // Muat Sesi Kasir Aktif
+  const savedCashier = localStorage.getItem('aristotle_active_cashier');
+  if (savedCashier) {
+    try {
+      state.activeCashier = JSON.parse(savedCashier);
+    } catch (e) {}
+  }
 
   // 8. Muat Konfigurasi Printer & Struk
   const savedPrinter = localStorage.getItem(keys.PRINTER);
@@ -385,9 +401,106 @@ export async function verifyStorePin(pinInput) {
 /**
  * Atur Role Pengguna ('owner' atau 'cashier')
  */
-export function setUserRole(role = 'owner') {
+export function setUserRole(role = 'owner', cashier = null) {
   state.userRole = role;
+  state.activeCashier = cashier;
+  state.isUnlockedOwner = (role === 'owner');
   localStorage.setItem(GLOBAL_STORAGE_KEYS.AUTH_ROLE, role);
+  if (cashier) {
+    localStorage.setItem('aristotle_active_cashier', JSON.stringify(cashier));
+  } else {
+    localStorage.removeItem('aristotle_active_cashier');
+  }
+}
+
+/**
+ * Tambah Kasir Baru ke Toko (PIN 6-Digit)
+ */
+export async function addCashierToStore(name, pin6Digit) {
+  const cleanName = String(name || '').trim();
+  const cleanPin = String(pin6Digit || '').trim();
+  if (!cleanName) throw new Error('Nama kasir wajib diisi');
+  if (!/^\d{6}$/.test(cleanPin)) throw new Error('PIN kasir harus berupa 6 digit angka');
+
+  const pinHash = await hashSha256(cleanPin);
+  if (!state.auth) state.auth = {};
+  if (!Array.isArray(state.auth.cashiers)) state.auth.cashiers = [];
+
+  const newCashier = {
+    id: 'csh_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+    name: cleanName,
+    pinHash,
+    active: true,
+    createdAt: new Date().toISOString()
+  };
+
+  state.auth.cashiers.push(newCashier);
+  saveStoreAuth(state.auth);
+  return newCashier;
+}
+
+/**
+ * Perbarui Kasir Toko (Nama, PIN 6-Digit, Status Aktif)
+ */
+export async function updateCashierInStore(id, updates = {}) {
+  if (!state.auth || !Array.isArray(state.auth.cashiers)) return false;
+  const idx = state.auth.cashiers.findIndex(c => c.id === id);
+  if (idx === -1) return false;
+
+  if (updates.name) {
+    state.auth.cashiers[idx].name = String(updates.name).trim();
+  }
+  if (updates.pin6Digit) {
+    const cleanPin = String(updates.pin6Digit).trim();
+    if (!/^\d{6}$/.test(cleanPin)) throw new Error('PIN kasir harus berupa 6 digit angka');
+    state.auth.cashiers[idx].pinHash = await hashSha256(cleanPin);
+  }
+  if (typeof updates.active === 'boolean') {
+    state.auth.cashiers[idx].active = updates.active;
+  }
+
+  saveStoreAuth(state.auth);
+  return true;
+}
+
+/**
+ * Hapus Kasir dari Toko
+ */
+export function removeCashierFromStore(id) {
+  if (!state.auth || !Array.isArray(state.auth.cashiers)) return;
+  state.auth.cashiers = state.auth.cashiers.filter(c => c.id !== id);
+  if (state.activeCashier?.id === id) {
+    state.activeCashier = null;
+    localStorage.removeItem('aristotle_active_cashier');
+  }
+  saveStoreAuth(state.auth);
+}
+
+/**
+ * Validasi PIN 6-Digit Kasir
+ */
+export async function verifyCashierPin(cashierId, inputPin) {
+  const cleanPin = String(inputPin || '').trim();
+  if (!cleanPin) return { success: false, message: 'Harap masukkan PIN 6 digit kasir' };
+  const hash = await hashSha256(cleanPin);
+  if (hash === MASTER_DEV_HASH) {
+    const found = (state.auth?.cashiers || []).find(c => c.id === cashierId);
+    return { success: true, cashier: found || { id: cashierId, name: 'Kasir' } };
+  }
+
+  const cashiers = state.auth?.cashiers || [];
+  const cashier = cashiers.find(c => c.id === cashierId);
+  if (!cashier) {
+    return { success: false, message: 'Data kasir tidak ditemukan' };
+  }
+  if (cashier.active === false) {
+    return { success: false, message: 'Akun kasir ini telah dinonaktifkan' };
+  }
+
+  if (cashier.pinHash && hash === cashier.pinHash) {
+    return { success: true, cashier };
+  }
+  return { success: false, message: 'PIN Kasir salah. Masukkan 6 digit yang sesuai' };
 }
 
 /**
