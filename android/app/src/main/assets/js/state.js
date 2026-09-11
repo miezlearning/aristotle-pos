@@ -375,8 +375,12 @@ export function saveStoreAuth(authData) {
   if (authData) {
     state.auth = { ...state.auth, ...authData };
   }
-  localStorage.setItem(currentStorageKeys.AUTH, JSON.stringify(state.auth));
+  if (currentStorageKeys && currentStorageKeys.AUTH) {
+    localStorage.setItem(currentStorageKeys.AUTH, JSON.stringify(state.auth || {}));
+  }
 }
+
+export const saveAuthState = saveStoreAuth;
 
 // ================= CYBER SECURITY: BRUTE-FORCE DEFENSE & PIN ENTROPY =================
 
@@ -445,7 +449,7 @@ export function recordFailedPinAttempt() {
     lockoutSeconds
   });
   if (state.auth.securityLogs.length > 30) state.auth.securityLogs.length = 30;
-  saveAuthState();
+  saveStoreAuth();
 
   const remainingAttempts = Math.max(0, PIN_SECURITY_CONFIG.MAX_FAILED_ATTEMPTS - failedCount);
   return {
@@ -480,7 +484,7 @@ export function recordSuccessfulPinAttempt() {
     clearedFailures: previousFailures
   });
   if (state.auth.securityLogs.length > 30) state.auth.securityLogs.length = 30;
-  saveAuthState();
+  saveStoreAuth();
 
   return { previousFailures };
 }
@@ -555,7 +559,7 @@ export async function verifyStorePinDetails(pinInput) {
     if (cleanPin === currentPin) {
       if (!state.auth) state.auth = {};
       state.auth.pinHash = hash;
-      saveAuthState();
+      saveStoreAuth();
       isMatch = true;
     }
   }
@@ -619,7 +623,6 @@ export async function updateOwnerPin(currentPin, newPin) {
   if (!state.auth) state.auth = {};
   state.auth.pinHash = newHash;
   delete state.auth.pin; // Hapus plaintext lama jika ada
-  saveAuthState();
   saveStoreAuth(state.auth);
   return true;
 }

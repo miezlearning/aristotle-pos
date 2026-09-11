@@ -1,12 +1,12 @@
 {
-  "versionCode": 100,
-  "versionName": "1.2.52",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.52/Aristotle-POS.apk",
+  "versionCode": 101,
+  "versionName": "1.2.53",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.53/Aristotle-POS.apk",
   "changelog": [
-    "Migrasi total pengubahan PIN ke Custom Modal UI/UX Material Design 3",
-    "Indikator entropi dan kekuatan sandi PIN Owner interaktif secara real-time",
-    "Eliminasi 100% seluruh dialog native browser (prompt, alert, confirm)",
-    "Sinkronisasi aset native Android v1.2.52"
+    "Universal Material Design 3 Custom Dropdown & Select Component",
+    "Perbaikan tuntas bug saveAuthState is not defined",
+    "Auto-enhancement seluruh dropdown menu di aplikasi kasir",
+    "Sinkronisasi aset native Android v1.2.53"
   ],
   "releaseDate": "2026-09-11"
 }
