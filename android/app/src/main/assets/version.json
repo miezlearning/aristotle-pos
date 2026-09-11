@@ -1,12 +1,13 @@
 {
-  "versionCode": 110,
-  "versionName": "1.2.61",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.61/Aristotle-POS.apk",
+  "versionCode": 111,
+  "versionName": "1.2.62",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.62/Aristotle-POS.apk",
   "changelog": [
-    "Sistem Lisensi Resmi Sekali Beli (One-Time Lifetime License)",
-    "Middleware Kriptografis HMAC-SHA256 & verifikasi cloud anti-duplikasi lisensi",
-    "Sandbox Akun Demo: batas 25 transaksi, 10 menu produk, dan watermark struk",
-    "Super Admin: Generator lisensi resmi & integrasi kirim lisensi 1-klik via WhatsApp"
+    "Perombakan UI/UX Super Admin: Generator Lisensi lebih lapang, terstruktur dan bernapas",
+    "Pemisahan bilah pencarian & tombol tambah mitra khusus ke tab Monitoring Toko Mitra",
+    "Struktur formulir 2-kolom terkelompok dengan panduan input yang jelas",
+    "Harmoni palet warna Executive Dark Slate & Golden Amber yang seimbang dan elegan",
+    "Lencana status soft pill dengan indikator titik dan kartu hasil lisensi berkelas"
   ],
   "releaseDate": "2026-09-11"
 }
