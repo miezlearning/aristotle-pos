@@ -234,7 +234,6 @@ export function openCloudModal() {
     const storeIdShort = document.getElementById('cloudStoreIdShort');
     const modalStatusEl = document.getElementById('cloudModalStatusText');
     const modalStatusDot = document.getElementById('cloudModalStatusDot');
-    const modalStatusBadge = document.getElementById('cloudModalStatusBadge');
     
     if (storeDisplay) {
       storeDisplay.innerText = `${state.storeProfile?.name || 'Toko UMKM'} (${state.storeId})`;
@@ -246,14 +245,10 @@ export function openCloudModal() {
       storeIdShort.innerText = state.storeId;
     }
     if (modalStatusDot) {
-      modalStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse';
-    }
-    if (modalStatusBadge) {
-      modalStatusBadge.className = 'flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 shrink-0';
+      modalStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-500 shrink-0';
     }
     if (modalStatusEl) {
       modalStatusEl.innerText = 'Online';
-      modalStatusEl.className = 'text-[11px] font-bold text-emerald-300';
     }
     updatePinButtonUI();
     updateCloudOwnerAccountUI();

@@ -131,19 +131,13 @@ export function updateSyncStatusUI(status, message) {
     textEl.innerText = current.text;
   }
   const modalStatusDot = document.getElementById('cloudModalStatusDot');
-  const modalStatusBadge = document.getElementById('cloudModalStatusBadge');
   if (modalStatusDot) {
-    modalStatusDot.className = `w-2 h-2 rounded-full shrink-0 ${current.dot} ${current.pulse ? 'animate-pulse' : ''}`;
-  }
-  if (modalStatusBadge) {
-    const isOk = status === 'online' || status === 'syncing';
-    modalStatusBadge.className = `flex items-center gap-1.5 px-2.5 py-0.5 rounded-full shrink-0 ${isOk ? 'bg-emerald-500/20 border border-emerald-500/30' : (status === 'error' ? 'bg-rose-500/20 border border-rose-500/30' : 'bg-stone-500/20 border border-stone-500/30')}`;
+    modalStatusDot.className = `w-2 h-2 rounded-full shrink-0 ${current.dot}`;
   }
   if (modalStatusEl) {
     const label = (message || current.text).replace('Online & Terhubung', 'Online').replace('Mode Offline (Lokal)', 'Offline');
     modalStatusEl.innerText = label;
-    const isOk = status === 'online' || status === 'syncing';
-    modalStatusEl.className = `text-[11px] font-bold ${isOk ? 'text-emerald-300' : (status === 'error' ? 'text-rose-300' : 'text-stone-300')}`;
+    modalStatusEl.className = `text-xs ${status === 'error' ? 'text-rose-600' : (status === 'online' || status === 'syncing' ? 'text-emerald-700' : 'text-stone-500')}`;
   }
 }
 

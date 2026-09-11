@@ -3716,48 +3716,22 @@ Kopi susu 7k"
   <div id="cloudModal"
     class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto transition-all">
     <div
-      class="bg-stone-100 w-full sm:max-w-[430px] rounded-t-[28px] sm:rounded-[28px] shadow-2xl border border-stone-200/90 overflow-hidden flex flex-col my-auto max-h-[92vh] sm:max-h-[88vh] animate-in zoom-in-95">
+      class="bg-white w-full sm:max-w-[430px] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200/90 overflow-hidden flex flex-col my-auto max-h-[92vh] sm:max-h-[88vh] animate-in zoom-in-95">
       
-      <!-- Executive Store Hero Header -->
-      <div class="relative bg-gradient-to-br from-stone-900 via-stone-900 to-stone-950 text-white p-5 sm:p-5.5 overflow-hidden shrink-0 border-b border-stone-800">
-        <!-- Ambient decorative blurs -->
-        <div class="absolute -right-8 -top-8 w-32 h-32 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none"></div>
-        <div class="absolute -left-8 -bottom-8 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-        <!-- Top Row: Category Label & Close Button -->
-        <div class="relative z-10 flex items-center justify-between mb-3.5">
-          <div class="flex items-center gap-1.5">
-            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-extrabold uppercase tracking-wider text-emerald-300">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-              Profil Toko
-            </span>
-          </div>
-          <button type="button" onclick="closeCloudModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 text-stone-300 hover:text-white flex items-center justify-center transition cursor-pointer" title="Tutup">
-            <span class="material-symbols-rounded text-lg">close</span>
-          </button>
+      <!-- Header -->
+      <div class="bg-white p-4 flex items-center gap-3 border-b border-stone-200 shrink-0">
+        <div class="w-11 h-11 rounded-2xl bg-stone-900 text-white flex items-center justify-center shrink-0">
+          <span class="material-symbols-rounded text-2xl">storefront</span>
         </div>
-
-        <!-- Store Profile Details -->
-        <div class="relative z-10 flex items-start gap-3.5">
-          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center font-black text-xl shadow-lg shadow-emerald-950/40 shrink-0 border border-emerald-400/30">
-            <span class="material-symbols-rounded text-2xl">storefront</span>
-          </div>
-          <div class="min-w-0 flex-1">
-            <h4 id="cloudStoreNameDisplay" class="font-extrabold text-white text-lg leading-tight tracking-tight truncate">Toko Saya</h4>
-            <div class="flex items-center justify-between gap-2 mt-1.5">
-              <span class="inline-flex items-center gap-1 text-[11px] font-mono text-stone-300 bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
-                <span class="material-symbols-rounded text-xs text-stone-400">tag</span>
-                <span id="cloudStoreIdShort">toko</span>
-              </span>
-              <div id="cloudModalStatusBadge" class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 shrink-0">
-                <span id="cloudModalStatusDot" class="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse"></span>
-                <span id="cloudModalStatusText" class="text-[11px] font-bold text-emerald-300">Online</span>
-              </div>
-            </div>
-            <!-- Hidden compatibility element -->
-            <span id="cloudStoreIdDisplay" class="hidden"></span>
-          </div>
+        <div class="min-w-0 flex-1">
+          <h4 id="cloudStoreNameDisplay" class="font-extrabold text-stone-900 text-base leading-tight truncate">Toko Saya</h4>
+          <p class="text-xs text-stone-500 truncate mt-0.5"><span id="cloudStoreIdShort" class="font-mono">toko</span> • <span id="cloudModalStatusText">Online</span></p>
+          <span id="cloudStoreIdDisplay" class="hidden"></span>
         </div>
+        <span id="cloudModalStatusDot" class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+        <button type="button" onclick="closeCloudModal()" class="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-800 flex items-center justify-center transition cursor-pointer" title="Tutup">
+          <span class="material-symbols-rounded text-lg">close</span>
+        </button>
       </div>
 
       <!-- Body -->
@@ -3830,7 +3804,7 @@ Kopi susu 7k"
               </div>
               <div class="flex-1 min-w-0">
                 <p class="font-bold text-stone-800 text-xs">Ubah PIN Owner</p>
-                <p class="text-[10.5px] text-stone-400 truncate">Anti Brute-Force & Entropi Tinggi</p>
+                <p class="text-[10.5px] text-stone-400 truncate">PIN 6 digit Owner</p>
               </div>
               <button type="button" onclick="closeCloudModal(); window.KasirApp.openChangeOwnerPinModal();"
                 class="px-2.5 py-1 rounded-xl font-bold text-[11px] transition shrink-0 bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200 cursor-pointer active:scale-95">
@@ -3887,7 +3861,7 @@ Kopi susu 7k"
                 <span class="material-symbols-rounded text-lg">system_update</span>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="font-bold text-stone-800 text-xs">Aplikasi <span id="appVersionLabel" class="text-stone-400 font-normal">v1.2.53</span></p>
+                <p class="font-bold text-stone-800 text-xs">Aplikasi <span id="appVersionLabel" class="text-stone-400 font-normal">v1.2.55</span></p>
                 <p class="text-[10.5px] text-stone-400 truncate">Pembaruan sistem kasir otomatis</p>
               </div>
               <button type="button" onclick="KasirApp.checkForAppUpdates(true)"
@@ -4440,7 +4414,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.54</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.55</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -4600,7 +4574,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.54</span>
+    <span id="appVersionBadge" class="hidden">v1.2.55</span>
   </div>
 
   <!-- Main JavaScript App Module -->
