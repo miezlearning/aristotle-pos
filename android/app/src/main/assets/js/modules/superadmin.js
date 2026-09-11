@@ -885,10 +885,10 @@ export function switchSuperAdminTab(tab = 'stores') {
 
   if (tab === 'licenses') {
     if (tabStoresBtn) {
-      tabStoresBtn.className = 'flex-1 py-2 px-3 rounded-xl text-stone-600 hover:text-stone-900 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition cursor-pointer';
+      tabStoresBtn.className = 'flex-1 py-2.5 px-3 rounded-xl text-stone-500 hover:text-stone-900 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer';
     }
     if (tabLicensesBtn) {
-      tabLicensesBtn.className = 'flex-1 py-2 px-3 rounded-xl bg-white text-stone-900 font-extrabold text-xs sm:text-sm shadow-2xs flex items-center justify-center gap-1.5 transition cursor-pointer';
+      tabLicensesBtn.className = 'flex-1 py-2.5 px-3 rounded-xl bg-white text-stone-900 font-extrabold text-xs sm:text-sm shadow-xs flex items-center justify-center gap-2 transition cursor-pointer';
     }
     if (storesContent) storesContent.classList.add('hidden');
     if (licensesContent) {
@@ -898,10 +898,10 @@ export function switchSuperAdminTab(tab = 'stores') {
     renderSuperAdminLicensesTable();
   } else {
     if (tabStoresBtn) {
-      tabStoresBtn.className = 'flex-1 py-2 px-3 rounded-xl bg-white text-stone-900 font-extrabold text-xs sm:text-sm shadow-2xs flex items-center justify-center gap-1.5 transition cursor-pointer';
+      tabStoresBtn.className = 'flex-1 py-2.5 px-3 rounded-xl bg-white text-stone-900 font-extrabold text-xs sm:text-sm shadow-xs flex items-center justify-center gap-2 transition cursor-pointer';
     }
     if (tabLicensesBtn) {
-      tabLicensesBtn.className = 'flex-1 py-2 px-3 rounded-xl text-stone-600 hover:text-stone-900 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition cursor-pointer';
+      tabLicensesBtn.className = 'flex-1 py-2.5 px-3 rounded-xl text-stone-500 hover:text-stone-900 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer';
     }
     if (licensesContent) {
       licensesContent.classList.add('hidden');
@@ -988,8 +988,8 @@ export async function handleGenerateLicenseSubmit(e) {
     if (submitBtn) {
       submitBtn.disabled = false;
       submitBtn.innerHTML = `
-        <span class="material-symbols-rounded text-lg">add_task</span>
-        <span>Generate Lisensi Resmi</span>
+        <span class="material-symbols-rounded text-lg text-amber-400">vpn_key</span>
+        <span>Terbitkan Lisensi Resmi Sekarang</span>
       `;
     }
   }
@@ -1089,20 +1089,23 @@ export async function renderSuperAdminLicensesTable() {
       const isRevoked = lic.status === 'revoked';
 
       let statusBadge = `
-        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-200">
-          Tersedia (Ready)
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-2xs">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+          <span>Tersedia</span>
         </span>
       `;
       if (isClaimed) {
         statusBadge = `
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-blue-900 border border-blue-200">
-            Aktif Terpakai
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-extrabold bg-sky-50 text-sky-800 border border-sky-200/80 shadow-2xs">
+            <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+            <span>Aktif Terpakai</span>
           </span>
         `;
       } else if (isRevoked) {
         statusBadge = `
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-200">
-            Dibekukan
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-extrabold bg-rose-50 text-rose-800 border border-rose-200/80 shadow-2xs">
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+            <span>Dibekukan</span>
           </span>
         `;
       }
@@ -1111,35 +1114,45 @@ export async function renderSuperAdminLicensesTable() {
       const safeKey = escapeHtml(lic.licenseKey);
       const safeName = escapeHtml(lic.clientName || '-');
       const safePhone = escapeHtml(lic.clientPhone || '');
-      const claimedStore = lic.claimedByStoreId ? escapeHtml(lic.claimedByStoreId) : '<span class="text-stone-400 italic">Belum diklaim</span>';
+      const claimedStore = lic.claimedByStoreId ? escapeHtml(lic.claimedByStoreId) : '<span class="text-stone-400 font-normal italic">Belum diklaim</span>';
 
       return `
-        <tr class="hover:bg-stone-50/80 transition">
-          <td class="py-3 px-3 font-mono font-black text-xs text-stone-900 select-all tracking-wider">${safeKey}</td>
-          <td class="py-3 px-3 font-bold text-xs text-stone-800">
-            <div>${safeName}</div>
-            <div class="text-[10px] font-normal text-stone-400">${safePhone}</div>
+        <tr class="hover:bg-stone-50/90 transition-colors border-b border-stone-100 last:border-0">
+          <td class="py-3.5 px-4 font-mono font-black text-xs text-stone-900 select-all tracking-wider">
+            <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-stone-100 text-stone-900 border border-stone-200">
+              <span class="material-symbols-rounded text-xs text-amber-500">vpn_key</span>
+              <span>${safeKey}</span>
+            </div>
           </td>
-          <td class="py-3 px-3 text-[11px] font-bold text-stone-600">
-            ${lic.tier === 'PRO_LIFETIME' ? '<span class="text-indigo-700">Pro Lifetime</span>' : 'Lifetime Standar'}
+          <td class="py-3.5 px-4 font-bold text-xs text-stone-900">
+            <div class="font-extrabold text-stone-900 text-xs sm:text-sm">${safeName}</div>
+            <div class="text-[11px] font-medium text-stone-500 flex items-center gap-1 mt-0.5">
+              <span class="material-symbols-rounded text-xs text-stone-400">phone</span>
+              <span>${safePhone || 'Tidak ada no WA'}</span>
+            </div>
           </td>
-          <td class="py-3 px-3">${statusBadge}</td>
-          <td class="py-3 px-3 text-[11px] text-stone-500">${dateStr}</td>
-          <td class="py-3 px-3 text-xs font-mono text-stone-700 font-bold">${claimedStore}</td>
-          <td class="py-3 px-3 text-right whitespace-nowrap">
-            <div class="flex items-center justify-end gap-1">
+          <td class="py-3.5 px-3 text-xs font-bold">
+            ${lic.tier === 'PRO_LIFETIME' 
+              ? '<span class="px-2 py-0.5 rounded-md bg-stone-900 text-amber-300 text-[10.5px] font-black tracking-wide">PRO LIFETIME</span>' 
+              : '<span class="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 text-[10.5px] font-black tracking-wide border border-stone-200">STANDAR</span>'}
+          </td>
+          <td class="py-3.5 px-3">${statusBadge}</td>
+          <td class="py-3.5 px-3 text-xs text-stone-600 font-medium">${dateStr}</td>
+          <td class="py-3.5 px-3 text-xs font-mono font-bold text-stone-800">${claimedStore}</td>
+          <td class="py-3.5 px-4 text-right whitespace-nowrap">
+            <div class="flex items-center justify-end gap-1.5">
               <button type="button" onclick="window.KasirApp.copySpecificLicenseCode('${safeKey}')"
-                class="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 transition" title="Salin Kode">
-                <span class="material-symbols-rounded text-sm">content_copy</span>
+                class="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 transition active:scale-95 cursor-pointer shadow-2xs" title="Salin Kode">
+                <span class="material-symbols-rounded text-base">content_copy</span>
               </button>
               <button type="button" onclick="window.KasirApp.shareSpecificLicenseViaWA('${safeKey}', '${safeName}', '${safePhone}', '${lic.tier}')"
-                class="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition" title="Kirim WhatsApp">
-                <span class="material-symbols-rounded text-sm">chat</span>
+                class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition active:scale-95 cursor-pointer shadow-2xs" title="Kirim WhatsApp">
+                <span class="material-symbols-rounded text-base">chat</span>
               </button>
               ${!isRevoked ? `
                 <button type="button" onclick="window.KasirApp.revokeLicenseAction('${safeKey}')"
-                  class="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition" title="Bekukan Lisensi">
-                  <span class="material-symbols-rounded text-sm">block</span>
+                  class="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 transition active:scale-95 cursor-pointer shadow-2xs" title="Bekukan Lisensi">
+                  <span class="material-symbols-rounded text-base">block</span>
                 </button>
               ` : ''}
             </div>
