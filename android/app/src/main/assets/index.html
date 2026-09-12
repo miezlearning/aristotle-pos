@@ -245,7 +245,9 @@
             class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200/80 border border-stone-200/80 shadow-2xs transition active:scale-95 touch-target-large cursor-pointer min-w-0 max-w-full"
             title="Klik untuk Info Toko / Hubungkan Perangkat & Ganti Role (3x untuk Super Admin)">
             <div class="relative w-5 h-5 rounded-md overflow-hidden bg-white p-0.5 border border-stone-200/60 shrink-0">
-              <img src="icon-192.png" alt="Aristotle POS" class="w-full h-full object-contain">
+              <img src="icon-192.png" alt="Aristotle POS" class="w-full h-full obje
+              
+              ct-contain">
               <span id="mobileStoreSyncDot" class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-white animate-pulse"></span>
             </div>
             <span id="mobileAppHeaderStoreTitle" class="text-xs font-black tracking-tight text-stone-900 truncate">Kedai Usaha Mami</span>
@@ -1941,138 +1943,116 @@
         <!-- License Generator Card -->
         <div class="bg-white rounded-3xl border border-stone-200/90 shadow-xs overflow-hidden">
           
-          <!-- Banner / Header Generator -->
-          <div class="p-5 sm:p-6 border-b border-stone-100 bg-gradient-to-r from-stone-900 via-stone-900 to-stone-950 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div class="flex items-center gap-3.5">
-              <div class="w-12 h-12 rounded-2xl bg-white/10 text-amber-400 border border-white/10 flex items-center justify-center shrink-0 shadow-inner">
-                <span class="material-symbols-rounded text-2xl">vpn_key</span>
+          <!-- Header Generator -->
+          <div class="p-4 sm:p-5 border-b border-stone-100 bg-stone-50/60 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-stone-100 text-stone-700 flex items-center justify-center shrink-0">
+                <span class="material-symbols-rounded text-lg">vpn_key</span>
               </div>
               <div>
-                <div class="flex items-center gap-2">
-                  <h3 class="text-base sm:text-lg font-black tracking-tight text-white">Generator Lisensi Resmi Sekali Beli</h3>
-                  <span class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-950 text-[10px] font-black uppercase tracking-wider">Lifetime</span>
-                </div>
-                <p class="text-xs text-stone-300 mt-1 leading-relaxed">Terbitkan kode unik 24-karakter dengan signature kriptografis HMAC-SHA256 untuk mitra UMKM baru.</p>
-              </div>
-            </div>
-
-            <!-- Value Pillars Badges -->
-            <div class="flex flex-wrap items-center gap-2 shrink-0">
-              <div class="px-2.5 py-1 rounded-xl bg-white/10 text-stone-200 border border-white/10 text-[11px] font-bold flex items-center gap-1.5">
-                <span class="material-symbols-rounded text-sm text-emerald-400">check_circle</span>
-                <span>Tanpa Biaya Bulanan</span>
-              </div>
-              <div class="px-2.5 py-1 rounded-xl bg-white/10 text-stone-200 border border-white/10 text-[11px] font-bold flex items-center gap-1.5">
-                <span class="material-symbols-rounded text-sm text-amber-400">verified_user</span>
-                <span>Anti-Duplikasi Cloud</span>
+                <h4 class="text-sm sm:text-base font-black text-stone-900">Generator Lisensi</h4>
+                <p class="text-xs text-stone-500 mt-0.5">Terbitkan kode lisensi resmi untuk toko mitra.</p>
               </div>
             </div>
           </div>
 
-          <!-- Formulir Generator (Spacious 2-Column Grid) -->
-          <form id="saLicenseGenForm" onsubmit="window.KasirApp.handleGenerateLicenseSubmit(event)" class="p-5 sm:p-6 flex flex-col gap-5">
+          <!-- Formulir Generator -->
+          <form id="saLicenseGenForm" onsubmit="window.KasirApp.handleGenerateLicenseSubmit(event)" class="p-4 sm:p-5 flex flex-col gap-4">
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               
-              <!-- Kolom Kiri: Identitas Mitra -->
-              <div class="flex flex-col gap-4 bg-stone-50/70 p-4 sm:p-5 rounded-2xl border border-stone-200/70">
-                <div class="flex items-center gap-2 pb-2 border-b border-stone-200/60">
-                  <span class="material-symbols-rounded text-stone-700 text-lg">person_pin</span>
-                  <h4 class="text-xs font-black uppercase tracking-wider text-stone-700">1. Data Pemilik & Toko Mitra</h4>
+              <!-- Kolom Kiri: Data Toko Mitra -->
+              <div class="flex flex-col gap-3.5 bg-stone-50/60 p-3.5 sm:p-4 rounded-2xl border border-stone-200/70">
+                <div class="flex items-center gap-2 pb-1.5 border-b border-stone-200/60">
+                  <span class="material-symbols-rounded text-stone-600 text-base">storefront</span>
+                  <h5 class="text-xs font-black uppercase tracking-wider text-stone-700">Data Toko Mitra</h5>
                 </div>
 
                 <div>
-                  <label class="block text-stone-800 font-extrabold mb-1.5 text-xs">Nama Toko / Usaha Mitra <span class="text-rose-500">*</span></label>
+                  <label class="block text-stone-800 font-extrabold mb-1 text-xs">Nama Toko / Mitra <span class="text-rose-500">*</span></label>
                   <div class="relative">
                     <span class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-lg pointer-events-none">storefront</span>
-                    <input type="text" id="saGenClientName" required placeholder="Misal: Kedai Kopi Melati"
+                    <input type="text" id="saGenClientName" required placeholder="Contoh: Kedai Kopi Melati"
                       class="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-white border border-stone-300 text-xs sm:text-sm font-bold text-stone-900 outline-none focus:border-stone-900 focus:ring-2 focus:ring-stone-900/10 transition shadow-2xs">
                   </div>
-                  <p class="text-[10.5px] text-stone-500 mt-1">Nama ini akan dicantumkan pada draf pesan WhatsApp resmi.</p>
                 </div>
 
                 <div>
-                  <label class="block text-stone-800 font-extrabold mb-1.5 text-xs">Nomor WhatsApp Mitra <span class="text-rose-500">*</span></label>
+                  <label class="block text-stone-800 font-extrabold mb-1 text-xs">Nomor WhatsApp <span class="text-rose-500">*</span></label>
                   <div class="relative">
                     <span class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-lg pointer-events-none">phone_iphone</span>
-                    <input type="tel" id="saGenClientPhone" required placeholder="Misal: 081234567890"
+                    <input type="tel" id="saGenClientPhone" required placeholder="Contoh: 081234567890"
                       class="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-white border border-stone-300 text-xs sm:text-sm font-bold text-stone-900 outline-none focus:border-stone-900 focus:ring-2 focus:ring-stone-900/10 transition shadow-2xs">
                   </div>
-                  <p class="text-[10.5px] text-stone-500 mt-1">Gunakan nomor aktif untuk kemudahan kirim lisensi 1-klik via WhatsApp.</p>
                 </div>
               </div>
 
-              <!-- Kolom Kanan: Pilihan Paket & Bukti Pembayaran -->
-              <div class="flex flex-col gap-4 bg-stone-50/70 p-4 sm:p-5 rounded-2xl border border-stone-200/70">
-                <div class="flex items-center gap-2 pb-2 border-b border-stone-200/60">
-                  <span class="material-symbols-rounded text-stone-700 text-lg">receipt_long</span>
-                  <h4 class="text-xs font-black uppercase tracking-wider text-stone-700">2. Paket Lisensi & Bukti Bayar</h4>
+              <!-- Kolom Kanan: Paket & Catatan -->
+              <div class="flex flex-col gap-3.5 bg-stone-50/60 p-3.5 sm:p-4 rounded-2xl border border-stone-200/70">
+                <div class="flex items-center gap-2 pb-1.5 border-b border-stone-200/60">
+                  <span class="material-symbols-rounded text-stone-600 text-base">receipt_long</span>
+                  <h5 class="text-xs font-black uppercase tracking-wider text-stone-700">Paket & Catatan</h5>
                 </div>
 
                 <div>
-                  <label class="block text-stone-800 font-extrabold mb-1.5 text-xs">Pilih Paket Lisensi <span class="text-rose-500">*</span></label>
+                  <label class="block text-stone-800 font-extrabold mb-1 text-xs">Pilihan Paket <span class="text-rose-500">*</span></label>
                   <select id="saGenTier"
-                    class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-stone-300 text-xs sm:text-sm font-black text-stone-900 outline-none focus:border-stone-900 focus:ring-2 focus:ring-stone-900/10 transition shadow-2xs cursor-pointer">
-                    <option value="LT">⭐ Lifetime Sekali Beli (Standar Retail & FnB)</option>
-                    <option value="PR">🚀 Pro Lifetime (Multi-Kasir Staf & Multi-Device)</option>
+                    class="w-full px-3 py-2.5 rounded-xl bg-white border border-stone-300 text-xs sm:text-sm font-bold text-stone-900 outline-none focus:border-stone-900 focus:ring-2 focus:ring-stone-900/10 transition shadow-2xs cursor-pointer">
+                    <option value="LT">Lifetime Standar</option>
+                    <option value="PR">Pro Lifetime (Multi-Kasir)</option>
                   </select>
-                  <p class="text-[10.5px] text-stone-500 mt-1">Lifetime Standar mencakup transaksi tak terbatas selamanya.</p>
                 </div>
 
                 <div>
-                  <label class="block text-stone-800 font-extrabold mb-1.5 text-xs">Catatan Referensi / Pembayaran</label>
+                  <label class="block text-stone-800 font-extrabold mb-1 text-xs">Catatan Pembayaran (Opsional)</label>
                   <div class="relative">
                     <span class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-lg pointer-events-none">note_alt</span>
-                    <input type="text" id="saGenNotes" placeholder="Misal: Lunas Transfer BCA Rp 150.000"
+                    <input type="text" id="saGenNotes" placeholder="Contoh: Transfer BCA lunas"
                       class="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-white border border-stone-300 text-xs sm:text-sm font-medium text-stone-900 outline-none focus:border-stone-900 focus:ring-2 focus:ring-stone-900/10 transition shadow-2xs">
                   </div>
-                  <p class="text-[10.5px] text-stone-500 mt-1">Catatan internal pembukuan developer (tidak terlihat oleh kasir).</p>
                 </div>
               </div>
 
             </div>
 
             <!-- Action Bar Submit Button -->
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-stone-100">
-              <div class="text-[11px] text-stone-500 flex items-center gap-1.5">
-                <span class="material-symbols-rounded text-sm text-stone-400">info</span>
-                <span>Lisensi langsung aktif dan tersimpan di database cloud begitu diterbitkan.</span>
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2.5 border-t border-stone-100">
+              <div class="text-xs text-stone-500 flex items-center gap-1.5">
+                <span class="material-symbols-rounded text-base text-stone-400">cloud_done</span>
+                <span>Lisensi langsung aktif di cloud setelah diterbitkan.</span>
               </div>
 
               <button type="submit" id="saBtnGenerateLicense"
-                class="w-full sm:w-auto px-6 py-3 rounded-xl bg-stone-900 hover:bg-black active:scale-98 text-white font-black text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 cursor-pointer">
-                <span class="material-symbols-rounded text-lg text-amber-400">vpn_key</span>
-                <span>Terbitkan Lisensi Resmi Sekarang</span>
+                class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-black active:scale-95 text-white font-extrabold text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-2 cursor-pointer">
+                <span class="material-symbols-rounded text-base">vpn_key</span>
+                <span>Terbitkan Lisensi</span>
               </button>
             </div>
           </form>
 
-          <!-- Kotak Hasil Generate Baru (Tampil saat lisensi berhasil dibuat) -->
-          <div id="saGeneratedResultBox" class="hidden m-5 sm:m-6 mt-0 p-5 rounded-2xl bg-gradient-to-br from-stone-900 via-stone-900 to-stone-950 text-white border border-stone-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in zoom-in-95">
-            <div class="flex items-center gap-3.5 min-w-0">
-              <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0">
-                <span class="material-symbols-rounded text-2xl">verified</span>
+          <!-- Kotak Hasil Generate Baru -->
+          <div id="saGeneratedResultBox" class="hidden m-4 sm:m-5 mt-0 p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-stone-900 flex flex-col md:flex-row items-start md:items-center justify-between gap-3.5 animate-in zoom-in-95">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                <span class="material-symbols-rounded text-xl">check_circle</span>
               </div>
               <div class="min-w-0">
-                <div class="flex items-center gap-2">
-                  <span class="text-[10px] uppercase font-black tracking-wider text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded-md border border-emerald-800">Lisensi Terbit & Aktif</span>
-                  <span class="text-[11px] text-stone-400">Siap Dikirim</span>
-                </div>
-                <p id="saGeneratedKeyDisplay" class="font-mono font-black text-lg sm:text-xl text-white tracking-widest select-all my-0.5">ARIS-XXXX-XXXX-XXXX-XXXX</p>
-                <p id="saGeneratedClientDisplay" class="text-xs text-stone-300 truncate">Klien: Kedai Kopi Melati (08123...) • Paket: Lifetime Standar</p>
+                <span class="text-[10px] uppercase font-black tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-200">Lisensi Aktif</span>
+                <p id="saGeneratedKeyDisplay" class="font-mono font-black text-base sm:text-lg text-stone-900 tracking-wider select-all my-0.5">ARIS-XXXX-XXXX-XXXX-XXXX</p>
+                <p id="saGeneratedClientDisplay" class="text-xs text-stone-600 truncate">Klien: Kedai Kopi Melati (08123...) • Paket: Lifetime Standar</p>
               </div>
             </div>
 
-            <div class="flex items-center gap-2.5 w-full md:w-auto justify-end shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-stone-800">
+            <div class="flex items-center gap-2 w-full md:w-auto justify-end shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-emerald-200/60">
               <button type="button" onclick="window.KasirApp.copyGeneratedLicenseCode()"
-                class="flex-1 md:flex-initial px-4 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 active:scale-95 text-stone-100 border border-stone-700 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
-                <span class="material-symbols-rounded text-base">content_copy</span>
+                class="flex-1 md:flex-initial px-3.5 py-2 rounded-xl bg-white hover:bg-stone-50 active:scale-95 text-stone-800 border border-stone-200 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs">
+                <span class="material-symbols-rounded text-base text-stone-600">content_copy</span>
                 <span>Salin Kode</span>
               </button>
               <button type="button" onclick="window.KasirApp.shareGeneratedLicenseViaWA()"
-                class="flex-1 md:flex-initial px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-extrabold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md">
+                class="flex-1 md:flex-initial px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-extrabold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
                 <span class="material-symbols-rounded text-base">chat</span>
-                <span>Kirim via WhatsApp</span>
+                <span>Kirim WhatsApp</span>
               </button>
             </div>
           </div>
@@ -4377,39 +4357,39 @@ Kopi susu 7k"
     <div
       class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-stone-200 p-5 flex flex-col gap-3.5 text-center animate-in zoom-in-95 my-auto font-sans">
       
-      <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center mx-auto border border-rose-200/80 shadow-xs animate-bounce">
+      <div class="w-12 h-12 rounded-2xl bg-stone-100 text-stone-700 flex items-center justify-center mx-auto border border-stone-200 shadow-2xs">
         <span class="material-symbols-rounded text-2xl">lock_clock</span>
       </div>
 
       <div>
         <h3 class="text-base sm:text-lg font-black text-stone-900 leading-tight">Batas Kuota Demo Tercapai</h3>
-        <p class="text-xs text-stone-500 mt-1">Anda telah mencapai batas <strong class="text-stone-800">25 transaksi</strong> akun demo. Untuk melanjutkan kasir tanpa batas & cetak struk resmi, silakan aktivasi lisensi.</p>
+        <p class="text-xs text-stone-600 mt-1 leading-relaxed">Anda telah mencapai batas <strong class="text-stone-900">25 transaksi</strong> mode demo. Untuk melanjutkan transaksi tanpa batas dan mencetak struk resmi, silakan aktifkan lisensi resmi.</p>
       </div>
 
-      <div class="p-3 rounded-2xl bg-amber-50 border border-amber-200/80 text-left text-xs text-amber-950 flex flex-col gap-1">
-        <p class="font-bold flex items-center gap-1.5">
-          <span class="material-symbols-rounded text-sm text-amber-700">verified</span>
-          <span>Keunggulan Lisensi Sekali Beli:</span>
+      <div class="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 text-left text-xs text-stone-800 flex flex-col gap-1.5">
+        <p class="font-bold text-stone-900 flex items-center gap-1.5">
+          <span class="material-symbols-rounded text-base text-emerald-700">verified</span>
+          <span>Keuntungan Lisensi Sekali Beli:</span>
         </p>
-        <ul class="text-[11px] text-amber-900 list-disc list-inside space-y-0.5 pt-0.5">
-          <li>Transaksi penjualan tak terbatas seumur hidup</li>
-          <li>Menu produk & kategori bebas tanpa batas</li>
-          <li>Struk thermal bersih tanpa watermark demo</li>
-          <li>Sinkronisasi multi-perangkat (HP Staf)</li>
+        <ul class="text-[11.5px] text-stone-600 list-disc list-inside space-y-1 font-medium">
+          <li>Transaksi kasir tak terbatas selamanya</li>
+          <li>Katalog produk & kategori tanpa batas</li>
+          <li>Struk belanja bersih tanpa watermark demo</li>
+          <li>Dukungan multi-perangkat (HP kasir staf)</li>
         </ul>
       </div>
 
       <div class="flex flex-col gap-2 pt-1">
         <button type="button" onclick="window.KasirApp.closeQuotaLimitModal(); window.KasirApp.openActivateLicenseModal();"
-          class="w-full py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs sm:text-sm shadow-sm transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+          class="w-full py-2.5 rounded-xl bg-stone-900 hover:bg-black text-white font-extrabold text-xs sm:text-sm shadow-sm transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
           <span class="material-symbols-rounded text-base">vpn_key</span>
-          <span>Masukkan Kode Lisensi</span>
+          <span>Aktivasi Kode Lisensi</span>
         </button>
 
         <a href="https://wa.me/6281345028895?text=Halo%20Admin%20Aristotle%20POS,%20kuota%20demo%20toko%20saya%20sudah%20habis%20(25/25).%20Saya%20ingin%20membeli%20lisensi%20resmi." target="_blank"
-          class="w-full py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold text-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1">
-          <span class="material-symbols-rounded text-sm">chat</span>
-          <span>Beli Lisensi via WhatsApp</span>
+          class="w-full py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs sm:text-sm transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+          <span class="material-symbols-rounded text-base">chat</span>
+          <span>Hubungi via WhatsApp</span>
         </a>
 
         <button type="button" onclick="window.KasirApp.closeQuotaLimitModal()"
@@ -4812,7 +4792,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.62</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.63</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -4972,7 +4952,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.62</span>
+    <span id="appVersionBadge" class="hidden">v1.2.63</span>
   </div>
 
   <!-- Main JavaScript App Module -->

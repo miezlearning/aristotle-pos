@@ -95,13 +95,81 @@ html.fonts-loading .material-symbols-rounded {
   min-height: 44px;
 }
 
-/* Custom Scrollbar Utilities */
-.custom-scroll::-webkit-scrollbar {
-  display: none;
+/* ==================== MODERN CUSTOM SCROLLBAR SYSTEM ==================== */
+/* Global default for all scrollable elements & document */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168, 162, 158, 0.45) transparent;
 }
-.custom-scroll {
+
+/* WebKit & Blink custom scrollbar (Chrome, Edge, Safari, Opera, Android WebView) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(168, 162, 158, 0.4);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(120, 113, 108, 0.7);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: rgba(87, 83, 78, 0.9);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Specific Custom Scroll & Custom Scrollbar utility classes */
+.custom-scroll,
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168, 162, 158, 0.45) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+.custom-scroll::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+  display: block;
+}
+
+.custom-scroll::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(168, 162, 158, 0.45);
+  border-radius: 9999px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb:hover,
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(120, 113, 108, 0.75);
+}
+
+/* Dedicated utility when hiding scrollbars is strictly intended (e.g., touch chip swipers) */
+.no-scrollbar,
+.hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar,
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* Queue Tab Styles */

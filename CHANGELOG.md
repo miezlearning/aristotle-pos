@@ -2,7 +2,15 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
-Format dokumen ini mengacu pada panduan [Keep a Changelog](https://keepachangelog.com/id/1.0.0/) dan mematuhi aturan [Semantic Versioning](https://semver.org/).
+## [v1.2.63] - 2026-09-12
+
+### 🎨 Desain Bersih Super Admin & Sistem Custom Scrollbar Modern
+- **Penyederhanaan UI/UX Super Admin & Lisensi:** Menghapus banner gradien promosi, badge marketing yang tidak perlu ("Lifetime" emas, "Tanpa Biaya Bulanan", "Anti-Duplikasi Cloud"), emoji, serta teks bantuan bertele-tele. Mengubah kartu generator lisensi dan kotak hasil terbit menjadi desain bersih, tenang, solid, dan profesional.
+- **Sistem Custom Scrollbar Modern Global:** Mengimplementasikan custom scrollbar ramping 6px (WebKit) dan `thin` (Firefox) dengan track transparan dan thumb kapsul berwarna netral stone di seluruh halaman aplikasi, menggantikan scrollbar bawaan sistem operasi yang kaku dan tebal.
+- **Penyempurnaan Modal Batas Kuota Demo:** Menghapus animasi memantul (`animate-bounce`) pada ikon gembok serta menyederhanakan poin keterangan kuota agar lugas dan ramah.
+- **Sinkronisasi Android Assets:** Sinkronisasi penuh seluruh pembaruan ke direktori aset Android.
+
+---
 
 ## [v1.2.48] - 2026-09-11
 

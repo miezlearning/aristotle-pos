@@ -988,8 +988,8 @@ export async function handleGenerateLicenseSubmit(e) {
     if (submitBtn) {
       submitBtn.disabled = false;
       submitBtn.innerHTML = `
-        <span class="material-symbols-rounded text-lg text-amber-400">vpn_key</span>
-        <span>Terbitkan Lisensi Resmi Sekarang</span>
+        <span class="material-symbols-rounded text-base">vpn_key</span>
+        <span>Terbitkan Lisensi</span>
       `;
     }
   }
@@ -1026,9 +1026,9 @@ export function shareSpecificLicenseViaWA(key, name = 'Mitra', phone = '', tier 
     cleanPhone = '62' + cleanPhone.substring(1);
   }
 
-  const tierText = tier === 'PRO_LIFETIME' ? 'Pro Lifetime (Multi-Kasir)' : 'Lifetime Sekali Beli (Standar Retail)';
+  const tierText = tier === 'PRO_LIFETIME' ? 'Pro Lifetime (Multi-Kasir)' : 'Lifetime Standar';
 
-  const text = `Halo Kak ${name},\n\nTerima kasih telah mempercayakan sistem kasir toko Anda kepada *Aristotle POS*! 🎉\n\nBerikut adalah *Kode Lisensi Resmi* seumur hidup untuk usaha Anda:\n\n🔑 *${key}*\nPaket: ${tierText}\nStatus: Aktif Selamanya (Tanpa Biaya Langganan Bulanan)\n\n*Langkah Aktivasi di Aplikasi:*\n1. Buka aplikasi Aristotle POS\n2. Klik menu *Daftar Toko Baru* (atau dari Profil Toko -> *Aktivasi Lisensi*)\n3. Masukkan kode lisensi resmi di atas\n4. Selesai! Kasir Anda langsung aktif penuh tanpa batas transaksi.\n\nSelamat berniaga dan semoga usaha Anda semakin maju, sukses & berkah selalu! 🙏✨`;
+  const text = `Halo ${name},\n\nBerikut adalah Kode Lisensi Resmi Aristotle POS untuk usaha Anda:\n\n*${key}*\nPaket: ${tierText}\nStatus: Aktif Selamanya\n\n*Langkah Aktivasi di Aplikasi:*\n1. Buka aplikasi Aristotle POS\n2. Buka menu Profil Toko -> Aktivasi Lisensi (atau saat pendaftaran toko baru)\n3. Masukkan kode lisensi di atas\n4. Selesai! Kasir Anda langsung aktif tanpa batas transaksi.\n\nTerima kasih dan semoga usaha Anda semakin lancar dan berkah.`;
 
   const encoded = encodeURIComponent(text);
   const waUrl = cleanPhone 
@@ -1119,8 +1119,8 @@ export async function renderSuperAdminLicensesTable() {
       return `
         <tr class="hover:bg-stone-50/90 transition-colors border-b border-stone-100 last:border-0">
           <td class="py-3.5 px-4 font-mono font-black text-xs text-stone-900 select-all tracking-wider">
-            <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-stone-100 text-stone-900 border border-stone-200">
-              <span class="material-symbols-rounded text-xs text-amber-500">vpn_key</span>
+            <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-stone-100 text-stone-900 border border-stone-200/90 font-mono font-bold text-xs">
+              <span class="material-symbols-rounded text-xs text-stone-500">vpn_key</span>
               <span>${safeKey}</span>
             </div>
           </td>
@@ -1133,8 +1133,8 @@ export async function renderSuperAdminLicensesTable() {
           </td>
           <td class="py-3.5 px-3 text-xs font-bold">
             ${lic.tier === 'PRO_LIFETIME' 
-              ? '<span class="px-2 py-0.5 rounded-md bg-stone-900 text-amber-300 text-[10.5px] font-black tracking-wide">PRO LIFETIME</span>' 
-              : '<span class="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 text-[10.5px] font-black tracking-wide border border-stone-200">STANDAR</span>'}
+              ? '<span class="px-2 py-0.5 rounded-md bg-stone-900 text-stone-100 text-[10px] font-black tracking-wide">PRO LIFETIME</span>' 
+              : '<span class="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 text-[10px] font-bold tracking-wide border border-stone-200">STANDAR</span>'}
           </td>
           <td class="py-3.5 px-3">${statusBadge}</td>
           <td class="py-3.5 px-3 text-xs text-stone-600 font-medium">${dateStr}</td>
