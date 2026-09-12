@@ -23,6 +23,16 @@ import android.net.RouteInfo;
 import android.net.Uri;
 import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
+import android.hardware.usb.UsbManager;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbInterface;
+import android.hardware.usb.UsbEndpoint;
+import android.hardware.usb.UsbDeviceConnection;
+import android.hardware.usb.UsbConstants;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
+import java.util.HashMap;
 import java.net.InetSocketAddress;
 import android.os.Build;
 import android.os.Bundle;
@@ -105,6 +115,16 @@ public class MainActivity extends AppCompatActivity {
     private String connectedDeviceAddress = null;
     private final Object socketLock = new Object();
     private final ExecutorService printExecutor = Executors.newSingleThreadExecutor();
+
+    // USB Host & OTG Thermal Printer Support
+    private static final String ACTION_USB_PERMISSION = "com.aristotle.pos.USB_PERMISSION";
+    private UsbManager usbManager;
+    private UsbDevice activeUsbDevice = null;
+    private UsbDeviceConnection activeUsbConnection = null;
+    private UsbInterface activeUsbInterface = null;
+    private UsbEndpoint activeUsbEndpointOut = null;
+    private final Object usbLock = new Object();
+    private BroadcastReceiver usbReceiver = null;
 
     // Callback untuk pemilih file/gambar (HTML <input type="file">)
     private ValueCallback<Uri[]> filePathCallback;
@@ -380,6 +400,11 @@ public class MainActivity extends AppCompatActivity {
 
         // Jalankan Local Offline LAN Print Server (Zero Internet Printer Relay)
         startLocalHttpServer();
+
+        // Inisialisasi USB Host Manager untuk printer thermal kabel OTG / USB Hub
+        usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
+        setupUsbReceiver();
+        connectUsbPrinter(false);
 
         // Warmup printer standby di latar belakang agar HP Staf langsung bisa cetak tanpa cold delay
         warmupPrinterConnectionAsync();
@@ -695,7 +720,54 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @JavascriptInterface
+        public boolean isBluetoothEnabled() {
+            return bluetoothAdapter != null && bluetoothAdapter.isEnabled();
+        }
+
+        @JavascriptInterface
+        public boolean hasUsbPrinter() {
+            return findUsbThermalPrinter() != null;
+        }
+
+        @JavascriptInterface
+        public boolean isUsbPrinterConnected() {
+            synchronized (usbLock) {
+                return activeUsbConnection != null && activeUsbEndpointOut != null;
+            }
+        }
+
+        @JavascriptInterface
+        public String getConnectedUsbPrinterName() {
+            synchronized (usbLock) {
+                if (activeUsbDevice != null) {
+                    return getUsbDeviceDisplayName(activeUsbDevice);
+                }
+                UsbDevice found = findUsbThermalPrinter();
+                if (found != null) {
+                    return getUsbDeviceDisplayName(found);
+                }
+            }
+            return "";
+        }
+
+        @JavascriptInterface
+        public boolean connectUsbPrinter() {
+            return MainActivity.this.connectUsbPrinter(true);
+        }
+
+        @JavascriptInterface
+        public boolean printUsb(String base64Data) {
+            if (base64Data == null || base64Data.isEmpty()) return false;
+            byte[] bytes = Base64.decode(base64Data, Base64.DEFAULT);
+            return sendRawBytesToUsb(bytes);
+        }
+
+        @JavascriptInterface
         public boolean isPrinterReady() {
+            synchronized (usbLock) {
+                if (activeUsbConnection != null && activeUsbEndpointOut != null) return true;
+            }
+            if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) return false;
             synchronized (socketLock) {
                 return activeSocket != null && activeSocket.isConnected() && activeOutputStream != null;
             }
@@ -703,6 +775,18 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public String getConnectedPrinterInfo() {
+            synchronized (usbLock) {
+                if (activeUsbConnection != null && activeUsbEndpointOut != null) {
+                    return "USB: " + getUsbDeviceDisplayName(activeUsbDevice);
+                }
+                UsbDevice d = findUsbThermalPrinter();
+                if (d != null) {
+                    if (usbManager != null && usbManager.hasPermission(d)) {
+                        return "USB: " + getUsbDeviceDisplayName(d);
+                    }
+                    return "USB (Perlu Izin Akses)";
+                }
+            }
             synchronized (socketLock) {
                 if (activeSocket != null && activeSocket.isConnected()) {
                     try {
@@ -1035,13 +1119,261 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void setupUsbReceiver() {
+        usbReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (ACTION_USB_PERMISSION.equals(action)) {
+                    synchronized (usbLock) {
+                        UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                        if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                            if (device != null) {
+                                Log.d(TAG, "Izin USB diberikan untuk: " + device.getDeviceName());
+                                connectUsbDeviceInternal(device);
+                                runOnUiThread(() -> {
+                                    if (webView != null) {
+                                        webView.evaluateJavascript("window.KasirApp && window.KasirApp.updatePrinterUIStatus && window.KasirApp.updatePrinterUIStatus();", null);
+                                    }
+                                });
+                            }
+                        } else {
+                            Log.w(TAG, "Izin USB ditolak oleh pengguna");
+                        }
+                    }
+                } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
+                    UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                    Log.d(TAG, "USB Device Attached: " + (device != null ? device.getDeviceName() : "null"));
+                    connectUsbPrinter(false);
+                    runOnUiThread(() -> {
+                        if (webView != null) {
+                            webView.evaluateJavascript("window.KasirApp && window.KasirApp.updatePrinterUIStatus && window.KasirApp.updatePrinterUIStatus();", null);
+                        }
+                    });
+                } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
+                    UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                    Log.d(TAG, "USB Device Detached: " + (device != null ? device.getDeviceName() : "null"));
+                    synchronized (usbLock) {
+                        if (activeUsbDevice != null && device != null &&
+                            activeUsbDevice.getDeviceId() == device.getDeviceId()) {
+                            closeActiveUsbConnection();
+                        }
+                    }
+                    runOnUiThread(() -> {
+                        if (webView != null) {
+                            webView.evaluateJavascript("window.KasirApp && window.KasirApp.updatePrinterUIStatus && window.KasirApp.updatePrinterUIStatus();", null);
+                        }
+                    });
+                }
+            }
+        };
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(ACTION_USB_PERMISSION);
+        filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(usbReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(usbReceiver, filter);
+        }
+    }
+
+    private UsbDevice findUsbThermalPrinter() {
+        if (usbManager == null) return null;
+        HashMap<String, UsbDevice> deviceList = usbManager.getDeviceList();
+        if (deviceList == null || deviceList.isEmpty()) return null;
+
+        for (UsbDevice device : deviceList.values()) {
+            for (int i = 0; i < device.getInterfaceCount(); i++) {
+                UsbInterface intf = device.getInterface(i);
+                if (intf.getInterfaceClass() == UsbConstants.USB_CLASS_PRINTER) {
+                    return device;
+                }
+            }
+        }
+
+        for (UsbDevice device : deviceList.values()) {
+            for (int i = 0; i < device.getInterfaceCount(); i++) {
+                UsbInterface intf = device.getInterface(i);
+                for (int j = 0; j < intf.getEndpointCount(); j++) {
+                    UsbEndpoint ep = intf.getEndpoint(j);
+                    if (ep.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK &&
+                        ep.getDirection() == UsbConstants.USB_DIR_OUT) {
+                        return device;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private boolean connectUsbPrinter(boolean requestPermissionIfNeed) {
+        synchronized (usbLock) {
+            if (activeUsbConnection != null && activeUsbEndpointOut != null && activeUsbDevice != null) {
+                return true;
+            }
+
+            UsbDevice target = findUsbThermalPrinter();
+            if (target == null) {
+                return false;
+            }
+
+            if (!usbManager.hasPermission(target)) {
+                if (requestPermissionIfNeed) {
+                    int flags = 0;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        flags |= PendingIntent.FLAG_IMMUTABLE;
+                    }
+                    PendingIntent pi = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), flags);
+                    usbManager.requestPermission(target, pi);
+                }
+                return false;
+            }
+
+            return connectUsbDeviceInternal(target);
+        }
+    }
+
+    private boolean connectUsbDeviceInternal(UsbDevice device) {
+        synchronized (usbLock) {
+            closeActiveUsbConnection();
+            if (device == null || usbManager == null) return false;
+
+            UsbInterface targetIntf = null;
+            UsbEndpoint targetEpOut = null;
+
+            for (int i = 0; i < device.getInterfaceCount(); i++) {
+                UsbInterface intf = device.getInterface(i);
+                for (int j = 0; j < intf.getEndpointCount(); j++) {
+                    UsbEndpoint ep = intf.getEndpoint(j);
+                    if (ep.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK &&
+                        ep.getDirection() == UsbConstants.USB_DIR_OUT) {
+                        targetIntf = intf;
+                        targetEpOut = ep;
+                        break;
+                    }
+                }
+                if (targetIntf != null) break;
+            }
+
+            if (targetIntf == null || targetEpOut == null) {
+                Log.w(TAG, "Tidak ditemukan USB Bulk OUT endpoint pada printer: " + device.getDeviceName());
+                return false;
+            }
+
+            UsbDeviceConnection conn = usbManager.openDevice(device);
+            if (conn == null) {
+                Log.w(TAG, "Gagal openDevice untuk USB printer: " + device.getDeviceName());
+                return false;
+            }
+
+            if (!conn.claimInterface(targetIntf, true)) {
+                Log.w(TAG, "Gagal claimInterface untuk USB printer: " + device.getDeviceName());
+                conn.close();
+                return false;
+            }
+
+            activeUsbDevice = device;
+            activeUsbInterface = targetIntf;
+            activeUsbEndpointOut = targetEpOut;
+            activeUsbConnection = conn;
+            Log.i(TAG, "BERHASIL terhubung ke Printer USB (OTG/Hub): " + getUsbDeviceDisplayName(device));
+            return true;
+        }
+    }
+
+    private void closeActiveUsbConnection() {
+        synchronized (usbLock) {
+            if (activeUsbConnection != null) {
+                try {
+                    if (activeUsbInterface != null) {
+                        activeUsbConnection.releaseInterface(activeUsbInterface);
+                    }
+                    activeUsbConnection.close();
+                } catch (Exception ignored) {}
+                activeUsbConnection = null;
+            }
+            activeUsbInterface = null;
+            activeUsbEndpointOut = null;
+            activeUsbDevice = null;
+        }
+    }
+
+    private String getUsbDeviceDisplayName(UsbDevice dev) {
+        if (dev == null) return "USB Thermal Printer";
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                String p = dev.getProductName();
+                if (p != null && !p.trim().isEmpty()) return p.trim();
+            }
+        } catch (Exception ignored) {}
+        return "USB Thermal (" + dev.getVendorId() + ":" + dev.getProductId() + ")";
+    }
+
+    private boolean sendRawBytesToUsb(byte[] data) {
+        if (data == null || data.length == 0) return false;
+        synchronized (usbLock) {
+            if (activeUsbConnection == null || activeUsbEndpointOut == null) {
+                if (!connectUsbPrinter(true)) {
+                    return false;
+                }
+            }
+            if (activeUsbConnection == null || activeUsbEndpointOut == null) {
+                return false;
+            }
+
+            int offset = 0;
+            int maxPacket = activeUsbEndpointOut.getMaxPacketSize();
+            if (maxPacket <= 0) maxPacket = 64;
+            int chunkSize = Math.max(maxPacket, 512);
+
+            while (offset < data.length) {
+                int len = Math.min(chunkSize, data.length - offset);
+                byte[] chunk = new byte[len];
+                System.arraycopy(data, offset, chunk, 0, len);
+                int res = activeUsbConnection.bulkTransfer(activeUsbEndpointOut, chunk, len, 5000);
+                if (res < 0) {
+                    Log.e(TAG, "Gagal bulkTransfer ke USB printer, return: " + res);
+                    closeActiveUsbConnection();
+                    return false;
+                }
+                offset += len;
+            }
+            return true;
+        }
+    }
+
     private boolean sendRawBytesToPrinter(byte[] data) {
+        // Prioritas 1: Jika printer USB (Hub / OTG) aktif atau terpasang
+        synchronized (usbLock) {
+            if (activeUsbConnection != null && activeUsbEndpointOut != null) {
+                boolean ok = sendRawBytesToUsb(data);
+                if (ok) {
+                    lastPrintErrorMessage = "";
+                    Log.d(TAG, "Cetak via USB OTG / Hub BERHASIL!");
+                    return true;
+                }
+            } else if (findUsbThermalPrinter() != null) {
+                if (connectUsbPrinter(true)) {
+                    boolean ok = sendRawBytesToUsb(data);
+                    if (ok) {
+                        lastPrintErrorMessage = "";
+                        Log.d(TAG, "Cetak via USB OTG / Hub BERHASIL (Auto-connected)!");
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // Prioritas 2: Bluetooth Thermal Printer
         if (bluetoothAdapter == null) {
-            lastPrintErrorMessage = "HP tidak memiliki adapter Bluetooth.";
+            lastPrintErrorMessage = "HP tidak memiliki adapter Bluetooth dan tidak ada printer USB yang terhubung.";
             return false;
         }
         if (!bluetoothAdapter.isEnabled()) {
-            lastPrintErrorMessage = "Bluetooth HP sedang mati. Mohon nyalakan Bluetooth di HP Anda.";
+            lastPrintErrorMessage = "Bluetooth HP sedang mati dan printer USB belum terhubung/diizinkan.";
             return false;
         }
 
@@ -1805,6 +2137,11 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         stopLocalHttpServer();
         closeActiveSocket();
+        if (usbReceiver != null) {
+            try { unregisterReceiver(usbReceiver); } catch (Exception ignored) {}
+            usbReceiver = null;
+        }
+        closeActiveUsbConnection();
         printExecutor.shutdown();
     }
 }

@@ -3232,14 +3232,16 @@ Kopi susu 7k"
 
               <div class="grid grid-cols-2 gap-1.5 pt-2 border-t border-amber-200/60">
                 <button type="button" onclick="KasirApp.connectBluetoothPrinter()"
-                  class="h-10 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                  title="Sambungkan printer thermal kasir lewat Bluetooth (Rekomendasi untuk HP & Tablet Android)"
+                  class="h-10 px-2.5 sm:px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 font-bold text-xs flex items-center justify-center gap-1.5 transition">
                   <span class="material-symbols-rounded text-base text-blue-700">bluetooth</span>
-                  <span>Sambung Bluetooth</span>
+                  <span>Bluetooth (HP)</span>
                 </button>
                 <button type="button" onclick="KasirApp.connectSerialPrinter()"
-                  class="h-10 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                  title="Sambungkan printer lewat kabel USB (Khusus Komputer / Laptop di Chrome & Edge)"
+                  class="h-10 px-2.5 sm:px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 font-bold text-xs flex items-center justify-center gap-1.5 transition">
                   <span class="material-symbols-rounded text-base">usb</span>
-                  <span>Sambung USB</span>
+                  <span>Kabel USB (PC)</span>
                 </button>
               </div>
             </div>
@@ -3250,10 +3252,10 @@ Kopi susu 7k"
                 <label class="block text-stone-800 font-black mb-1.5 text-xs">Metode Cetak:</label>
                 <select id="printerMethodSelect"
                   class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-stone-300 focus:border-emerald-600 font-bold text-stone-900 text-xs sm:text-sm outline-none transition shadow-sm">
-                  <option value="browser">Sistem / Browser (Bawaan)</option>
-                  <option value="rawbt">Printer Bluetooth (Android)</option>
-                  <option value="serial">Kabel USB (Laptop / PC)</option>
-                  <option value="bluetooth">Web Bluetooth (BLE)</option>
+                  <option value="browser">Sistem / Browser Dialog (Bawaan)</option>
+                  <option value="rawbt">Printer Bluetooth Kasir (HP Android / APK)</option>
+                  <option value="serial">Kabel USB Direct (Khusus Laptop / PC Chrome/Edge)</option>
+                  <option value="bluetooth">Web Bluetooth BLE (Desktop / Web)</option>
                 </select>
               </div>
 
@@ -3785,6 +3787,60 @@ Kopi susu 7k"
             class="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-md transition active:scale-95 flex items-center justify-center gap-1.5">
             <span class="material-symbols-rounded text-sm">refresh</span>
             <span>Coba Scan Lagi</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: PANDUAN & DIAGNOSTIK KONEKSI USB PRINTER ==================== -->
+  <div id="usbTroubleshootModal"
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
+    <div
+      class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col animate-in zoom-in-95">
+      
+      <!-- Clean Header -->
+      <div class="p-5 pb-3 flex items-start justify-between border-b border-stone-100">
+        <div class="flex items-center gap-3">
+          <div id="usbTroubleIconBox" class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shrink-0">
+            <span id="usbTroubleIcon" class="material-symbols-rounded text-2xl">usb</span>
+          </div>
+          <div>
+            <h3 id="usbTroubleTitle" class="text-base sm:text-lg font-black text-stone-900 leading-tight">Panduan Sambung USB</h3>
+            <p id="usbTroubleSubtitle" class="text-xs text-stone-500 font-medium mt-0.5">Informasi koneksi kabel printer</p>
+          </div>
+        </div>
+        <button onclick="KasirApp.closeUsbTroubleshootModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition">
+          <span class="material-symbols-rounded text-2xl">close</span>
+        </button>
+      </div>
+
+      <!-- Content Body -->
+      <div class="p-5 flex flex-col gap-4">
+        <p id="usbTroubleMsg" class="text-xs text-stone-600 font-medium leading-relaxed">
+          Koneksi kabel printer via USB:
+        </p>
+
+        <!-- Steps List -->
+        <ul id="usbTroubleList" class="flex flex-col gap-2.5 bg-stone-50 p-3.5 rounded-2xl border border-stone-200">
+        </ul>
+
+        <!-- Status Box (Misal info status bluetooth sudah aktif) -->
+        <div id="usbTroubleStatusBox" class="hidden p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 font-medium flex items-center gap-2.5">
+          <span class="material-symbols-rounded text-emerald-600 text-xl shrink-0">check_circle</span>
+          <span id="usbTroubleStatusText" class="leading-tight">Printer Bluetooth Anda saat ini sudah aktif & terhubung!</span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div id="usbTroubleActions" class="flex items-center gap-2 pt-2">
+          <button type="button" onclick="KasirApp.closeUsbTroubleshootModal()"
+            class="flex-1 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 text-xs transition">
+            Tutup
+          </button>
+          <button type="button" id="usbTroublePrimaryBtn" onclick="KasirApp.closeUsbTroubleshootModal()"
+            class="flex-1 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs shadow-md transition active:scale-95 flex items-center justify-center gap-1.5">
+            <span id="usbTroublePrimaryBtnIcon" class="material-symbols-rounded text-sm">receipt</span>
+            <span id="usbTroublePrimaryBtnText">Tes Struk Sekarang</span>
           </button>
         </div>
       </div>
@@ -4792,7 +4848,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.63</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.64</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -4952,7 +5008,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.63</span>
+    <span id="appVersionBadge" class="hidden">v1.2.64</span>
   </div>
 
   <!-- Main JavaScript App Module -->

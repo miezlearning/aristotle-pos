@@ -2890,6 +2890,8 @@ const KasirApp = {
   closePrinterConfigModal: printer.closePrinterConfigModal,
   openBluetoothTroubleshootModal: printer.openBluetoothTroubleshootModal,
   closeBluetoothTroubleshootModal: printer.closeBluetoothTroubleshootModal,
+  openUsbTroubleshootModal: printer.openUsbTroubleshootModal,
+  closeUsbTroubleshootModal: printer.closeUsbTroubleshootModal,
   savePrinterSettings: printer.savePrinterSettings,
   updateLiveReceiptPreview: printer.updateLiveReceiptPreview,
   handleLogoUpload: printer.handleLogoUpload,

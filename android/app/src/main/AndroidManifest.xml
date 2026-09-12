@@ -6,8 +6,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- Kamera untuk Scan QRIS & Barcode Scanner -->
-    <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- USB Host untuk Printer Thermal Kabel / USB Hub OTG -->
+    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
 
     <!-- Membaca Galeri Foto & Upload Gambar Struk -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />

@@ -1,10 +1,11 @@
 {
-  "versionCode": 112,
-  "versionName": "1.2.63",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.63/Aristotle-POS.apk",
+  "versionCode": 113,
+  "versionName": "1.2.64",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.64/Aristotle-POS.apk",
   "changelog": [
-    "Penyederhanaan UI/UX Super Admin & Lisensi yang bersih, tenang, dan profesional",
-    "Implementasi sistem Custom Scrollbar modern yang ramping di seluruh aplikasi"
+    "Dukungan cetak printer thermal via USB Hub / OTG di Android APK",
+    "Indikator status perangkat keras printer thermal real-time (Bluetooth & USB)",
+    "Panduan & penanganan konflik penguncian port USB Serial di PC desktop"
   ],
   "releaseDate": "2026-09-12"
 }

@@ -2,8 +2,8 @@ plugins {
     id 'com.android.application'
 }
 
-def appVersionCode = project.hasProperty('customVersionCode') ? project.property('customVersionCode').toInteger() : 112
-def appVersionName = project.hasProperty('customVersionName') ? project.property('customVersionName') : "1.2.63"
+def appVersionCode = project.hasProperty('customVersionCode') ? project.property('customVersionCode').toInteger() : 113
+def appVersionName = project.hasProperty('customVersionName') ? project.property('customVersionName') : "1.2.64"
 
 android {
     namespace 'com.aristotle.pos'

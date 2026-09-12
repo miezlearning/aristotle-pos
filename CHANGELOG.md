@@ -2,6 +2,16 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.64] - 2026-09-12
+
+### 🖨️ Dukungan Cetak USB Hub / OTG di Android & Indikator Status Real-Time
+- **Cetak Printer Thermal USB Hub di Android APK:** Menambahkan implementasi Android Native USB Host (`UsbManager`) dan komunikasi `bulkTransfer` untuk printer ESC/POS. Pengguna kini dapat mencetak struk kasir secara langsung dan cepat lewat kabel USB yang terhubung ke USB Hub / adapter OTG di HP/tablet Android tanpa perlu Bluetooth.
+- **Hierarki Jalur Cetak Otomatis:** Sistem Android mendeteksi koneksi printer secara cerdas: mencetak via kabel USB Hub sebagai prioritas utama jika terhubung, dan otomatis beralih ke Bluetooth jika kabel tidak terpasang.
+- **Indikator Status Hardware Nyata:** Memperbaiki indikator status printer agar memverifikasi radio Bluetooth dan izin USB secara real-time. Jika Bluetooth di HP dimatikan, status secara jujur menampilkan label `Bluetooth HP Mati` (oranye/merah) alih-alih menampilkan MAC address cache sebelumnya.
+- **Panduan Pemecahan Masalah Konflik Port USB di PC:** Menambahkan modal troubleshooting interaktif (`#usbTroubleshootModal`) untuk memandu penanganan penguncian port COM/Serial saat ada aplikasi POS lain di PC yang sedang mengunci port printer.
+
+---
+
 ## [v1.2.63] - 2026-09-12
 
 ### 🎨 Desain Bersih Super Admin & Sistem Custom Scrollbar Modern

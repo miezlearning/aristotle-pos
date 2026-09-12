@@ -1262,13 +1262,201 @@ if (typeof navigator !== 'undefined' && navigator.serial) {
   setTimeout(() => { autoReconnectSerial().catch(() => {}); }, 500);
 }
 
+// ==================== USB SERIAL PRINTER TROUBLESHOOT MODAL ====================
+
 /**
- * Koneksi ke Printer via Web Serial (USB Port / Bluetooth Virtual COM di Windows)
+ * Tampilkan modal panduan & diagnostik koneksi USB
+ * @param {'mobile' | 'mobile_no_usb' | 'port_locked' | 'unsupported_browser'} mode
+ */
+export function openUsbTroubleshootModal(mode = 'mobile') {
+  playClick('pop');
+  const modal = document.getElementById('usbTroubleshootModal');
+  if (!modal) return;
+
+  const iconBox = document.getElementById('usbTroubleIconBox');
+  const icon = document.getElementById('usbTroubleIcon');
+  const title = document.getElementById('usbTroubleTitle');
+  const subtitle = document.getElementById('usbTroubleSubtitle');
+  const msg = document.getElementById('usbTroubleMsg');
+  const list = document.getElementById('usbTroubleList');
+  const statusBox = document.getElementById('usbTroubleStatusBox');
+  const statusText = document.getElementById('usbTroubleStatusText');
+  const primaryBtn = document.getElementById('usbTroublePrimaryBtn');
+  const primaryBtnIcon = document.getElementById('usbTroublePrimaryBtnIcon');
+  const primaryBtnText = document.getElementById('usbTroublePrimaryBtnText');
+
+  const hasBluetoothPrinter = !!(state.printerConfig?.bluetoothAddress || (window.AndroidBridge && typeof window.AndroidBridge.getPreferredPrinter === 'function' && window.AndroidBridge.getPreferredPrinter()));
+  const printerName = state.printerConfig?.bluetoothName || state.printerConfig?.bluetoothAddress || 'Printer Kasir';
+
+  if (mode === 'mobile_no_usb' || mode === 'mobile') {
+    if (iconBox) iconBox.className = 'w-11 h-11 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shrink-0';
+    if (icon) icon.textContent = 'usb';
+    if (title) title.textContent = 'Printer USB Belum Terdeteksi';
+    if (subtitle) subtitle.textContent = 'Panduan sambung kabel USB ke HP / USB Hub Android';
+    if (msg) msg.textContent = 'Aristotle POS mendukung cetak via kabel USB Hub / OTG di HP Android. Saat ini printer USB belum terdeteksi oleh sistem HP Anda.';
+    
+    if (list) {
+      list.innerHTML = `
+        <li class="flex items-start gap-2.5 text-xs text-stone-700">
+          <span class="w-5 h-5 rounded-full bg-amber-100 text-amber-900 font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">1</span>
+          <span>Pastikan <strong>kabel USB dari printer</strong> sudah tercolok kencang ke port <strong>USB Hub</strong>.</span>
+        </li>
+        <li class="flex items-start gap-2.5 text-xs text-stone-700">
+          <span class="w-5 h-5 rounded-full bg-amber-100 text-amber-900 font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">2</span>
+          <span>Pastikan <strong>USB Hub menancap di port Type-C HP</strong> dan printer thermal dalam kondisi <strong>MENYALA</strong>.</span>
+        </li>
+        <li class="flex items-start gap-2.5 text-xs text-stone-700">
+          <span class="w-5 h-5 rounded-full bg-amber-100 text-amber-900 font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">3</span>
+          <span>Khusus HP <strong>Oppo, Vivo, Realme</strong>: Buka Pengaturan HP &gt; Pengaturan Tambahan &gt; Aktifkan <strong>"Koneksi OTG"</strong>.</span>
+        </li>
+        <li class="flex items-start gap-2.5 text-xs text-stone-700">
+          <span class="w-5 h-5 rounded-full bg-amber-100 text-amber-900 font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">4</span>
+          <span>Jika muncul jendela pop-up izin USB di layar HP, pilih <strong>"Selalu Izinkan / OK"</strong>.</span>
+        </li>
+      `;
+    }
+
+    if (statusBox && statusText) {
+      if (hasBluetoothPrinter) {
+        statusText.innerHTML = `Opsi Nirkabel: Anda juga bisa menyalakan Bluetooth HP untuk mencetak nirkabel ke (${escapeHtml(printerName)}).`;
+        statusBox.classList.remove('hidden');
+      } else {
+        statusBox.classList.add('hidden');
+      }
+    }
+
+    if (primaryBtn) {
+      primaryBtn.className = 'flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs shadow-md transition active:scale-95 flex items-center justify-center gap-1.5';
+      primaryBtn.onclick = () => {
+        closeUsbTroubleshootModal();
+        connectSerialPrinter();
+      };
+      if (primaryBtnIcon) primaryBtnIcon.textContent = 'refresh';
+      if (primaryBtnText) primaryBtnText.textContent = 'Pindai USB Hub Lagi';
+    }
+  } else if (mode === 'port_locked') {
+    if (iconBox) iconBox.className = 'w-11 h-11 rounded-2xl bg-rose-50 text-rose-700 border border-rose-200 flex items-center justify-center shrink-0';
+    if (icon) icon.textContent = 'lock';
+    if (title) title.textContent = 'Port USB Terkunci (Ada Aplikasi Lain)';
+    if (subtitle) subtitle.textContent = 'Port printer sedang dipakai atau dikunci program lain';
+    if (msg) msg.textContent = 'Di Windows / PC, kabel USB printer hanya dapat diakses oleh 1 aplikasi dalam satu waktu. Jika ada aplikasi POS lain atau software utilitas printer yang sempat dibuka, Windows akan mengunci port tersebut.';
+
+    if (list) {
+      list.innerHTML = `
+        <li class="flex items-start gap-2.5 text-xs text-stone-700">
+          <span class="w-5 h-5 rounded-full bg-rose-100 text-rose-900 font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">1</span>
+          <span><strong>Tutup total aplikasi POS lain</strong> yang tadi sempat Anda buka. Periksa System Tray dekat jam di kanan bawah atau Task Manager.</span>
+        </li>
+        <li class="flex items-start gap-2.5 text-xs text-stone-700">
+          <span class="w-5 h-5 rounded-full bg-rose-100 text-rose-900 font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">2</span>
+          <span><strong>Cabut kabel USB printer</strong> dari laptop/PC, tunggu 3-5 detik, lalu <strong>colokkan kembali</strong> agar Windows me-reset port USB.</span>
+        </li>
+        <li class="flex items-start gap-2.5 text-xs text-stone-700">
+          <span class="w-5 h-5 rounded-full bg-rose-100 text-rose-900 font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">3</span>
+          <span>Matikan sakelar printer thermal Anda lalu nyalakan kembali.</span>
+        </li>
+        <li class="flex items-start gap-2.5 text-xs text-stone-700">
+          <span class="w-5 h-5 rounded-full bg-rose-100 text-rose-900 font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">4</span>
+          <span>Setelah selesai, klik tombol <strong>"Coba Sambungkan Lagi"</strong> di bawah.</span>
+        </li>
+      `;
+    }
+
+    if (statusBox) statusBox.classList.add('hidden');
+
+    if (primaryBtn) {
+      primaryBtn.className = 'flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-md transition active:scale-95 flex items-center justify-center gap-1.5';
+      primaryBtn.onclick = () => {
+        closeUsbTroubleshootModal();
+        setTimeout(() => { connectSerialPrinter(); }, 200);
+      };
+      if (primaryBtnIcon) primaryBtnIcon.textContent = 'refresh';
+      if (primaryBtnText) primaryBtnText.textContent = 'Coba Sambungkan Lagi';
+    }
+  } else {
+    // unsupported_browser
+    if (iconBox) iconBox.className = 'w-11 h-11 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shrink-0';
+    if (icon) icon.textContent = 'browser_updated';
+    if (title) title.textContent = 'Browser Belum Mendukung Web Serial';
+    if (subtitle) subtitle.textContent = 'Gunakan Google Chrome atau Microsoft Edge di PC';
+    if (msg) msg.textContent = 'Fitur komunikasi kabel USB langsung (Web Serial) membutuhkan browser modern berbasis Chromium di perangkat desktop (PC / Laptop).';
+
+    if (list) {
+      list.innerHTML = `
+        <li class="flex items-start gap-2.5 text-xs text-stone-700">
+          <span class="w-5 h-5 rounded-full bg-stone-200 text-stone-900 font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">1</span>
+          <span>Buka aplikasi kasir ini di <strong>Google Chrome</strong> atau <strong>Microsoft Edge</strong> di PC/Laptop Anda.</span>
+        </li>
+        <li class="flex items-start gap-2.5 text-xs text-stone-700">
+          <span class="w-5 h-5 rounded-full bg-stone-200 text-stone-900 font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">2</span>
+          <span>Pastikan printer thermal tersambung kabel USB dan dalam kondisi menyala.</span>
+        </li>
+        <li class="flex items-start gap-2.5 text-xs text-stone-700">
+          <span class="w-5 h-5 rounded-full bg-stone-200 text-stone-900 font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">3</span>
+          <span>Klik tombol <strong>"Kabel USB (PC/Hub)"</strong> lalu pilih nama printer Anda di jendela pop-up browser.</span>
+        </li>
+      `;
+    }
+
+    if (statusBox) statusBox.classList.add('hidden');
+
+    if (primaryBtn) {
+      primaryBtn.className = 'flex-1 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-900 text-white font-black text-xs shadow-md transition active:scale-95 flex items-center justify-center gap-1.5';
+      primaryBtn.onclick = () => { closeUsbTroubleshootModal(); };
+      if (primaryBtnIcon) primaryBtnIcon.textContent = 'check';
+      if (primaryBtnText) primaryBtnText.textContent = 'Saya Mengerti';
+    }
+  }
+
+  modal.classList.remove('hidden');
+}
+
+export function closeUsbTroubleshootModal() {
+  const modal = document.getElementById('usbTroubleshootModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+/**
+ * Koneksi ke Printer via Web Serial (USB Port di PC) atau Native USB Host (di Android APK)
  */
 export async function connectSerialPrinter() {
+  // 1. Jalur Utama Native Android APK (USB OTG / USB Hub)
+  if (window.AndroidBridge) {
+    if (typeof window.AndroidBridge.hasUsbPrinter === 'function' && window.AndroidBridge.hasUsbPrinter()) {
+      showToast('Menyambungkan printer thermal USB Hub...', 'info', 2000);
+      const ok = typeof window.AndroidBridge.connectUsbPrinter === 'function' ? window.AndroidBridge.connectUsbPrinter() : false;
+      if (ok) {
+        showToast('Printer USB Hub berhasil terhubung!', 'success', 3000);
+        updatePrinterUIStatus();
+        return true;
+      } else {
+        showToast('Menunggu izin USB. Tekan "Izinkan" pada dialog layar HP Anda.', 'info', 4000);
+        return false;
+      }
+    } else {
+      openUsbTroubleshootModal('mobile_no_usb');
+      return false;
+    }
+  }
+
+  // 2. Lingkungan Browser / Desktop
   if (!navigator.serial) {
-    showToast('Browser ini belum mendukung Web Serial. Gunakan Chrome / Edge desktop.', 'error');
+    if (/android|iphone|ipad|ipod/i.test(navigator.userAgent || '')) {
+      openUsbTroubleshootModal('mobile_no_usb');
+    } else {
+      openUsbTroubleshootModal('unsupported_browser');
+    }
     return false;
+  }
+
+  // Bersihkan lock port & writer sebelumnya untuk mencegah tab mengunci port sendiri
+  if (serialWriter) {
+    try { serialWriter.releaseLock(); } catch (_) {}
+    serialWriter = null;
+  }
+  if (serialPort) {
+    try { await serialPort.close(); } catch (_) {}
+    serialPort = null;
   }
 
   try {
@@ -1284,7 +1472,18 @@ export async function connectSerialPrinter() {
       return false; // Pengguna membatalkan dialog
     }
     console.warn('Serial Connection Warning:', err);
-    showToast(`Serial: ${err.message}`, 'warning');
+    const errMsg = (err.message || '').toLowerCase();
+    const isBusyOrLocked = err.name === 'NetworkError' ||
+                           errMsg.includes('failed to open') ||
+                           errMsg.includes('access denied') ||
+                           errMsg.includes('already open') ||
+                           errMsg.includes('busy') ||
+                           errMsg.includes('in use');
+    if (isBusyOrLocked) {
+      openUsbTroubleshootModal('port_locked');
+    } else {
+      showToast(`Serial: ${err.message}`, 'warning');
+    }
     return false;
   }
 }
@@ -1452,8 +1651,17 @@ export function isLocalPrinterReady() {
   if (role === 'pelayan') {
     return false;
   }
-  if (window.AndroidBridge && typeof window.AndroidBridge.printBluetooth === 'function') {
-    return true;
+  if (window.AndroidBridge) {
+    if (typeof window.AndroidBridge.isPrinterReady === 'function') {
+      return Boolean(window.AndroidBridge.isPrinterReady());
+    }
+    if (typeof window.AndroidBridge.isUsbPrinterConnected === 'function' && window.AndroidBridge.isUsbPrinterConnected()) {
+      return true;
+    }
+    if (typeof window.AndroidBridge.isBluetoothEnabled === 'function' && !window.AndroidBridge.isBluetoothEnabled()) {
+      return false;
+    }
+    return Boolean(state.printerConfig?.bluetoothAddress);
   }
   if (bluetoothCharacteristic && bluetoothDevice && bluetoothDevice.gatt && bluetoothDevice.gatt.connected) {
     return true;
@@ -2143,11 +2351,27 @@ try {
 export function updatePrinterUIStatus(skipHeartbeat = false) {
   const isReady = isLocalPrinterReady();
   let printerName = '';
+  let isBtEnabled = true;
+  let isUsbConnected = false;
+  let hasUsbAttached = false;
+  let usbName = '';
 
-  if (window.AndroidBridge && typeof window.AndroidBridge.getConnectedPrinterInfo === 'function') {
-    try {
+  if (window.AndroidBridge) {
+    if (typeof window.AndroidBridge.isBluetoothEnabled === 'function') {
+      isBtEnabled = window.AndroidBridge.isBluetoothEnabled();
+    }
+    if (typeof window.AndroidBridge.isUsbPrinterConnected === 'function') {
+      isUsbConnected = window.AndroidBridge.isUsbPrinterConnected();
+    }
+    if (typeof window.AndroidBridge.hasUsbPrinter === 'function') {
+      hasUsbAttached = window.AndroidBridge.hasUsbPrinter();
+    }
+    if (typeof window.AndroidBridge.getConnectedUsbPrinterName === 'function') {
+      usbName = window.AndroidBridge.getConnectedUsbPrinterName();
+    }
+    if (typeof window.AndroidBridge.getConnectedPrinterInfo === 'function') {
       printerName = window.AndroidBridge.getConnectedPrinterInfo();
-    } catch (_) {}
+    }
   }
 
   // Header badges
@@ -2177,44 +2401,85 @@ export function updatePrinterUIStatus(skipHeartbeat = false) {
       if (!hostHeartbeatTimer) startHostHeartbeatLoop();
       if (!remotePrintUnsubscribe) setupRemotePrintHostListener();
     }
-    const displayName = isHotspot ? 'Kasir (Hotspot)' : (printerName ? `Printer: ${printerName}` : (isReady ? 'Printer Siap' : 'Kasir Utama'));
-    if (headerBadge) {
-      headerBadge.className = 'hidden';
+
+    let displayName = 'Kasir Utama';
+    let badgeHtml = '<span class="text-stone-500 font-bold text-[11px]">Standby</span>';
+    let dotClass = 'w-2.5 h-2.5 rounded-full bg-stone-400 shrink-0';
+    let cardClass = 'bg-stone-50 border border-stone-200 rounded-2xl p-3 flex flex-col gap-2';
+    let roleBadgeText = 'Host Wi-Fi';
+    let roleBadgeClass = 'px-2 py-0.5 rounded-full bg-emerald-200/70 text-emerald-900 font-extrabold text-[10px] shrink-0';
+    let descText = 'Menerima pesanan cetak dari HP staf.';
+    let hardwareLabel = 'Hardware: Standby';
+
+    if (isHotspot) {
+      displayName = 'Kasir (Hotspot)';
+      badgeHtml = '<span class="text-amber-800 font-bold text-[11px]">Hotspot Aktif</span>';
+      dotClass = 'w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0';
+      cardClass = 'bg-amber-50 border border-amber-200 rounded-2xl p-3 flex flex-col gap-2';
+      roleBadgeText = 'Hotspot Aktif';
+      roleBadgeClass = 'px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 font-extrabold text-[10px] shrink-0';
+      descText = 'Hotspot HP aktif. HP Staf dapat tersambung langsung.';
+      hardwareLabel = 'Jalur: Hotspot HP (192.168.43.1)';
+    } else if (isUsbConnected) {
+      const uLabel = usbName || 'USB Printer';
+      displayName = `USB: ${uLabel}`;
+      badgeHtml = `<span class="text-emerald-700 font-bold text-[11px]">Terhubung (USB Hub)</span>`;
+      dotClass = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0';
+      cardClass = 'bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex flex-col gap-2';
+      descText = `Terhubung langsung via USB Hub (${uLabel}). Menerima pesanan cetak dari HP staf.`;
+      hardwareLabel = `Hardware: ${uLabel}`;
+    } else if (hasUsbAttached) {
+      displayName = 'USB Terdeteksi';
+      badgeHtml = '<span class="text-amber-800 font-bold text-[11px]">USB (Perlu Izin)</span>';
+      dotClass = 'w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0';
+      cardClass = 'bg-amber-50 border border-amber-200 rounded-2xl p-3 flex flex-col gap-2';
+      descText = 'Printer USB terpasang di hub. Ketuk tombol USB untuk mengizinkan akses.';
+      hardwareLabel = `Hardware: ${usbName || 'USB Attached'}`;
+    } else if (window.AndroidBridge && !isBtEnabled) {
+      displayName = 'Bluetooth Mati';
+      badgeHtml = '<span class="text-rose-700 font-bold text-[11px]">Bluetooth HP Mati</span>';
+      dotClass = 'w-2.5 h-2.5 rounded-full bg-rose-400 shrink-0';
+      cardClass = 'bg-rose-50/50 border border-rose-200 rounded-2xl p-3 flex flex-col gap-2';
+      roleBadgeText = 'Kasir Standby';
+      roleBadgeClass = 'px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-extrabold text-[10px] shrink-0';
+      descText = 'Bluetooth HP sedang mati. Nyalakan Bluetooth atau colok kabel printer ke USB Hub untuk mencetak.';
+      hardwareLabel = 'Hardware: Bluetooth Nonaktif';
+    } else if (printerName) {
+      displayName = `Printer: ${printerName}`;
+      badgeHtml = `<span class="text-emerald-700 font-bold text-[11px]">${printerName}</span>`;
+      dotClass = isReady ? 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0' : 'w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0';
+      cardClass = 'bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex flex-col gap-2';
+      descText = `Terhubung langsung ke printer (${printerName}). Menerima pesanan cetak dari HP staf.`;
+      hardwareLabel = `Hardware: ${printerName}`;
+    } else {
+      displayName = isReady ? 'Printer Siap' : 'Kasir Utama';
+      badgeHtml = isReady ? '<span class="text-emerald-700 font-bold text-[11px]">Printer Siap</span>' : '<span class="text-stone-500 font-bold text-[11px]">Standby (Kasir Host)</span>';
+      dotClass = isReady ? 'w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0' : 'w-2.5 h-2.5 rounded-full bg-stone-400 shrink-0';
+      cardClass = isReady ? 'bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex flex-col gap-2' : 'bg-stone-50 border border-stone-200 rounded-2xl p-3 flex flex-col gap-2';
+      descText = 'Menerima pesanan cetak dari HP staf.';
+      hardwareLabel = 'Hardware: Standby';
     }
-    if (headerDot) headerDot.className = isHotspot ? 'w-2 h-2 rounded-full bg-amber-500 shrink-0' : 'w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse';
-    if (railDot) railDot.className = isHotspot ? 'absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-500 border border-white' : 'absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white animate-pulse';
+
+    if (headerBadge) headerBadge.className = 'hidden';
+    if (headerDot) headerDot.className = dotClass.replace('w-2.5 h-2.5', 'w-2 h-2');
+    if (railDot) railDot.className = `absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-white ${isUsbConnected || (printerName && isReady) ? 'bg-emerald-500 animate-pulse' : (window.AndroidBridge && !isBtEnabled ? 'bg-rose-400' : 'bg-stone-400')}`;
     if (headerIcon) {
-      headerIcon.textContent = isHotspot ? 'wifi_tethering' : 'print';
-      headerIcon.className = isHotspot ? 'material-symbols-rounded text-sm text-amber-700' : 'material-symbols-rounded text-sm text-emerald-700';
+      headerIcon.textContent = isHotspot ? 'wifi_tethering' : (isUsbConnected ? 'usb' : 'print');
+      headerIcon.className = isHotspot ? 'material-symbols-rounded text-sm text-amber-700' : (isUsbConnected || (printerName && isReady) ? 'material-symbols-rounded text-sm text-emerald-700' : 'material-symbols-rounded text-sm text-stone-500');
     }
     if (headerText) headerText.textContent = displayName;
-    if (mobileDot) mobileDot.className = isHotspot ? 'absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500' : 'absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+    if (mobileDot) mobileDot.className = `absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${isUsbConnected || (printerName && isReady) ? 'bg-emerald-500 animate-pulse' : (window.AndroidBridge && !isBtEnabled ? 'bg-rose-400' : 'bg-stone-400')}`;
 
-    if (modalBadge) {
-      modalBadge.innerHTML = isHotspot 
-        ? `<span class="text-amber-800 font-bold text-[11px]">Hotspot Aktif</span>`
-        : `<span class="text-emerald-700 font-bold text-[11px]">${printerName || 'Terhubung (Kasir Host)'}</span>`;
-    }
-
-    if (roleCard) {
-      roleCard.className = isHotspot
-        ? 'bg-amber-50 border border-amber-200 rounded-2xl p-3 flex flex-col gap-2'
-        : 'bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex flex-col gap-2';
-    }
-    if (roleDot) roleDot.className = isHotspot ? 'w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0' : 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0';
+    if (modalBadge) modalBadge.innerHTML = badgeHtml;
+    if (roleCard) roleCard.className = cardClass;
+    if (roleDot) roleDot.className = dotClass;
     if (roleTitle) roleTitle.textContent = 'Kasir Utama';
     if (roleBadge) {
-      roleBadge.textContent = isHotspot ? 'Hotspot Aktif' : 'Host Wi-Fi';
-      roleBadge.className = isHotspot 
-        ? 'px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 font-extrabold text-[10px] shrink-0'
-        : 'px-2 py-0.5 rounded-full bg-emerald-200/70 text-emerald-900 font-extrabold text-[10px] shrink-0';
+      roleBadge.textContent = roleBadgeText;
+      roleBadge.className = roleBadgeClass;
     }
-    if (roleDesc) {
-      roleDesc.textContent = isHotspot
-        ? 'Hotspot HP aktif. HP Staf dapat tersambung langsung.'
-        : `Terhubung langsung ke printer (${printerName || 'Bluetooth'}). Menerima pesanan cetak dari HP staf.`;
-    }
-    if (rolePrinterName) rolePrinterName.textContent = isHotspot ? 'Jalur: Hotspot HP (192.168.43.1)' : (printerName ? `Hardware: ${printerName}` : 'Hardware: Bluetooth Standby');
+    if (roleDesc) roleDesc.textContent = descText;
+    if (rolePrinterName) rolePrinterName.textContent = hardwareLabel;
 
     const isAndroidApk = Boolean(window.AndroidBridge && typeof window.AndroidBridge.getLocalIpAddress === 'function');
     const localOfflineInfo = document.getElementById('localOfflineHostInfo');
@@ -2792,7 +3057,13 @@ export function openPrinterConfigModal() {
   const itemPriceStyleSelect = document.getElementById('printerItemPriceStyleSelect');
 
   if (paperWidthSelect) paperWidthSelect.value = cfg.paperWidth || '58mm';
-  if (printMethodSelect) printMethodSelect.value = cfg.printMethod || 'browser';
+  if (printMethodSelect) {
+    if (window.AndroidBridge) {
+      printMethodSelect.value = (cfg.printMethod && cfg.printMethod !== 'serial') ? cfg.printMethod : 'rawbt';
+    } else {
+      printMethodSelect.value = cfg.printMethod || 'browser';
+    }
+  }
   if (feedLinesSelect) feedLinesSelect.value = String(cfg.feedLines !== undefined ? cfg.feedLines : 1);
   if (sectionSpacingSelect) sectionSpacingSelect.value = String(cfg.sectionSpacing !== undefined ? cfg.sectionSpacing : 1);
   if (dividerStyleSelect) dividerStyleSelect.value = cfg.dividerStyle || 'dashed';
