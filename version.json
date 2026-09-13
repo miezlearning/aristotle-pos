@@ -1,9 +1,12 @@
 {
-  "versionCode": 115,
-  "versionName": "1.2.66",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.66/Aristotle-POS.apk",
+  "versionCode": 116,
+  "versionName": "1.2.67",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.67/Aristotle-POS.apk",
   "changelog": [
-    "Perbaikan struktur modal agar profil toko dapat dibuka"
+    "Modal profil toko compact & responsif: 2 kolom di tablet, hemat scroll",
+    "Kunci Menu dan Laporan jadi Switch, badge status anti-kepotong",
+    "Checkbox notifikasi biru bawaan Android diganti Switch emerald custom",
+    "Sistem panduan desain konsisten design.md + aturan compact-responsif"
   ],
   "releaseDate": "2026-09-13"
 }

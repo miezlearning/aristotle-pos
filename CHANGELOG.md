@@ -2,6 +2,17 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.67] - 2026-09-13
+
+### 🎨 Modal Profil Toko Compact & Responsif + Sistem Panduan Desain Konsisten
+- **Modal Profil Toko Compact & Responsif:** Merombak `#cloudModal` jadi hemat ruang — header dipadatkan, kartu Lisensi + Peran disusun grid 2 kolom di tablet/desktop (1 kolom di HP), baris duplikat "Beralih Peran" dihapus, dan semua subtitle dipendekkan dengan `truncate` agar tidak kepotong di layar 360px.
+- **Kunci Menu & Laporan Jadi Switch:** Mengganti pill `Aktif`/`Nonaktif` yang menipu (terlihat seperti badge tapi bisa diklik) menjadi Switch aksesibel (`role="switch"`, hijau ON / abu OFF) via `updatePinButtonUI`.
+- **Badge Status Anti-Kepotong:** Badge notifikasi (`Aktif`, `Diblokir`, `Cek Izin`), lisensi (`Lifetime`, `Demo`), dan peran kini selalu `truncate` + `max-w` maksimal 1–2 kata — memperbaiki kasus `Aktif (Diizinkan...` yang terpotong.
+- **Switch Emerald Custom Pengganti Checkbox Biru:** 4 pengaturan notifikasi yang tampil sebagai checkbox biru bawaan Android kini memakai Switch emerald custom (`.switch-input`/`.switch-track` di `css/style.css`) tanpa merusak logika `.checked` yang sudah ada.
+- **Sistem Panduan Desain (`design.md`):** Menambahkan dokumen acuan UI/UX baku (token warna, tipografi, pola modal, peta ikon, aturan trailing, checklist agent) termasuk aturan compact + responsif hasil refactor ini.
+
+---
+
 ## [v1.2.65] - 2026-09-13
 
 ### 🔔 Sistem Notifikasi HP Multi-Device & Mitigasi Tuntas Print Spooler Android

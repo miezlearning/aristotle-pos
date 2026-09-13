@@ -744,4 +744,22 @@ div[id$="Modal"] > div {
   animation: reportSlideInLeft 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* 10. Compact Switch (pengganti checkbox biru bawaan Android) */
+.switch-input + .switch-track {
+  background-color: #d6d3d1;
+}
+.switch-input:checked + .switch-track {
+  background-color: #047857;
+}
+.switch-input:checked + .switch-track .switch-knob {
+  margin-left: auto;
+}
+.switch-input:focus-visible + .switch-track {
+  outline: 2px solid rgba(4, 120, 87, 0.4);
+  outline-offset: 2px;
+}
+#btnTogglePinSetting .switch-knob {
+  transition: margin 0.18s ease;
+}
+
 

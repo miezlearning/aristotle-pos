@@ -287,30 +287,30 @@ export function updateStoreLicenseUI() {
   if (!licenseBox) return;
 
   if (status.isLicensed) {
-    if (iconContainer) iconContainer.className = 'w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 border border-emerald-200/70';
+    if (iconContainer) iconContainer.className = 'w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 border border-emerald-200/70';
     if (icon) icon.textContent = 'verified';
     if (badge) {
-      badge.className = 'px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-950 text-[10px] font-black';
-      badge.textContent = status.tier === 'PRO_LIFETIME' ? 'Pro Lifetime' : 'Lifetime Resmi';
+      badge.className = 'px-1.5 py-px rounded-md bg-emerald-100 text-emerald-950 text-[10px] font-black truncate max-w-[110px]';
+      badge.textContent = status.tier === 'PRO_LIFETIME' ? 'Pro Lifetime' : 'Lifetime';
     }
     if (sub) {
       const maskedKey = status.licenseKey ? `${status.licenseKey.substring(0, 9)}...${status.licenseKey.substring(status.licenseKey.length - 4)}` : 'Aktif';
       sub.textContent = `Akses tak terbatas (${maskedKey})`;
     }
-    if (btnActivate) btnActivate.classList.add('hidden');
+    if (btnActivate) { btnActivate.classList.add('hidden'); btnActivate.classList.remove('flex'); }
   } else {
     const currentTx = state.history ? state.history.length : 0;
     const remaining = Math.max(0, 25 - currentTx);
-    if (iconContainer) iconContainer.className = 'w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 border border-amber-200/70';
+    if (iconContainer) iconContainer.className = 'w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 border border-amber-200/70';
     if (icon) icon.textContent = 'science';
     if (badge) {
-      badge.className = 'px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-950 text-[10px] font-black';
-      badge.textContent = 'Akun Demo (25 Tx)';
+      badge.className = 'px-1.5 py-px rounded-md bg-amber-100 text-amber-950 text-[10px] font-black truncate max-w-[110px]';
+      badge.textContent = 'Demo';
     }
     if (sub) {
-      sub.textContent = `Sisa Kuota: ${remaining} / 25 Transaksi`;
+      sub.textContent = `Sisa: ${remaining}/25 transaksi`;
     }
-    if (btnActivate) btnActivate.classList.remove('hidden');
+    if (btnActivate) { btnActivate.classList.remove('hidden'); btnActivate.classList.add('flex'); }
   }
 }
 
@@ -1104,13 +1104,12 @@ export function togglePinProtectionSetting() {
 function updatePinButtonUI() {
   const btn = document.getElementById('btnTogglePinSetting');
   if (btn) {
-    if (state.auth?.requirePinForAdmin) {
-      btn.innerText = 'Aktif';
-      btn.className = 'px-3 py-1 rounded-full font-bold text-[11px] transition shrink-0 bg-emerald-600 text-white shadow-xs cursor-pointer active:scale-95';
-    } else {
-      btn.innerText = 'Nonaktif';
-      btn.className = 'px-3 py-1 rounded-full font-bold text-[11px] transition shrink-0 bg-stone-100 text-stone-500 hover:text-stone-800 border border-stone-200 cursor-pointer active:scale-95';
-    }
+    const isOn = Boolean(state.auth?.requirePinForAdmin);
+    btn.setAttribute('role', 'switch');
+    btn.setAttribute('aria-checked', isOn ? 'true' : 'false');
+    btn.setAttribute('aria-label', 'Kunci Menu dan Laporan');
+    btn.className = 'w-11 h-6 rounded-full p-1 transition shrink-0 flex cursor-pointer active:scale-95 ' + (isOn ? 'bg-emerald-600 justify-end' : 'bg-stone-300 justify-start');
+    btn.innerHTML = '<span class="switch-knob w-4 h-4 rounded-full bg-white shadow"></span>';
   }
 }
 
@@ -1213,40 +1212,40 @@ export function updateHeaderRoleBadgeUI() {
 
   if (roleCard && roleTitle) {
     if (isCashier) {
-      roleCard.className = 'p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200/90 flex items-center justify-between gap-3 shadow-2xs';
-      if (roleAvatar) roleAvatar.className = 'w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs';
+      roleCard.className = 'p-2.5 rounded-2xl bg-amber-50/90 border border-amber-200/90 flex items-center justify-between gap-2 shadow-2xs min-w-0';
+      if (roleAvatar) roleAvatar.className = 'w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs';
       if (roleIcon) roleIcon.textContent = 'badge';
       if (roleBadge) {
-        roleBadge.className = 'px-1.5 py-0.5 rounded-md bg-amber-200 text-amber-950 text-[10px] font-black';
+        roleBadge.className = 'px-1.5 py-px rounded-md bg-amber-200 text-amber-950 text-[10px] font-black truncate max-w-[90px]';
         roleBadge.textContent = 'Kasir';
       }
       roleTitle.textContent = `Kasir: ${cashierName}`;
-      if (roleSub) roleSub.textContent = 'Akses terbatas operasional kasir & penjualan';
+      if (roleSub) roleSub.textContent = 'Akses kasir & penjualan';
       if (roleCardBtn) {
-        roleCardBtn.className = 'px-3 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 active:scale-95 text-white font-extrabold text-xs transition shadow-xs shrink-0 cursor-pointer flex items-center gap-1.5';
+        roleCardBtn.className = 'px-2.5 py-1.5 rounded-xl bg-amber-700 hover:bg-amber-800 active:scale-95 text-white font-extrabold text-[11px] transition shadow-xs shrink-0 cursor-pointer flex items-center gap-1';
         if (roleCardBtnIcon) roleCardBtnIcon.textContent = 'lock_open';
-        if (roleCardBtnText) roleCardBtnText.textContent = 'Beralih ke Owner';
+        if (roleCardBtnText) roleCardBtnText.textContent = 'Ke Owner';
       }
 
       if (roleListTitle) roleListTitle.textContent = 'Beralih ke Mode Owner';
       if (roleListSub) roleListSub.textContent = 'Verifikasi PIN Owner untuk akses penuh';
       if (roleSwitchIcon) roleSwitchIcon.textContent = 'lock_open';
-      if (roleSwitchIconContainer) roleSwitchIconContainer.className = 'w-8 h-8 rounded-xl bg-amber-50 text-amber-800 border border-amber-200/70 flex items-center justify-center shrink-0';
+      if (roleSwitchIconContainer) roleSwitchIconContainer.className = 'w-7 h-7 rounded-lg bg-amber-50 text-amber-800 border border-amber-200/70 flex items-center justify-center shrink-0';
       if (securityTitle) securityTitle.innerHTML = '<span class="material-symbols-rounded text-xs">verified_user</span><span>Akses & Hak Peran</span>';
     } else {
-      roleCard.className = 'p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200/90 flex items-center justify-between gap-3 shadow-2xs';
-      if (roleAvatar) roleAvatar.className = 'w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs';
+      roleCard.className = 'p-2.5 rounded-2xl bg-emerald-50/90 border border-emerald-200/90 flex items-center justify-between gap-2 shadow-2xs min-w-0';
+      if (roleAvatar) roleAvatar.className = 'w-8 h-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs';
       if (roleIcon) roleIcon.textContent = 'shield_person';
       if (roleBadge) {
-        roleBadge.className = 'px-1.5 py-0.5 rounded-md bg-emerald-200 text-emerald-950 text-[10px] font-black';
+        roleBadge.className = 'px-1.5 py-px rounded-md bg-emerald-200 text-emerald-950 text-[10px] font-black truncate max-w-[90px]';
         roleBadge.textContent = 'Owner';
       }
-      roleTitle.textContent = 'Mode Pemilik (Owner)';
-      if (roleSub) roleSub.textContent = 'Akses penuh ke semua laporan & pengaturan';
+      roleTitle.textContent = 'Mode Pemilik';
+      if (roleSub) roleSub.textContent = 'Akses penuh menu & laporan';
       if (roleCardBtn) {
-        roleCardBtn.className = 'px-3 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-extrabold text-xs transition shadow-xs shrink-0 cursor-pointer flex items-center gap-1.5';
+        roleCardBtn.className = 'px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-extrabold text-[11px] transition shadow-xs shrink-0 cursor-pointer flex items-center gap-1';
         if (roleCardBtnIcon) roleCardBtnIcon.textContent = 'sync_alt';
-        if (roleCardBtnText) roleCardBtnText.textContent = 'Ganti Role';
+        if (roleCardBtnText) roleCardBtnText.textContent = 'Ganti';
       }
 
       if (roleListTitle) roleListTitle.textContent = 'Beralih Peran (Owner / Kasir)';

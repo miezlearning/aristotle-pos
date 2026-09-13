@@ -238,14 +238,14 @@ export function updateNotificationUiState() {
 
   if (badgeEl) {
     if (perm === 'granted') {
-      badgeEl.innerText = 'Aktif (Diizinkan)';
-      badgeEl.className = 'text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full';
+      badgeEl.innerText = 'Aktif';
+      badgeEl.className = 'text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full max-w-[90px] truncate shrink-0';
     } else if (perm === 'denied') {
-      badgeEl.innerText = 'Diblokir Sistem';
-      badgeEl.className = 'text-xs font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full';
+      badgeEl.innerText = 'Diblokir';
+      badgeEl.className = 'text-[10px] font-black text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full max-w-[90px] truncate shrink-0';
     } else {
-      badgeEl.innerText = 'Belum Aktif';
-      badgeEl.className = 'text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full';
+      badgeEl.innerText = 'Cek Izin';
+      badgeEl.className = 'text-[10px] font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full max-w-[90px] truncate shrink-0';
     }
   }
 
