@@ -1,11 +1,9 @@
 {
-  "versionCode": 114,
-  "versionName": "1.2.65",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.65/Aristotle-POS.apk",
+  "versionCode": 115,
+  "versionName": "1.2.66",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.66/Aristotle-POS.apk",
   "changelog": [
-    "Sistem notifikasi HP multi-device (pesanan, bayar, stok)",
-    "Mitigasi masalah Print Spooler Android (Zero-Error UX)",
-    "Tombol pembersih antrean cetak HP langsung dari aplikasi"
+    "Perbaikan struktur modal agar profil toko dapat dibuka"
   ],
   "releaseDate": "2026-09-13"
 }
