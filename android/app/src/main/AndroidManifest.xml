@@ -26,6 +26,10 @@
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
+    <!-- Izin Notifikasi & Getar untuk Pesanan & Transaksi HP -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <!-- Izin Pembaruan Aplikasi Langsung dari Dalam (In-App Auto-Updater) -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 

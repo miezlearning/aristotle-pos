@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aristotle-pos-v113';
+const CACHE_NAME = 'aristotle-pos-v114';
 const PRECACHE_ASSETS = [
   './',
   './index.html',
@@ -21,6 +21,7 @@ const PRECACHE_ASSETS = [
   './js/modules/tour.js',
   './js/modules/superadmin.js',
   './js/modules/printer.js',
+  './js/modules/notification.js',
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap',
   'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24..48,400..700,0..1,-50..200&display=block',
@@ -114,5 +115,22 @@ self.addEventListener('fetch', (event) => {
         });
       }
     })()
+  );
+});
+
+// Penanganan interaksi saat pengguna mengetuk / mengklik notifikasi sistem di HP
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('./');
+      }
+    })
   );
 });

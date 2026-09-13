@@ -3,6 +3,11 @@ package com.aristotle.pos;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import android.provider.Settings;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -129,10 +134,31 @@ public class MainActivity extends AppCompatActivity {
     // Callback untuk pemilih file/gambar (HTML <input type="file">)
     private ValueCallback<Uri[]> filePathCallback;
 
+    public static final String NOTIFICATION_CHANNEL_ID = "aristotle_pos_alerts";
+    public static final String NOTIFICATION_CHANNEL_NAME = "Notifikasi Aristotle POS";
+
+    private void setupNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                NOTIFICATION_CHANNEL_ID,
+                NOTIFICATION_CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setDescription("Peringatan pesanan masuk, pembayaran kasir, dan stok menipis");
+            channel.enableVibration(true);
+            channel.setVibrationPattern(new long[]{0, 250, 150, 250});
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+            }
+        }
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setupNotificationChannel();
         setupCrashTelemetry();
 
         webView = new WebView(this);
@@ -519,6 +545,13 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        // Izin Notifikasi Sistem Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissionsNeeded.add(Manifest.permission.POST_NOTIFICATIONS);
+            }
+        }
+
         // Izin Galeri / Memori
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
@@ -717,6 +750,76 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public String getPreferredPrinter() {
             return preferredPrinterAddress != null ? preferredPrinterAddress : "";
+        }
+
+        @JavascriptInterface
+        public void showNotification(String title, String message, String tag) {
+            runOnUiThread(() -> {
+                try {
+                    Intent intent = new Intent(MainActivity.this, MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    PendingIntent pendingIntent = PendingIntent.getActivity(
+                        MainActivity.this,
+                        0,
+                        intent,
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                            ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                            : PendingIntent.FLAG_UPDATE_CURRENT
+                    );
+
+                    NotificationCompat.Builder builder = new NotificationCompat.Builder(MainActivity.this, NOTIFICATION_CHANNEL_ID)
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentTitle(title != null ? title : "Aristotle POS")
+                        .setContentText(message != null ? message : "")
+                        .setStyle(new NotificationCompat.BigTextStyle().bigText(message != null ? message : ""))
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setDefaults(NotificationCompat.DEFAULT_ALL)
+                        .setAutoCancel(true)
+                        .setContentIntent(pendingIntent);
+
+                    int notifId = (tag != null && !tag.isEmpty()) ? tag.hashCode() : (int) System.currentTimeMillis();
+                    NotificationManagerCompat manager = NotificationManagerCompat.from(MainActivity.this);
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                        ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                        manager.notify(notifId, builder.build());
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Gagal memunculkan notifikasi native: " + e.getMessage());
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public boolean hasNotificationPermission() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                return ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+            }
+            return NotificationManagerCompat.from(MainActivity.this).areNotificationsEnabled();
+        }
+
+        @JavascriptInterface
+        public void requestNotificationPermission() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, PERMISSION_REQUEST_CODE);
+                }
+            }
+        }
+
+        @JavascriptInterface
+        public void openPrintSettings() {
+            try {
+                Intent intent = new Intent(Settings.ACTION_PRINT_SETTINGS);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+            } catch (Exception e) {
+                Log.e(TAG, "Gagal membuka pengaturan cetak Android: " + e.getMessage());
+                try {
+                    Intent fallback = new Intent(Settings.ACTION_SETTINGS);
+                    fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(fallback);
+                } catch (Exception ignored) {}
+            }
         }
 
         @JavascriptInterface

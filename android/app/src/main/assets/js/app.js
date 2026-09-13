@@ -31,6 +31,8 @@ import * as superadmin from './modules/superadmin.js';
 import * as printer from './modules/printer.js';
 import * as updater from './modules/updater.js';
 import * as shift from './modules/shift.js';
+import * as notification from './modules/notification.js';
+import { saveNotificationConfig } from './state.js';
 import { initErrorTelemetry, sendTelemetryToDiscord } from './modules/telemetry.js';
 import { 
   initAllCustomSelects, 
@@ -2255,6 +2257,13 @@ export async function init() {
       console.warn('Shift init note:', e);
     }
 
+    // Inisialisasi Modul Notifikasi Multi-Device
+    try {
+      notification.initNotificationModule();
+    } catch (e) {
+      console.warn('Notification init note:', e);
+    }
+
     // 6. Selesai (100%)
     updateLoadingProgress(100, 'Sistem kasir siap digunakan!');
     await new Promise(r => setTimeout(r, 200));
@@ -2910,6 +2919,18 @@ const KasirApp = {
   openQrPairingScannerModal: printer.openQrPairingScannerModal,
   closeQrPairingScannerModal: printer.closeQrPairingScannerModal,
   handleQrScanFromFile: printer.handleQrScanFromFile,
+  openAndroidPrintSettings: printer.openAndroidPrintSettings,
+
+  // Multi-Device System Notifications
+  requestNotificationPermission: notification.requestNotificationPermission,
+  showNotificationPermissionModal: notification.showNotificationPermissionModal,
+  closeNotificationPermissionModal: notification.closeNotificationPermissionModal,
+  updateNotificationUiState: notification.updateNotificationUiState,
+  sendSystemNotification: notification.sendSystemNotification,
+  updateNotificationSetting: (key, val) => {
+    saveNotificationConfig({ [key]: val });
+    showToast('Pengaturan notifikasi diperbarui.', 'success', 2000);
+  },
 
   // Admin & Backup & QRIS & Menu
   renderAdminTable: admin.renderAdminTable,

@@ -1644,6 +1644,24 @@ export function setDevicePrinterMode(mode) {
 }
 
 /**
+ * Cek apakah perangkat saat ini adalah lingkungan mobile (Android APK, Android Chrome, iOS)
+ */
+export function isMobileBrowser() {
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || !!window.AndroidBridge;
+}
+
+/**
+ * Buka layar Pengaturan Cetak Android langsung untuk membatalkan antrean Print Spooler yang nyangkut
+ */
+export function openAndroidPrintSettings() {
+  if (window.AndroidBridge && typeof window.AndroidBridge.openPrintSettings === 'function') {
+    window.AndroidBridge.openPrintSettings();
+  } else {
+    showToast('Buka Pengaturan HP > Koneksi & Berbagi > Pencetakan untuk menghapus antrean spooler.', 'info', 6000);
+  }
+}
+
+/**
  * Cek apakah perangkat saat ini terhubung langsung ke printer fisik
  */
 export function isLocalPrinterReady() {
@@ -1811,8 +1829,12 @@ export async function executeDirectLocalPrintReceipt(tx, shouldKickDrawer, force
       return true;
     } catch (e) {
       console.warn('RawBT print error:', e);
-      window.print();
-      return true;
+      if (!isMobileBrowser()) {
+        window.print();
+        return true;
+      }
+      showToast('Gagal cetak: Aplikasi RawBT tidak merespons.', 'warning', 3000);
+      return false;
     }
   } else if (method === 'bluetooth') {
     try {
@@ -1822,8 +1844,12 @@ export async function executeDirectLocalPrintReceipt(tx, shouldKickDrawer, force
       return true;
     } catch (e) {
       console.warn('Bluetooth print gagal:', e);
-      window.print();
-      return true;
+      if (!isMobileBrowser()) {
+        window.print();
+        return true;
+      }
+      showToast('Gagal cetak: Printer Bluetooth terputus atau belum aktif. Struk aman tersimpan.', 'error', 4000);
+      return false;
     }
   } else if (method === 'serial') {
     try {
@@ -1833,12 +1859,27 @@ export async function executeDirectLocalPrintReceipt(tx, shouldKickDrawer, force
       return true;
     } catch (e) {
       console.warn('Serial print gagal:', e);
+      if (!isMobileBrowser()) {
+        window.print();
+        return true;
+      }
+      showToast('Gagal cetak: Printer USB kabel tidak terdeteksi.', 'warning', 3000);
+      return false;
+    }
+  } else {
+    // Mode Browser / Fallback Sistem
+    if (isMobileBrowser()) {
+      // Pada HP: Hanya panggil jika kasir secara eksplisit memilih tombol dialog sistem (PDF)
+      if (forceMethod === 'browser') {
+        window.print();
+        return true;
+      }
+      showToast('Printer belum terhubung. Buka Pengaturan Printer untuk menyambungkan printer Bluetooth.', 'warning', 4000);
+      return false;
+    } else {
       window.print();
       return true;
     }
-  } else {
-    window.print();
-    return true;
   }
 }
 
@@ -1915,9 +1956,13 @@ export async function executeDirectLocalKitchenTicket(tx, shouldKickDrawer = fal
     }
   }
 
-  // 5. Browser Fallback
+  // 5. Browser Fallback (Hanya untuk Desktop/Laptop, jangan spam spooler HP)
   const kitchenEl = document.getElementById('kitchenPrintArea');
   if (kitchenEl) {
+    if (isMobileBrowser()) {
+      console.log('Tiket dapur dilewati di HP karena belum terhubung ke printer thermal Bluetooth.');
+      return false;
+    }
     const rawOrder = String(tx.orderName || '01').replace(/^NO ANTRIAN:?\s*/i, '');
     const itemsHtml = (tx.items || []).map(it => `
       <div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px dashed #ccc;">

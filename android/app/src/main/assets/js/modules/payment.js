@@ -3,7 +3,8 @@ import { formatRp, formatDateShort, escapeHtml, showToast, playClick, playSucces
 import { renderOrderQueueTabs, renderCart, renderProducts, toggleMobileCartDrawer } from './pos.js';
 import { syncAddTransaction, syncSaveQueues, syncSaveProduct } from '../firebase.js';
 import { generateDynamicQRIS, renderQRToContainer, parseQRISMetadata } from '../qris.js';
-import { printReceipt, printKitchenTicket, kickCashDrawer, renderPrintableReceiptArea } from './printer.js';
+import { printReceipt, printKitchenTicket, kickCashDrawer, renderPrintableReceiptArea, isLocalPrinterReady, isMobileBrowser } from './printer.js';
+import { notifyPaymentSuccess, notifyLowStock } from './notification.js';
 import { renderFinancialReport } from './report.js';
 import { checkDemoTransactionLimit } from './license.js';
 
@@ -578,34 +579,59 @@ export function completeTransaction() {
     showReceipt(newTx);
     playSuccessChime();
 
-    // 1. Auto-Print Struk Kasir / Tiket Dapur & Buka Laci Kasir
+    // Notifikasi Transaksi Berhasil ke Bilah Status HP
+    try {
+      notifyPaymentSuccess(newTx);
+      if (newTx.items && Array.isArray(newTx.items)) {
+        newTx.items.forEach(it => {
+          const prod = (state.products || []).find(p => p.id === it.id);
+          if (prod && typeof prod.stock === 'number' && prod.stock <= (state.notificationConfig?.lowStockThreshold || 3)) {
+            notifyLowStock(prod);
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Notification trigger note:', e);
+    }
+
+    // 1. Auto-Print Struk Kasir / Tiket Dapur & Buka Laci Kasir (Smart Guard Anti-Spooler)
     const printerCfg = state.printerConfig || {};
     const isCash = !isQris;
     const shouldKick = Boolean(printerCfg.autoKickDrawer !== false && isCash);
+    const hasPrinterReady = isLocalPrinterReady() || !isMobileBrowser();
 
-    if (printerCfg.autoPrintKitchen && printerCfg.autoPrint) {
-      setTimeout(() => {
-        printKitchenTicket(newTx, false);
+    if (hasPrinterReady) {
+      if (printerCfg.autoPrintKitchen && printerCfg.autoPrint) {
+        setTimeout(() => {
+          printKitchenTicket(newTx, false);
+          setTimeout(() => {
+            printReceipt(newTx, shouldKick);
+          }, 700);
+        }, 300);
+      } else if (printerCfg.autoPrintKitchen) {
+        setTimeout(() => {
+          printKitchenTicket(newTx, shouldKick);
+          if (shouldKick) {
+            setTimeout(() => kickCashDrawer(), 500);
+          }
+        }, 300);
+      } else if (printerCfg.autoPrint) {
         setTimeout(() => {
           printReceipt(newTx, shouldKick);
-        }, 700);
-      }, 300);
-    } else if (printerCfg.autoPrintKitchen) {
-      setTimeout(() => {
-        printKitchenTicket(newTx, shouldKick);
-        if (shouldKick) {
-          setTimeout(() => kickCashDrawer(), 500);
-        }
-      }, 300);
-    } else if (printerCfg.autoPrint) {
-      setTimeout(() => {
-        printReceipt(newTx, shouldKick);
-      }, 300);
-    } else if (shouldKick) {
-      // Jika tidak mencetak otomatis, picu buka laci langsung saat bayar tunai
-      setTimeout(() => {
-        kickCashDrawer();
-      }, 300);
+        }, 300);
+      } else if (shouldKick) {
+        setTimeout(() => {
+          kickCashDrawer();
+        }, 300);
+      }
+    } else {
+      // Perangkat HP tanpa printer aktif: Lewati pencetakan agar tidak memicu Print Spooler Android
+      if (shouldKick) {
+        setTimeout(() => kickCashDrawer(), 300);
+      }
+      if (printerCfg.autoPrint || printerCfg.autoPrintKitchen) {
+        console.log('Cetak otomatis dilewati: printer belum terhubung di perangkat HP ini.');
+      }
     }
 
     if (state.orderQueues.length > 1) {
@@ -660,7 +686,11 @@ export function printCurrentReceipt() {
     const shouldKick = Boolean(state.printerConfig?.autoKickDrawer !== false && isCash);
     printReceipt(currentReceiptTx, shouldKick);
   } else {
-    window.print();
+    if (!isMobileBrowser()) {
+      window.print();
+    } else {
+      showToast('Belum ada transaksi aktif untuk dicetak.', 'warning');
+    }
   }
 }
 

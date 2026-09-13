@@ -10,7 +10,8 @@ import {
   DEFAULT_QRIS_PAYLOAD, 
   MAMI_QRIS_PAYLOAD,
   DEFAULT_STORE_PROFILE,
-  DEFAULT_PRINTER_CONFIG
+  DEFAULT_PRINTER_CONFIG,
+  DEFAULT_NOTIFICATION_CONFIG
 } from './config.js';
 import { parseQRISMetadata } from './qris.js';
 import { hashSha256 } from './utils.js';
@@ -139,6 +140,7 @@ export const state = {
   qrisPayload: DEFAULT_QRIS_PAYLOAD,
   qrisMode: 'dynamic', // 'dynamic' (nominal pas otomatis) or 'static' (nominal manual)
   printerConfig: { ...DEFAULT_PRINTER_CONFIG },
+  notificationConfig: { ...DEFAULT_NOTIFICATION_CONFIG },
   activeShift: null,
   shifts: []
 };
@@ -158,6 +160,7 @@ export function initState() {
     state.orderQueues = [{ id: 'q_1', name: 'Pesanan #1', cart: {} }];
     state.activeQueueId = 'q_1';
     state.printerConfig = { ...DEFAULT_PRINTER_CONFIG };
+    state.notificationConfig = { ...DEFAULT_NOTIFICATION_CONFIG };
     state.activeShift = null;
     state.shifts = [];
     updateUIStoreBranding();
@@ -319,7 +322,19 @@ export function initState() {
     window.AndroidBridge.setPreferredPrinter(state.printerConfig.bluetoothAddress);
   }
 
-  // 9. Muat Status Shift Aktif & Riwayat Tutup Shift
+  // 9. Muat Konfigurasi Notifikasi
+  const savedNotif = localStorage.getItem(keys.NOTIFICATIONS);
+  if (savedNotif) {
+    try {
+      state.notificationConfig = { ...DEFAULT_NOTIFICATION_CONFIG, ...JSON.parse(savedNotif) };
+    } catch (e) {
+      state.notificationConfig = { ...DEFAULT_NOTIFICATION_CONFIG };
+    }
+  } else {
+    state.notificationConfig = { ...DEFAULT_NOTIFICATION_CONFIG };
+  }
+
+  // 10. Muat Status Shift Aktif & Riwayat Tutup Shift
   const savedActiveShift = localStorage.getItem(keys.ACTIVE_SHIFT);
   if (savedActiveShift) {
     try {
@@ -365,6 +380,18 @@ export function savePrinterConfig(newConfig) {
   localStorage.setItem(currentStorageKeys.PRINTER, JSON.stringify(state.printerConfig));
   if (state.printerConfig?.bluetoothAddress && window.AndroidBridge && typeof window.AndroidBridge.setPreferredPrinter === 'function') {
     window.AndroidBridge.setPreferredPrinter(state.printerConfig.bluetoothAddress);
+  }
+}
+
+/**
+ * Simpan konfigurasi notifikasi sistem & HP
+ */
+export function saveNotificationConfig(newConfig) {
+  if (newConfig) {
+    state.notificationConfig = { ...state.notificationConfig, ...newConfig };
+  }
+  if (currentStorageKeys && currentStorageKeys.NOTIFICATIONS) {
+    localStorage.setItem(currentStorageKeys.NOTIFICATIONS, JSON.stringify(state.notificationConfig));
   }
 }
 

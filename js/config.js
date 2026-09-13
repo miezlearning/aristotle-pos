@@ -46,6 +46,16 @@ export const DEFAULT_PRINTER_CONFIG = {
   itemPriceStyle: 'compact' // 'compact' atau 'detailed'
 };
 
+export const DEFAULT_NOTIFICATION_CONFIG = {
+  enabled: true,
+  sound: true,
+  vibrate: true,
+  notifyNewOrder: true,
+  notifyPayment: true,
+  notifyLowStock: true,
+  lowStockThreshold: 3
+};
+
 /**
  * Generate isolated localStorage keys per store ID (Multi-Tenant)
  * @param {string} storeId - ID unik toko UMKM
@@ -62,7 +72,8 @@ export function getStorageKeys(storeId = 'toko_utama') {
     AUTH: `kasir_${safeId}_auth_v1`,
     PRINTER: `kasir_${safeId}_printer_v1`,
     SHIFTS: `kasir_${safeId}_shifts_v1`,
-    ACTIVE_SHIFT: `kasir_${safeId}_active_shift_v1`
+    ACTIVE_SHIFT: `kasir_${safeId}_active_shift_v1`,
+    NOTIFICATIONS: `kasir_${safeId}_notifications_v1`
   };
 }
 

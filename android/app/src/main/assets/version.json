@@ -1,11 +1,11 @@
 {
-  "versionCode": 113,
-  "versionName": "1.2.64",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.64/Aristotle-POS.apk",
+  "versionCode": 114,
+  "versionName": "1.2.65",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.65/Aristotle-POS.apk",
   "changelog": [
-    "Dukungan cetak printer thermal via USB Hub / OTG di Android APK",
-    "Indikator status perangkat keras printer thermal real-time (Bluetooth & USB)",
-    "Panduan & penanganan konflik penguncian port USB Serial di PC desktop"
+    "Sistem notifikasi HP multi-device (pesanan, bayar, stok)",
+    "Mitigasi masalah Print Spooler Android (Zero-Error UX)",
+    "Tombol pembersih antrean cetak HP langsung dari aplikasi"
   ],
-  "releaseDate": "2026-09-12"
+  "releaseDate": "2026-09-13"
 }

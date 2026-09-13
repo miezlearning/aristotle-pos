@@ -2,6 +2,16 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.65] - 2026-09-13
+
+### 🔔 Sistem Notifikasi HP Multi-Device & Mitigasi Tuntas Print Spooler Android
+- **Sistem Notifikasi HP Terpadu (Semua Device):** Mengintegrasikan modul notifikasi sistem multi-device (`js/modules/notification.js`) yang mendukung Android Native APK via `NotificationChannel` (`aristotle_pos_alerts`), Web Notifications API di PWA / Chrome / Edge, iOS Safari PWA (iOS 16.4+), dan Desktop.
+- **Pemicu Notifikasi Real-Time:** Peringatan otomatis muncul di bilah status HP lengkap dengan bel suara kasir dan getaran haptik untuk pesanan baru dari pelayan/meja, konfirmasi pembayaran transaksi (Tunai/QRIS), dan peringatan stok menipis ($\le 3$ pcs).
+- **Mitigasi Tuntas Masalah Android Print Spooler (Zero-Error UX):** Menghilangkan *blind fallback* `window.print()` pada perangkat mobile saat Bluetooth mati/offline. Mengamankan alur cetak otomatis (*smart auto-print guard*) sehingga tidak membebani antrean cetak sistem Android dan mencegah munculnya notifikasi error *"Ada kesalahan printer"*.
+- **Tombol Pembersih Antrean HP Langsung dari Aplikasi:** Menambahkan tombol *"Buka Antrean Cetak HP"* di pengaturan printer yang langsung memicu intent `Settings.ACTION_PRINT_SETTINGS` untuk membatalkan tugas cetak yang tersangkut di sistem Android hanya dengan 1 ketukan.
+
+---
+
 ## [v1.2.64] - 2026-09-12
 
 ### 🖨️ Dukungan Cetak USB Hub / OTG di Android & Indikator Status Real-Time
