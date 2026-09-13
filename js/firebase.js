@@ -33,6 +33,7 @@ import {
 import { DEFAULT_PRODUCTS, getStorageKeys, MASTER_DEV_HASH, DEFAULT_PRINTER_CONFIG } from './config.js';
 import { state, currentStorageKeys, updateUIStoreBranding, getSavedStoresList, removeStoreFromDevice, registerStoreOnDevice } from './state.js';
 import { showToast, hashSha256 } from './utils.js';
+import { getStoreLicenseStatus, setStoreLicenseLocal, getOrCreateDeviceFingerprint } from './modules/license.js';
 
 // Firebase Configuration (Google Firebase Web Public Project Identifier)
 export const firebaseConfig = {
@@ -1923,6 +1924,112 @@ export async function verifyAndClaimLicense(licenseKey, storeId, deviceFingerpri
       success: false, 
       message: 'Gagal memvalidasi lisensi: ' + (err.message || 'Koneksi error') 
     };
+  }
+}
+
+/**
+ * STANDAR INDUSTRI — Pemulihan entitlement lisensi dari cloud.
+ *
+ * Sumber kebenaran = cloud (`stores_registry/{storeId}` + `licenses/{key}`).
+ * Cache lokal = hanya untuk mode offline. Aturan main:
+ *  1. Offline / DB mati → percaya cache lokal apa adanya (fail-open, kasir tetap jalan).
+ *  2. Cloud bilang licensed + key belum revoked → tulis ulang cache lokal (pulihkan).
+ *  3. Cloud bilang revoked → hapus cache lokal (kill-switch, hanya saat online).
+ *  4. TIDAK PERNAH downgrade ke demo hanya karena data cloud tidak ada / tidak terbaca
+ *     (mencegah user berbayar terkunci oleh gangguan jaringan atau aturan lama).
+ *  5. Aktivasi offline (pendingSync) diverifikasi ulang saat online pertama kali.
+ *
+ * @returns {Promise<{ok, offline?, changed: null|'restored'|'pending-verified'|'revoked', tier}>}
+ */
+export async function restoreStoreLicenseFromCloud(storeId) {
+  const cleanId = String(storeId || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+  if (!cleanId) return { ok: false, reason: 'no-store', changed: null };
+
+  let local = null;
+  try { local = getStoreLicenseStatus(cleanId); } catch (_) {}
+  if (!local) return { ok: false, reason: 'no-cache', changed: null };
+
+  // (1) Fail-open: tanpa koneksi, kasir berjalan dengan cache terakhir — tanpa toast, tanpa blokir.
+  if (!db || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
+    return { ok: true, offline: true, changed: null, tier: local.tier };
+  }
+
+  try {
+    // Baca entitlement cloud. Gagal baca (izin/jaringan) = fail-open, bukan vonis demo.
+    let reg = null;
+    try {
+      const regSnap = await getDoc(doc(db, 'stores_registry', cleanId));
+      if (regSnap.exists()) reg = regSnap.data();
+    } catch (_) { reg = null; }
+
+    if (!reg) {
+      if (local.isLicensed && local.licenseKey && !local.pendingSync) {
+        try { setStoreLicenseLocal(cleanId, { ...local, pendingSync: true }); } catch (_) {}
+      }
+      return { ok: true, offline: false, changed: null, tier: local.tier };
+    }
+
+    // (2) Cloud bilang licensed → pastikan key belum dicabut, lalu pulihkan cache.
+    if (reg.licenseStatus === 'licensed' && reg.licenseKey) {
+      const key = String(reg.licenseKey).trim().toUpperCase();
+      let revoked = false;
+      try {
+        const licSnap = await getDoc(doc(db, 'licenses', key));
+        if (licSnap.exists() && licSnap.data() && licSnap.data().status === 'revoked') revoked = true;
+      } catch (_) { /* gagal verifikasi = jangan hukum user */ }
+
+      // (3) Kill-switch: hanya saat cloud SECARA POSITIF menyatakan revoked.
+      if (revoked) {
+        if (local.isLicensed) {
+          try {
+            setStoreLicenseLocal(cleanId, {
+              isLicensed: false, tier: 'DEMO',
+              registeredAt: new Date().toISOString(), pendingSync: false
+            });
+          } catch (_) {}
+          return { ok: true, offline: false, changed: 'revoked', tier: 'DEMO' };
+        }
+        return { ok: true, offline: false, changed: null, tier: 'DEMO' };
+      }
+
+      const sameKey = local.isLicensed && local.licenseKey === key;
+      try {
+        setStoreLicenseLocal(cleanId, {
+          isLicensed: true,
+          tier: reg.licenseTier || 'LIFETIME_STANDARD',
+          licenseKey: key,
+          activatedAt: (sameKey && local.activatedAt) ? local.activatedAt : new Date().toISOString(),
+          pendingSync: false
+        });
+      } catch (_) {}
+      return { ok: true, offline: false, changed: sameKey ? null : 'restored', tier: reg.licenseTier || 'LIFETIME_STANDARD' };
+    }
+
+    // (5) Aktivasi offline yang belum pernah terverifikasi → verifikasi sekarang.
+    if (local.isLicensed && local.pendingSync && local.licenseKey) {
+      try {
+        const fp = getOrCreateDeviceFingerprint();
+        const re = await verifyAndClaimLicense(local.licenseKey, cleanId, fp);
+        if (re && re.success) {
+          try {
+            setStoreLicenseLocal(cleanId, {
+              isLicensed: true,
+              tier: re.tier || 'LIFETIME_STANDARD',
+              licenseKey: local.licenseKey,
+              activatedAt: local.activatedAt || new Date().toISOString(),
+              pendingSync: false
+            });
+          } catch (_) {}
+          return { ok: true, offline: false, changed: 'pending-verified', tier: re.tier || 'LIFETIME_STANDARD' };
+        }
+      } catch (_) {}
+      // Verifikasi gagal karena teknis (bukan vonis) → tetap fail-open.
+      return { ok: true, offline: false, changed: null, tier: local.tier };
+    }
+
+    return { ok: true, offline: false, changed: null, tier: local.isLicensed ? local.tier : 'DEMO' };
+  } catch (_) {
+    return { ok: false, reason: 'error', changed: null };
   }
 }
 

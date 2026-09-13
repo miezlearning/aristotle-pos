@@ -2,6 +2,16 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.69] - 2026-09-13
+
+### 🔑 Perbaikan Bug Lisensi Hilang: Entitlement Cloud + Restore Otomatis
+- **Lisensi dipulihkan otomatis dari cloud:** fungsi baru `restoreStoreLicenseFromCloud()` berjalan tiap login, ganti toko, dan boot bersesi — lisensi Lifetime yang hilang akibat update aplikasi/hapus cache/ganti HP kini pulih sendiri dengan toast konfirmasi.
+- **Fail-open offline & kill-switch:** tanpa koneksi kasir tetap jalan dengan cache lokal (tidak pernah downgrade tanpa bukti); pencabutan lisensi (`revoked`) tetap ditegakkan saat online.
+- **Aktivasi offline terverifikasi ulang:** klaim saat offline ditandai `pendingSync` dan diverifikasi ke server saat online pertama.
+- **Aturan Firestore diperbaiki:** koleksi `licenses/**` kini bisa dibaca/divalidasi (sebelumnya default-deny sehingga operasi cloud lisensi gagal); tulis entitlement tanpa nama diizinkan di `stores_registry`. **Wajib deploy ulang rules** (`firebase deploy --only firestore:rules`).
+
+---
+
 ## [v1.2.68] - 2026-09-13
 
 ### 🔒 Privasi Kode Lisensi Standar Industri (Minimal Disclosure)

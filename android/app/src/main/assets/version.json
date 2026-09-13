@@ -1,11 +1,11 @@
 {
-  "versionCode": 117,
-  "versionName": "1.2.68",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.68/Aristotle-POS.apk",
+  "versionCode": 118,
+  "versionName": "1.2.69",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.69/Aristotle-POS.apk",
   "changelog": [
-    "Hapus fragmen kode lisensi dari kartu profil toko, subtitle jadi status saja",
-    "Kode lisensi pindah ke modal aktivasi: tersembunyi by default, reveal-on-tap + salin",
-    "Subtitle peran dipendekkan agar tidak terpotong di kartu compact"
+    "Perbaikan bug lisensi hilang: entitlement dipulihkan otomatis dari cloud setiap sesi login dan boot",
+    "Aturan Firestore koleksi licenses diperbaiki + kill-switch revoke saat online",
+    "Aktivasi offline ditandai pendingSync dan diverifikasi ulang saat online pertama"
   ],
   "releaseDate": "2026-09-13"
 }

@@ -205,3 +205,10 @@ Masalah di screenshot → perbaikan baku:
 - Badge: selalu `max-w-[90px]~[110px] truncate`, maks 1–2 kata (`Aktif`, `Demo`, `Lifetime`, `Cek Izin`). Jangan tulis kalimat di badge.
 - Switch: on/off SELALU switch (`w-11 h-6` untuk tombol, `w-9 h-5` untuk toggle list). Checkbox asli tetap dipakai sebagai `<input type="checkbox" class="switch-input sr-only">` + `<span class="switch-track">` agar JS `.checked` tidak rusak tapi visual konsisten (lihat `css/style.css` bagian 10).
 - JS yang me-render ulang class (contoh: `updatePinButtonUI`, `updateStoreLicenseUI`, `updateNotificationUiState`, `updateHeaderRoleBadgeUI`) WAJIB memakai kelas compact yang sama — jangan kembalikan ke `p-3.5`/`w-10` lama.
+
+## 13. Aturan Lisensi (logic — standar industri)
+- Sumber kebenaran entitlement = cloud (`stores_registry/{storeId}` + `licenses/{key}`). Cache lokal (`kasir_{id}_license_v1`) hanya untuk mode offline.
+- Wajib panggil `syncLicenseAfterSession(storeId)` setiap sesi berdiri (login, ganti toko, boot dengan sesi aktif). Fungsi ini non-blokir dan fail-open.
+- Jangan pernah downgrade ke demo hanya karena cloud tidak terbaca / dokumen tidak ada. Downgrade hanya atas bukti positif revoked.
+- Aktivasi offline wajib ditandai `pendingSync: true` dan diverifikasi ulang saat online pertama (`restoreStoreLicenseFromCloud`).
+- Jangan tampilkan material key di UI (lihat larangan no. 5). Aturan Firestore untuk `licenses/**` wajib ikut di-deploy setiap mengubah alur lisensi (`firebase deploy --only firestore:rules`).

@@ -5,9 +5,27 @@ service cloud.firestore {
     // 1. Registry Toko (Pendaftaran & Pencarian ID Toko)
     match /stores_registry/{storeId} {
       allow read: if true;
-      allow create, update: if request.resource.data.name is string
-                            && request.resource.data.name.size() > 0;
+      allow create, update: if (request.resource.data.name is string
+                                && request.resource.data.name.size() > 0)
+                             // Pengecualian: tulis entitlement lisensi tanpa nama
+                             // (klaim bisa terjadi sebelum/sesudah profil ada)
+                             || request.resource.data.licenseStatus is string;
       allow delete: if true;
+    }
+
+    // 1b. Registry Lisensi (Entitlement SaaS — sumber kebenaran lisensi)
+    // Model keamanan: kode lisensi = capability secret. Read publik agar verifikasi
+    // aktivasi & restore lisensi bisa jalan dari HP kasir tanpa login Firebase.
+    // Write dibatasi validasi field; hapus dilarang (pakai status 'revoked').
+    // TODO hardening: kunci create/update ke Firebase Auth admin saat auth diberlakukan.
+    match /licenses/{licenseKey} {
+      allow read: if true;
+      allow create: if request.resource.data.licenseKey == licenseKey
+                    && request.resource.data.status in ['active', 'claimed']
+                    && request.resource.data.tier in ['LIFETIME_STANDARD', 'PRO_LIFETIME', 'DEMO'];
+      allow update: if request.resource.data.licenseKey == licenseKey
+                    && request.resource.data.status in ['active', 'claimed', 'revoked'];
+      allow delete: if false;
     }
     
     // 2. Data Terisolasi Tiap Toko (Multi-Tenant Store Boundary)

@@ -58,7 +58,8 @@ import {
   logoutGoogleOwner,
   fetchStoresByOwner,
   linkStoreToOwner,
-  verifyAndClaimLicense
+  verifyAndClaimLicense,
+  restoreStoreLicenseFromCloud
 } from './firebase.js';
 import { 
   getStoreLicenseStatus, 
@@ -552,6 +553,8 @@ export function quickSelectStore(storeId) {
   applyRoleUIPermissions();
   closeUniversalLoginModal();
   showToast(`Kasir [${state.storeProfile?.name || cleanId}] siap melayani`, 'success');
+  // Pulihkan entitlement lisensi dari cloud di latar (non-blokir; offline = percaya cache).
+  syncLicenseAfterSession(cleanId);
 }
 
 export function deleteSavedStoreCard(storeId) {
@@ -727,6 +730,7 @@ export async function handleStoreRegisterSubmit(e) {
   }
 
   let claimTier = 'LIFETIME_STANDARD';
+  let claimWasOffline = false;
 
   if (currentRegisterMode === 'licensed') {
     if (!licenseKey) {
@@ -758,6 +762,7 @@ export async function handleStoreRegisterSubmit(e) {
         return;
       }
       claimTier = claimResult.tier || 'LIFETIME_STANDARD';
+      claimWasOffline = Boolean(claimResult.isOfflineValidated);
     } catch (verErr) {
       showToast('Koneksi verifikasi gagal: ' + verErr.message, 'error');
       return;
@@ -801,7 +806,8 @@ export async function handleStoreRegisterSubmit(e) {
         isLicensed: true,
         tier: claimTier,
         licenseKey: licenseKey,
-        activatedAt: new Date().toISOString()
+        activatedAt: new Date().toISOString(),
+        pendingSync: claimWasOffline
       });
     } else {
       setStoreLicenseLocal(cleanId, {
@@ -995,7 +1001,8 @@ export async function handleActivateLicenseSubmit(e) {
       isLicensed: true,
       tier: claimRes.tier || 'LIFETIME_STANDARD',
       licenseKey: licenseKey,
-      activatedAt: new Date().toISOString()
+      activatedAt: new Date().toISOString(),
+      pendingSync: Boolean(claimRes.isOfflineValidated)
     });
 
     closeActivateLicenseModal();
@@ -1195,6 +1202,31 @@ function updatePinButtonUI() {
 }
 
 // ================= ROLE-BASED ACCESS CONTROL (RBAC) & CASHIER FOCUS MODE =================
+
+/**
+ * Sinkronisasi lisensi pasca-sesi: pulihkan entitlement dari cloud tanpa memblokir kasir.
+ * Dipanggil saat login/ganti toko (via quickSelectStore) dan saat boot dengan sesi aktif.
+ * Berjalan di latar: offline atau gagal baca = percaya cache lokal (fail-open).
+ */
+export function syncLicenseAfterSession(storeId) {
+  if (!storeId) return Promise.resolve(null);
+  try {
+    return restoreStoreLicenseFromCloud(storeId).then((res) => {
+      try { updateStoreLicenseUI(); } catch (_) {}
+      if (!res) return res;
+      if (res.changed === 'restored') {
+        showToast('Lisensi Lifetime dipulihkan dari cloud. Transaksi tanpa batas aktif kembali.', 'success', 4500);
+      } else if (res.changed === 'pending-verified') {
+        showToast('Aktivasi offline terverifikasi ke server. Lisensi resmi aktif.', 'success', 4500);
+      } else if (res.changed === 'revoked') {
+        showToast('Lisensi toko ini telah dibekukan. Aplikasi kembali ke Mode Demo.', 'danger', 6000);
+      }
+      return res;
+    }).catch(() => null);
+  } catch (_) {
+    return Promise.resolve(null);
+  }
+}
 
 /**
  * Terapkan hak akses tampilan secara otomatis (Cashier Focus Mode)
@@ -2322,6 +2354,13 @@ export async function init() {
 
     initFirebaseSync();
 
+    // Pulihkan lisensi dari cloud jika ada sesi toko aktif (non-blokir; offline = cache lokal).
+    try {
+      if (state.storeId && state.isSessionActive && sessionStorage.getItem('is_logged_out_state') !== '1') {
+        syncLicenseAfterSession(state.storeId);
+      }
+    } catch (_) {}
+
     // 5. Setup Remote Print Host Listener (Device 1 otomatis mengeksekusi print dari Device 2)
     try {
       printer.setupRemotePrintHostListener();
@@ -2837,6 +2876,7 @@ const KasirApp = {
   renderInstalledLicenseBox,
   toggleInstalledLicenseVisibility,
   copyInstalledLicenseKey,
+  syncLicenseAfterSession,
   openQuotaLimitModal,
   closeQuotaLimitModal,
   updateStoreLicenseUI,

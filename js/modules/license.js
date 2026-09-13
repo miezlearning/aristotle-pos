@@ -149,7 +149,8 @@ export function getStoreLicenseStatus(storeId) {
         isDemo: true,
         isLicensed: false,
         tier: 'DEMO',
-        licenseKey: null
+        licenseKey: null,
+        pendingSync: false
       };
     }
     const data = JSON.parse(raw);
@@ -159,7 +160,8 @@ export function getStoreLicenseStatus(storeId) {
         isLicensed: true,
         tier: data.tier || 'LIFETIME_STANDARD',
         licenseKey: data.licenseKey,
-        activatedAt: data.activatedAt
+        activatedAt: data.activatedAt,
+        pendingSync: Boolean(data.pendingSync)
       };
     }
   } catch (_) {}
@@ -168,7 +170,8 @@ export function getStoreLicenseStatus(storeId) {
     isDemo: true,
     isLicensed: false,
     tier: 'DEMO',
-    licenseKey: null
+    licenseKey: null,
+    pendingSync: false
   };
 }
 
@@ -184,7 +187,11 @@ export function setStoreLicenseLocal(storeId, licenseInfo) {
       isLicensed: Boolean(licenseInfo.isLicensed),
       tier: licenseInfo.tier || 'LIFETIME_STANDARD',
       licenseKey: licenseInfo.licenseKey || null,
-      activatedAt: licenseInfo.activatedAt || new Date().toISOString()
+      activatedAt: licenseInfo.activatedAt || new Date().toISOString(),
+      registeredAt: licenseInfo.registeredAt || null,
+      // Standar industri offline-first: aktivasi yang terjadi saat offline
+      // WAJIB diverifikasi ulang ke cloud saat online pertama kali.
+      pendingSync: Boolean(licenseInfo.pendingSync)
     }));
   } catch (e) {
     console.error('Failed to save store license locally:', e);
