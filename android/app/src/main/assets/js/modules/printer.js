@@ -473,8 +473,15 @@ export function generateReceiptPlainText(tx, customConfig = null) {
   const rawSubtotal = tx.subtotal || tx.total;
   lines.push(padBetween('Subtotal', formatRp(rawSubtotal)));
   if (tx.discount && tx.discount.amount > 0) {
-    const discLabel = tx.discount.type === 'percent' ? `Diskon (${tx.discount.value}%)` : 'Diskon';
+    const discReason = tx.discount.reason ? `, ${{ rutin: 'Pelanggan', promo: 'Promo', rusak: 'Rusak', acara: 'Acara' }[tx.discount.reason] || tx.discount.reason}` : '';
+    const discLabel = tx.discount.type === 'percent' ? `Diskon (${tx.discount.value}%${discReason})` : `Diskon${discReason}`;
     lines.push(padBetween(discLabel, `-${formatRp(tx.discount.amount)}`));
+  }
+  if (tx.tax && tx.tax.serviceAmt > 0) {
+    lines.push(padBetween(`Service (${tx.tax.servicePct}%)`, `+${formatRp(tx.tax.serviceAmt)}`));
+  }
+  if (tx.tax && tx.tax.taxAmt > 0) {
+    lines.push(padBetween(`${tx.tax.label || 'PBJT'} (${tx.tax.taxPct}%)`, `+${formatRp(tx.tax.taxAmt)}`));
   }
   lines.push(padBetween('TOTAL', formatRp(tx.total)));
   if (sectionSpacing > 0) {
@@ -712,8 +719,15 @@ export async function buildEscPosBytes(tx, kickDrawer = false) {
   const rawSubtotal = tx.subtotal || tx.total;
   addText(padBetween('Subtotal', formatRp(rawSubtotal), width) + '\n');
   if (tx.discount && tx.discount.amount > 0) {
-    const discLabel = tx.discount.type === 'percent' ? `Diskon (${tx.discount.value}%)` : 'Diskon';
+    const discReason = tx.discount.reason ? `, ${{ rutin: 'Pelanggan', promo: 'Promo', rusak: 'Rusak', acara: 'Acara' }[tx.discount.reason] || tx.discount.reason}` : '';
+    const discLabel = tx.discount.type === 'percent' ? `Diskon (${tx.discount.value}%${discReason})` : `Diskon${discReason}`;
     addText(padBetween(discLabel, `-${formatRp(tx.discount.amount)}`, width) + '\n');
+  }
+  if (tx.tax && tx.tax.serviceAmt > 0) {
+    addText(padBetween(`Service (${tx.tax.servicePct}%)`, `+${formatRp(tx.tax.serviceAmt)}`, width) + '\n');
+  }
+  if (tx.tax && tx.tax.taxAmt > 0) {
+    addText(padBetween(`${tx.tax.label || 'PBJT'} (${tx.tax.taxPct}%)`, `+${formatRp(tx.tax.taxAmt)}`, width) + '\n');
   }
   addBytes(0x1B, 0x45, 0x01); // Bold ON
   addText(padBetween('TOTAL', formatRp(tx.total), width) + '\n');
@@ -2827,13 +2841,37 @@ export function renderPrintableReceiptArea(tx, cfg = null) {
   if (tx.discount && tx.discount.amount > 0) {
     if (discountRow) discountRow.style.display = 'flex';
     if (discountLabelEl) {
+      const discReason = tx.discount.reason ? `, ${{ rutin: 'Pelanggan', promo: 'Promo', rusak: 'Rusak', acara: 'Acara' }[tx.discount.reason] || tx.discount.reason}` : '';
       discountLabelEl.innerText = tx.discount.type === 'percent' 
-        ? `Diskon (${tx.discount.value}%):` 
-        : 'Diskon:';
+        ? `Diskon (${tx.discount.value}%${discReason}):` 
+        : `Diskon${discReason}:`;
     }
     if (discountValEl) discountValEl.innerText = `-${formatRp(tx.discount.amount)}`;
   } else {
     if (discountRow) discountRow.style.display = 'none';
+  }
+
+  {
+    const svcRow = document.getElementById('receiptServiceRow');
+    const svcLabelEl = document.getElementById('receiptServiceLabel');
+    const svcValEl = document.getElementById('receiptServiceVal');
+    const taxRow = document.getElementById('receiptTaxRow');
+    const taxLabelEl = document.getElementById('receiptTaxLabel');
+    const taxValEl = document.getElementById('receiptTaxVal');
+    if (tx.tax && tx.tax.serviceAmt > 0) {
+      if (svcRow) svcRow.style.display = 'flex';
+      if (svcLabelEl) svcLabelEl.innerText = `Service (${tx.tax.servicePct}%):`;
+      if (svcValEl) svcValEl.innerText = `+${formatRp(tx.tax.serviceAmt)}`;
+    } else if (svcRow) {
+      svcRow.style.display = 'none';
+    }
+    if (tx.tax && tx.tax.taxAmt > 0) {
+      if (taxRow) taxRow.style.display = 'flex';
+      if (taxLabelEl) taxLabelEl.innerText = `${tx.tax.label || 'PBJT'} (${tx.tax.taxPct}%):`;
+      if (taxValEl) taxValEl.innerText = `+${formatRp(tx.tax.taxAmt)}`;
+    } else if (taxRow) {
+      taxRow.style.display = 'none';
+    }
   }
 
   if (totalEl) totalEl.innerText = formatRp(tx.total);

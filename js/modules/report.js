@@ -2,16 +2,26 @@
  * Kasir Mami - Financial Report & Bookkeeping Module
  */
 
-import { state, saveExpenses, saveHistory } from '../state.js';
+import { state, saveExpenses, saveHistory, saveProducts } from '../state.js';
 import { formatRp, formatDateShort, formatDateFull, escapeHtml, showToast, showConfirmDialog, playClick } from '../utils.js';
 import { showReceipt } from './payment.js';
 import { 
   syncAddExpense, 
+  syncAddTransaction,
   syncDeleteExpense, 
-  syncDeleteTransaction, 
   syncClearTodayData, 
   syncClearAllHistory 
 } from '../firebase.js';
+
+export const VOID_REASONS = {
+  salah: 'Salah input',
+  batal: 'Batal pelanggan',
+  rusak: 'Makanan rusak',
+  lain: 'Lainnya'
+};
+
+let voidTxId = null;
+let voidReason = null;
 
 export function setReportPeriod(period) {
   if (period === 'range' && !state.reportRange) {
@@ -105,9 +115,10 @@ export function getPeriodLabel() {
   return 'Semua Periode';
 }
 
-export function filterByPeriod(items) {
+export function filterByPeriod(items, includeVoid = false) {
   const now = new Date();
   return items.filter(item => {
+    if (!includeVoid && item.voided) return false; // void tidak masuk omzet, tapi tetap ada di jurnal
     const itemDate = new Date(item.date);
     if (state.currentPeriod === 'today') {
       return itemDate.toDateString() === now.toDateString();
@@ -142,10 +153,15 @@ export function renderReportSkeletons() {
 export function renderFinancialReport() {
   const filteredTx = filterByPeriod(state.transactions);
   const filteredExp = filterByPeriod(state.expenses);
+  const journalTx = filterByPeriod(state.transactions, true); // jurnal termasuk void (badge)
+  const voidedTx = journalTx.filter(t => t.voided);
 
   let totalRevenue = 0;
   let totalCash = 0;
   let totalQris = 0;
+  let totalDiscount = 0;
+  let discountCount = 0;
+  const discountByActor = {};
   const itemSalesCounter = {};
 
   filteredTx.forEach(tx => {
@@ -154,6 +170,13 @@ export function renderFinancialReport() {
       totalQris += tx.total;
     } else {
       totalCash += tx.total;
+    }
+
+    if (tx.discount && tx.discount.amount > 0) {
+      totalDiscount += tx.discount.amount;
+      discountCount += 1;
+      const actor = tx.discount.by || 'Owner';
+      discountByActor[actor] = (discountByActor[actor] || 0) + tx.discount.amount;
     }
 
     tx.items.forEach(i => {
@@ -212,23 +235,40 @@ export function renderFinancialReport() {
     }
   }
 
-  // 3. Render Riwayat Penjualan dengan Tombol Cetak & Hapus Satuan
+  // 3. Render Riwayat Penjualan (jurnal: termasuk void ber-badge) + Ringkasan Diskon
   const txContainer = document.getElementById('txHistoryCardList');
   if (txContainer) {
-    if (filteredTx.length === 0) {
-      txContainer.innerHTML = `<div class="py-6 text-center text-stone-400 font-bold text-xs">Belum ada transaksi penjualan di periode ini</div>`;
+    const discRows = Object.entries(discountByActor)
+      .sort((a, b) => b[1] - a[1])
+      .map(([actor, amt]) => `<div class="flex justify-between text-[11px] font-bold text-stone-600"><span class="truncate">${escapeHtml(actor)}</span><span class="shrink-0">-${formatRp(amt)}</span></div>`)
+      .join('');
+    const discCard = (totalDiscount > 0 || voidedTx.length > 0) ? `
+      <div class="mb-2 p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80 flex flex-col gap-1">
+        <div class="flex items-center justify-between text-[11px] font-black text-amber-950">
+          <span class="flex items-center gap-1"><span class="material-symbols-rounded text-sm">local_offer</span>Diskon periode ini</span>
+          <span>-${formatRp(totalDiscount)} (${discountCount}x)</span>
+        </div>
+        ${discRows}
+        ${voidedTx.length > 0 ? `<div class="flex items-center justify-between text-[11px] font-bold text-stone-500 border-t border-amber-200/60 pt-1"><span>Transaksi dibatalkan (void)</span><span>${voidedTx.length}x (tidak masuk omzet)</span></div>` : ''}
+      </div>` : '';
+    if (journalTx.length === 0) {
+      txContainer.innerHTML = `${discCard}<div class="py-6 text-center text-stone-400 font-bold text-xs">Belum ada transaksi penjualan di periode ini</div>`;
     } else {
-      txContainer.innerHTML = filteredTx.map(tx => {
+      txContainer.innerHTML = discCard + journalTx.map(tx => {
         const dateStr = formatDateShort(tx.date);
         const summaryItems = tx.items.map(i => `${i.qty}x ${escapeHtml(i.name)}`).join(', ');
+        const voidBadge = tx.voided
+          ? `<span class="text-[9px] bg-stone-800 text-white font-black px-1.5 py-0.2 rounded">VOID • ${escapeHtml(tx.voidReasonLabel || 'Batal')}</span>`
+          : '';
 
         return `
-          <div class="py-2.5 flex items-center justify-between gap-1.5 hover:bg-stone-50 transition border-b border-stone-100 last:border-0">
+          <div class="py-2.5 flex items-center justify-between gap-1.5 hover:bg-stone-50 transition border-b border-stone-100 last:border-0 ${tx.voided ? 'opacity-70' : ''}">
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="font-black text-stone-900 text-xs sm:text-sm">${formatRp(tx.total)}</span>
+                <span class="font-black ${tx.voided ? 'text-stone-400 line-through' : 'text-stone-900'} text-xs sm:text-sm">${formatRp(tx.total)}</span>
                 <span class="text-[10px] text-stone-500 font-bold">${dateStr}</span>
                 <span class="text-[9px] ${tx.method === 'QRIS' ? 'bg-emerald-100 text-emerald-900 font-black' : 'bg-stone-100 text-stone-800 font-black'} px-1.5 py-0.2 rounded">${tx.method || 'TUNAI'}</span>
+                ${voidBadge}
               </div>
               <p class="text-[11px] text-stone-600 truncate mt-0.5">${summaryItems}</p>
             </div>
@@ -236,9 +276,9 @@ export function renderFinancialReport() {
               <button onclick='window.KasirApp.reprintTx("${tx.id}")' class="p-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold transition touch-target-large" title="Lihat / Cetak Struk">
                 <span class="material-symbols-rounded text-base">receipt</span>
               </button>
-              <button onclick='window.KasirApp.deleteTransaction("${tx.id}")' class="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-bold transition touch-target-large" title="Hapus transaksi ini (koreksi kesalahan input)">
-                <span class="material-symbols-rounded text-base">delete</span>
-              </button>
+              ${tx.voided ? '' : `<button onclick='window.KasirApp.deleteTransaction("${tx.id}")' class="p-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold transition touch-target-large" title="Batalkan transaksi (void berjejak)">
+                <span class="material-symbols-rounded text-base">do_not_disturb_on</span>
+              </button>`}
             </div>
           </div>
         `;
@@ -292,6 +332,10 @@ export function reprintTx(txId) {
  * HAPUS DATA HARI INI (Transaksi Penjualan & Pengeluaran Hari Ini Saja)
  */
 export async function clearTodayData() {
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Hapus data hanya untuk Mode Owner.', 'warning');
+    return;
+  }
   const now = new Date();
   const todayStr = now.toDateString();
 
@@ -323,28 +367,97 @@ export async function clearTodayData() {
 }
 
 /**
- * HAPUS SATU TRANSAKSI SPESIFIK (Untuk koreksi jika salah input)
+ * BATALKAN TRANSAKSI DENGAN JEJAK (VOID — standar industri).
+ * Transaksi TIDAK dihapus: ditandai void + alasan + pelaku + waktu, dikeluarkan
+ * dari omzet, dan stok yang terpakai dikembalikan. Tidak bisa di-unvoid.
  */
 export async function deleteTransaction(txId) {
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Batalkan transaksi hanya untuk Mode Owner.', 'warning');
+    return;
+  }
   const tx = state.transactions.find(t => t.id === txId);
   if (!tx) return;
-
-  const itemSummary = tx.items.map(i => `${i.qty}x ${i.name}`).join(', ');
-  const ok = await showConfirmDialog({
-    title: 'Hapus Transaksi Penjualan',
-    message: `Hapus transaksi ${tx.orderName || 'Pesanan'} senilai ${formatRp(tx.total)} (${itemSummary})?`,
-    confirmText: 'Hapus Transaksi',
-    confirmType: 'danger',
-    icon: 'delete'
-  });
-
-  if (ok) {
-    state.transactions = state.transactions.filter(t => t.id !== txId);
-    saveHistory();
-    syncDeleteTransaction(txId);
-    renderFinancialReport();
-    showToast('Catatan transaksi berhasil dihapus.', 'info');
+  if (tx.voided) {
+    showToast('Transaksi ini sudah dibatalkan (void) dan tercatat di audit.', 'info');
+    return;
   }
+  openVoidModal(txId);
+}
+
+export function openVoidModal(txId) {
+  playClick('pop');
+  voidTxId = txId;
+  voidReason = null;
+  try {
+    document.querySelectorAll('.void-reason-chip').forEach(ch => {
+      ch.className = 'void-reason-chip py-2 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-xs text-stone-700 transition active:scale-95 touch-target-large text-center';
+    });
+  } catch (_) {}
+  const tx = state.transactions.find(t => t.id === txId);
+  const sub = document.getElementById('voidTxModalSub');
+  if (sub && tx) sub.innerText = `${tx.orderName || 'Pesanan'} • ${formatRp(tx.total)} — tercatat, tidak masuk omzet`;
+  const modal = document.getElementById('voidTxModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+export function closeVoidModal() {
+  playClick('pop');
+  voidTxId = null;
+  voidReason = null;
+  const modal = document.getElementById('voidTxModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+export function setVoidReason(r) {
+  playClick('tap');
+  voidReason = (voidReason === r) ? null : r;
+  try {
+    document.querySelectorAll('.void-reason-chip').forEach(ch => {
+      const on = ch.dataset.reason === voidReason;
+      ch.className = 'void-reason-chip py-2 px-1 rounded-xl border font-bold text-xs transition active:scale-95 touch-target-large text-center ' +
+        (on ? 'bg-amber-600 border-amber-600 text-white shadow-xs' : 'bg-stone-100 border-stone-200 text-stone-700');
+    });
+  } catch (_) {}
+}
+
+export async function submitVoid() {
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Batalkan transaksi hanya untuk Mode Owner.', 'warning');
+    return;
+  }
+  const tx = state.transactions.find(t => t.id === voidTxId);
+  if (!tx || tx.voided) {
+    closeVoidModal();
+    return;
+  }
+  if (!voidReason) {
+    showToast('Pilih alasan pembatalan dulu (wajib untuk audit).', 'warning');
+    return;
+  }
+  const actor = state.auth?.ownerName || state.storeProfile?.name || 'Owner';
+  tx.voided = true;
+  tx.voidReason = voidReason;
+  tx.voidReasonLabel = VOID_REASONS[voidReason] || voidReason;
+  tx.voidBy = actor;
+  tx.voidAt = new Date().toISOString();
+
+  // Kembalikan stok yang terpakai (penjualan dianggap tidak pernah terjadi).
+  let stockTouched = false;
+  (tx.items || []).forEach(it => {
+    const prod = state.products.find(p => p.id === it.id);
+    if (prod && prod.trackStock && typeof prod.stock === 'number') {
+      prod.stock = Math.max(0, (prod.stock || 0) + (Number(it.qty) || 0));
+      stockTouched = true;
+    }
+  });
+  if (stockTouched) saveProducts();
+
+  saveHistory();
+  try { await syncAddTransaction(tx); } catch (_) {}
+  closeVoidModal();
+  renderFinancialReport();
+  showToast(`Transaksi dibatalkan (${tx.voidReasonLabel}). Jejak tersimpan di audit.`, 'info', 4000);
 }
 
 // ================= EXPENSE FORM MODAL =================
@@ -390,6 +503,10 @@ export function saveExpense(e) {
 }
 
 export async function deleteExpense(id) {
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Hapus pengeluaran hanya untuk Mode Owner.', 'warning');
+    return;
+  }
   const exp = state.expenses.find(e => e.id === id);
   const expName = exp ? `${exp.name} (${formatRp(exp.amount)})` : 'ini';
   const ok = await showConfirmDialog({
@@ -430,6 +547,7 @@ export function shareReportWhatsApp() {
   const netProfit = totalRevenue - totalExpenses;
   const periodLabel = getPeriodLabel();
   const storeName = state.storeProfile?.name || 'Kasir UMKM';
+  const voidCount = filterByPeriod(state.transactions, true).filter(t => t.voided).length;
 
   const message = `*REKAP LAPORAN PENJUALAN - ${storeName.toUpperCase()}*
 Periode: ${periodLabel} (${formatDateFull(new Date())})
@@ -437,7 +555,7 @@ Periode: ${periodLabel} (${formatDateFull(new Date())})
 *Pemasukan (Omset)*: ${formatRp(totalRevenue)} (${filteredTx.length} Transaksi)
    • Tunai di Laci: ${formatRp(totalCash)}
    • QRIS / Transfer: ${formatRp(totalQris)}
-
+${voidCount > 0 ? `   • Dibatalkan (void, tidak masuk omzet): ${voidCount}x\n` : ''}
 *Total Pengeluaran*: ${formatRp(totalExpenses)}
 *LABA BERSIH (UNTUNG)*: ${formatRp(netProfit)}
 
@@ -455,10 +573,15 @@ export function exportReportCSV() {
   }
 
   const storeSlug = (state.storeProfile?.name || 'Toko').replace(/[^a-zA-Z0-9]/g, '_');
-  let csv = 'ID Transaksi,Tanggal,Nama Pesanan,Metode,Total,Uang Masuk,Kembalian,Menu Item\n';
+  let csv = 'ID Transaksi,Tanggal,Nama Pesanan,Metode,Total,Uang Masuk,Kembalian,Status,Menu Item\n';
   filteredTx.forEach(t => {
     const itemStr = t.items.map(i => `${i.qty}x ${i.name}`).join(' | ').replace(/,/g, ' ');
-    csv += `"${t.id}","${t.date}","${t.orderName || 'Kasir'}","${t.method || 'TUNAI'}","${t.total}","${t.cashGiven}","${t.change}","${itemStr}"\n`;
+    csv += `"${t.id}","${t.date}","${t.orderName || 'Kasir'}","${t.method || 'TUNAI'}","${t.total}","${t.cashGiven}","${t.change}","AKTIF","${itemStr}"\n`;
+  });
+  const voidedCsv = filterByPeriod(state.transactions, true).filter(t => t.voided);
+  voidedCsv.forEach(t => {
+    const itemStr = t.items.map(i => `${i.qty}x ${i.name}`).join(' | ').replace(/,/g, ' ');
+    csv += `"${t.id}","${t.date}","${t.orderName || 'Kasir'}","${t.method || 'TUNAI'}","${t.total}","${t.cashGiven}","${t.change}","VOID (${t.voidReasonLabel || t.voidReason || 'batal'} oleh ${t.voidBy || 'Owner'})","${itemStr}"\n`;
   });
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -475,6 +598,10 @@ export function clearTransactionHistory() {
 }
 
 export async function clearAllHistory() {
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Hapus riwayat hanya untuk Mode Owner.', 'warning');
+    return;
+  }
   if (state.transactions.length === 0 && state.expenses.length === 0) {
     showToast('Riwayat transaksi dan pengeluaran sudah kosong.', 'info');
     return;

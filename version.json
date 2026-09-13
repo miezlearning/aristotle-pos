@@ -1,11 +1,12 @@
 {
-  "versionCode": 118,
-  "versionName": "1.2.69",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.69/Aristotle-POS.apk",
+  "versionCode": 119,
+  "versionName": "1.2.70",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.70/Aristotle-POS.apk",
   "changelog": [
-    "Perbaikan bug lisensi hilang: entitlement dipulihkan otomatis dari cloud setiap sesi login dan boot",
-    "Aturan Firestore koleksi licenses diperbaiki + kill-switch revoke saat online",
-    "Aktivasi offline ditandai pendingSync dan diverifikasi ulang saat online pertama"
+    "Void transaksi beralasan gantikan hapus: jejak audit, keluar omzet, stok kembali",
+    "Pajak PBJT/service charge opsional Owner-only + tercetak di struk",
+    "Disiplin shift anti double-open, wajib hitung fisik, konfirmasi selisih",
+    "Laporan diskon per kasir, validasi stok anti-oversell, Uang Pas diselaraskan"
   ],
   "releaseDate": "2026-09-13"
 }

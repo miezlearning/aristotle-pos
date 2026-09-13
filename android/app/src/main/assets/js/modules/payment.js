@@ -1,7 +1,7 @@
-import { state, saveProducts, saveHistory, saveQueues, getCurrentCart, getActiveQueue, calculateCartTotal, getQueueLineItems } from '../state.js';
-import { formatRp, formatDateShort, escapeHtml, showToast, playClick, playSuccessChime } from '../utils.js';
+import { state, saveProducts, saveHistory, saveQueues, saveTaxConfig, getCurrentCart, getActiveQueue, calculateCartTotal, getQueueLineItems } from '../state.js';
+import { formatRp, formatDateShort, escapeHtml, showToast, showConfirmDialog, playClick, playSuccessChime } from '../utils.js';
 import { renderOrderQueueTabs, renderCart, renderProducts, toggleMobileCartDrawer } from './pos.js';
-import { syncAddTransaction, syncSaveQueues, syncSaveProduct } from '../firebase.js';
+import { syncAddTransaction, syncSaveQueues, syncSaveProduct, syncSaveTaxConfig } from '../firebase.js';
 import { generateDynamicQRIS, renderQRToContainer, parseQRISMetadata } from '../qris.js';
 import { printReceipt, printKitchenTicket, kickCashDrawer, renderPrintableReceiptArea, isLocalPrinterReady, isMobileBrowser } from './printer.js';
 import { notifyPaymentSuccess, notifyLowStock } from './notification.js';
@@ -12,8 +12,37 @@ let paymentMethod = 'cash'; // 'cash' or 'qris'
 let cashGiven = 0;
 let cashContributions = [];
 let currentReceiptTx = null;
-let activeDiscount = null; // { type: 'percent'|'nominal', value: number, amount: number }
+let activeDiscount = null; // { type:'percent'|'nominal', value, amount, reason, by, approvedBy }
 let discountModalType = 'percent'; // 'percent' or 'nominal'
+let discountReason = null; // 'rutin'|'promo'|'rusak'|'acara'|null
+
+// Standar industri warung: kasir boleh memberi diskon kecil langsung,
+// selebihnya wajib persetujuan Owner (mencegah struk Rp0 fiktif).
+export const CASHIER_DISCOUNT_MAX_PCT = 10;
+export const DISCOUNT_REASONS = {
+  rutin: 'Pelanggan',
+  promo: 'Promo',
+  rusak: 'Rusak',
+  acara: 'Acara'
+};
+
+function currentActorName() {
+  if (state.userRole === 'cashier') return state.activeCashier?.name || 'Kasir';
+  return state.auth?.ownerName || state.storeProfile?.name || 'Owner';
+}
+
+export function setDiscountReason(r) {
+  playClick('tap');
+  discountReason = (discountReason === r) ? null : r;
+  try {
+    document.querySelectorAll('.discount-reason-chip').forEach(ch => {
+      const on = ch.dataset.reason === discountReason;
+      ch.className = 'discount-reason-chip py-1.5 px-1 rounded-xl border font-bold text-[11px] transition active:scale-95 touch-target-large text-center ' +
+        (on ? 'bg-rose-600 border-rose-600 text-white shadow-xs'
+            : 'bg-stone-100 border-stone-200 text-stone-700');
+    });
+  } catch (_) {}
+}
 
 export function getActiveDiscount() {
   return activeDiscount;
@@ -21,7 +50,7 @@ export function getActiveDiscount() {
 
 export function getFinalPayableTotal() {
   const { total } = calculateCartTotal();
-  if (!activeDiscount) return total;
+  if (!activeDiscount) return calcPayable(total, 0).total;
   let amount = 0;
   if (activeDiscount.type === 'percent') {
     amount = Math.round((total * activeDiscount.value) / 100);
@@ -29,7 +58,95 @@ export function getFinalPayableTotal() {
     amount = Math.min(activeDiscount.value, total);
   }
   activeDiscount.amount = Math.max(0, Math.min(amount, total));
-  return Math.max(0, total - activeDiscount.amount);
+  return calcPayable(total, activeDiscount.amount).total;
+}
+
+/**
+ * Standar F&B Indonesia: service% dihitung dari penjualan bersih (setelah diskon),
+ * lalu pajak (PBJT/PB1) dihitung dari DPP = penjualan + service.
+ */
+export function calcPayable(subtotal, discAmt = 0) {
+  const sales = Math.max(0, (Number(subtotal) || 0) - Math.max(0, Number(discAmt) || 0));
+  const cfg = state.taxConfig || {};
+  if (!cfg.enabled) {
+    return { sales, servicePct: 0, serviceAmt: 0, dpp: sales, taxPct: 0, taxAmt: 0, total: sales };
+  }
+  const sPct = Math.min(100, Math.max(0, Number(cfg.servicePct) || 0));
+  const tPct = Math.min(100, Math.max(0, Number(cfg.taxPct) || 0));
+  const serviceAmt = Math.round((sales * sPct) / 100);
+  const dpp = sales + serviceAmt;
+  const taxAmt = Math.round((dpp * tPct) / 100);
+  return { sales, servicePct: sPct, serviceAmt, dpp, taxPct: tPct, taxAmt, total: dpp + taxAmt };
+}
+
+function taxLabel() {
+  return String((state.taxConfig || {}).taxLabel || 'PBJT').slice(0, 12) || 'PBJT';
+}
+
+export function toggleTaxEnabled(on) {
+  playClick('switch');
+  if (state.userRole === 'cashier') {
+    showToast('Pajak & service hanya bisa diubah Owner.', 'warning');
+    renderTaxCard();
+    return;
+  }
+  saveTaxConfig({ enabled: Boolean(on) });
+  syncSaveTaxConfig(state.taxConfig);
+  updatePaymentTotals();
+  renderTaxCard();
+}
+
+export function setTaxPct(v) {
+  if (state.userRole === 'cashier') {
+    showToast('Pajak & service hanya bisa diubah Owner.', 'warning');
+    renderTaxCard();
+    return;
+  }
+  saveTaxConfig({ taxPct: v });
+  syncSaveTaxConfig(state.taxConfig);
+  updatePaymentTotals();
+  renderTaxCard();
+}
+
+export function setServicePct(v) {
+  if (state.userRole === 'cashier') {
+    showToast('Pajak & service hanya bisa diubah Owner.', 'warning');
+    renderTaxCard();
+    return;
+  }
+  saveTaxConfig({ servicePct: v });
+  syncSaveTaxConfig(state.taxConfig);
+  updatePaymentTotals();
+  renderTaxCard();
+}
+
+export function renderTaxCard() {
+  const cfg = state.taxConfig || {};
+  const isOwner = state.userRole !== 'cashier';
+  const tgl = document.getElementById('taxToggleEnabled');
+  if (tgl) tgl.checked = Boolean(cfg.enabled);
+  const tp = document.getElementById('taxPctInput');
+  if (tp) { tp.value = cfg.taxPct ?? 10; tp.disabled = !isOwner; }
+  const sp = document.getElementById('servicePctInput');
+  if (sp) { sp.value = cfg.servicePct ?? 0; sp.disabled = !isOwner; }
+  const st = document.getElementById('taxCardStatus');
+  const rows = document.getElementById('taxCalcRows');
+  try {
+    const { total } = calculateCartTotal();
+    const dAmt = (activeDiscount && activeDiscount.amount) || 0;
+    const pay = calcPayable(total, dAmt);
+    if (st) {
+      st.innerText = cfg.enabled
+        ? `Aktif • Service ${pay.servicePct}% + ${taxLabel()} ${pay.taxPct}%`
+        : 'Mati • cocok untuk warung mikro (bukan objek pajak)';
+    }
+    if (rows) {
+      rows.innerHTML = (cfg.enabled && (pay.serviceAmt > 0 || pay.taxAmt > 0))
+        ? `<div class="flex justify-between text-[11px] font-bold text-stone-600"><span>Service (${pay.servicePct}%)</span><span>+${formatRp(pay.serviceAmt)}</span></div>
+           <div class="flex justify-between text-[11px] font-bold text-stone-600"><span>${escapeHtml(taxLabel())} (${pay.taxPct}%)</span><span>+${formatRp(pay.taxAmt)}</span></div>`
+        : '';
+    }
+  } catch (_) {}
 }
 
 export function updatePaymentTotals() {
@@ -66,6 +183,7 @@ export function updatePaymentTotals() {
   } else {
     updateChangeDisplay();
   }
+  try { renderTaxCard(); } catch (_) {}
 }
 
 export function applyDiscount(type, value) {
@@ -80,13 +198,41 @@ export function applyDiscount(type, value) {
   }
 
   let amount = 0;
+  let pctEquiv = 0;
+  let clampedPct = 0;
   if (type === 'percent') {
-    const clampedPct = Math.min(100, Math.max(1, numVal));
+    clampedPct = Math.min(100, Math.max(1, numVal));
     amount = Math.round((total * clampedPct) / 100);
-    activeDiscount = { type: 'percent', value: clampedPct, amount };
+    pctEquiv = clampedPct;
   } else {
     amount = Math.min(numVal, total);
-    activeDiscount = { type: 'nominal', value: numVal, amount };
+    pctEquiv = total > 0 ? (amount / total) * 100 : 0;
+  }
+
+  // Wewenang kasir: tombol cepat ≤ batas langsung; selebihnya approval Owner.
+  const isCashier = state.userRole === 'cashier';
+  if (isCashier && pctEquiv > CASHIER_DISCOUNT_MAX_PCT) {
+    closeDiscountModal();
+    const desc = type === 'percent' ? `Diskon ${clampedPct}%` : `Diskon ${formatRp(amount)}`;
+    showConfirmDialog({
+      title: 'Butuh Persetujuan Owner',
+      message: `${desc} melebihi wewenang kasir (maks ${CASHIER_DISCOUNT_MAX_PCT}%). Minta Owner verifikasi — buka ganti peran sekarang?`,
+      confirmText: 'Minta Owner',
+      confirmType: 'success',
+      icon: 'shield_person'
+    }).then(ok => {
+      if (ok && window.KasirApp && typeof window.KasirApp.openRoleSwitchModal === 'function') {
+        window.KasirApp.openRoleSwitchModal('owner');
+      }
+    });
+    return;
+  }
+
+  const actor = currentActorName();
+  if (type === 'percent') {
+    activeDiscount = { type: 'percent', value: clampedPct, amount, reason: discountReason, by: actor, approvedBy: isCashier ? null : actor };
+  } else {
+    activeDiscount = { type: 'nominal', value: numVal, amount, reason: discountReason, by: actor, approvedBy: isCashier ? null : actor };
   }
 
   updatePaymentTotals();
@@ -103,6 +249,15 @@ export function removeDiscount() {
 
 export function openDiscountModal() {
   playClick('pop');
+  // Kasir boleh masuk (preset kecil wewenangnya); selebihnya digate di applyDiscount.
+  discountReason = null;
+  try {
+    document.querySelectorAll('.discount-reason-chip').forEach(ch => {
+      ch.className = 'discount-reason-chip py-1.5 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-[11px] text-stone-700 transition active:scale-95 touch-target-large text-center';
+    });
+  } catch (_) {}
+  const hint = document.getElementById('discountRoleHint');
+  if (hint) hint.classList.toggle('hidden', state.userRole !== 'cashier');
   const { total } = calculateCartTotal();
   const subtotalEl = document.getElementById('discountModalSubtotal');
   if (subtotalEl) subtotalEl.innerText = formatRp(total);
@@ -226,7 +381,7 @@ export function openPaymentModal() {
   if (total <= 0) return;
 
   // Cek Batasan Kuota Akun Demo (Maksimal 25 Transaksi)
-  const quotaCheck = checkDemoTransactionLimit(state.storeId, state.history ? state.history.length : 0);
+  const quotaCheck = checkDemoTransactionLimit(state.storeId, (state.transactions || []).length);
   if (!quotaCheck.allowed) {
     playClick('error');
     if (window.KasirApp && typeof window.KasirApp.openQuotaLimitModal === 'function') {
@@ -449,7 +604,7 @@ export function updateChangeDisplay() {
 
 let isCompletingTransaction = false;
 
-export function completeTransaction() {
+export async function completeTransaction() {
   if (isCompletingTransaction) return;
 
   const finalPayable = getFinalPayableTotal();
@@ -457,6 +612,40 @@ export function completeTransaction() {
 
   const isQris = paymentMethod === 'qris';
   if (!isQris && cashGiven < finalPayable) return;
+
+  // Kuota demo ditegakkan ulang saat commit (bukan cuma saat modal dibuka).
+  const quotaCheck = checkDemoTransactionLimit(state.storeId, (state.transactions || []).length);
+  if (!quotaCheck.allowed) {
+    playClick('error');
+    if (window.KasirApp && typeof window.KasirApp.openQuotaLimitModal === 'function') {
+      window.KasirApp.openQuotaLimitModal();
+    } else {
+      showToast('Batas kuota demo tercapai (25/25)! Silakan aktivasi lisensi resmi.', 'warning', 5000);
+    }
+    return;
+  }
+
+  // QRIS tanpa bukti bayar tidak boleh menjadi omzet sah (standar industri
+  // untuk POS tanpa callback bank: kasir mengesahkan dana sudah masuk).
+  if (isQris) {
+    const hasQris = state.qrisPayload && state.qrisPayload.trim();
+    if (!hasQris) {
+      playClick('error');
+      showToast('QRIS toko belum dipasang. Pasang dulu atau pilih Tunai.', 'warning', 4000);
+      if (window.KasirApp && typeof window.KasirApp.openQrisModal === 'function') {
+        window.KasirApp.openQrisModal();
+      }
+      return;
+    }
+    const confirmed = await showConfirmDialog({
+      title: 'Konfirmasi Dana QRIS Masuk',
+      message: `Pastikan pembeli sudah scan & bayar ${formatRp(finalPayable)} (cek mutasi / aplikasi QRIS Anda) sebelum menyimpan.`,
+      confirmText: 'Sudah Dibayar, Simpan',
+      confirmType: 'success',
+      icon: 'qr_code_scanner'
+    });
+    if (!confirmed) return;
+  }
 
   isCompletingTransaction = true;
   const finishBtn = document.getElementById('btnFinishPayment');
@@ -519,6 +708,15 @@ export function completeTransaction() {
       return;
     }
 
+    // Validasi stok saat commit: tolak oversell diam-diam (standar opname).
+    for (const item of orderItems) {
+      const prod = state.products.find(p => p.id === item.id);
+      if (prod && prod.trackStock && typeof prod.stock === 'number' && prod.stock < item.qty) {
+        showToast(`Stok "${prod.name}" sisa ${prod.stock}, tidak cukup untuk ${item.qty}. Kurangi jumlah atau opname dulu.`, 'warning', 4500);
+        return;
+      }
+    }
+
     // Hitung diskon secara presisi terhadap verifiedRawSubtotal
     let finalVerifiedTotal = verifiedRawSubtotal;
     let txDiscount = null;
@@ -534,12 +732,29 @@ export function completeTransaction() {
       txDiscount = {
         type: activeDiscount.type,
         value: activeDiscount.value,
-        amount: discAmt
+        amount: discAmt,
+        reason: activeDiscount.reason || null,
+        by: activeDiscount.by || null,
+        approvedBy: activeDiscount.approvedBy || null
       };
     }
 
     const finalCash = isQris ? finalVerifiedTotal : cashGiven;
     const finalChange = isQris ? 0 : (cashGiven - finalVerifiedTotal);
+
+    // Pajak & service mengikuti rumus standar (service → DPP → pajak).
+    const payCalc = calcPayable(verifiedRawSubtotal, (txDiscount && txDiscount.amount) || 0);
+    finalVerifiedTotal = payCalc.total;
+    const finalCashAdj = isQris ? finalVerifiedTotal : cashGiven;
+    const finalChangeAdj = isQris ? 0 : (cashGiven - finalVerifiedTotal);
+    const txTax = (payCalc.serviceAmt > 0 || payCalc.taxAmt > 0) ? {
+      servicePct: payCalc.servicePct,
+      serviceAmt: payCalc.serviceAmt,
+      dpp: payCalc.dpp,
+      taxPct: payCalc.taxPct,
+      taxAmt: payCalc.taxAmt,
+      label: taxLabel()
+    } : null;
 
     const newTx = {
       id: 'TX-' + Date.now(),
@@ -549,9 +764,10 @@ export function completeTransaction() {
       items: orderItems,
       subtotal: verifiedRawSubtotal,
       discount: txDiscount,
+      tax: txTax,
       total: finalVerifiedTotal,
-      cashGiven: finalCash,
-      change: finalChange,
+      cashGiven: finalCashAdj,
+      change: finalChangeAdj,
       contributions: (!isQris && cashContributions.length > 1) ? cashContributions : null
     };
 

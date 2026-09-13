@@ -136,11 +136,19 @@ export function setQuickStartCash(amount) {
 }
 
 /**
- * Konfirmasi Buka Shift Baru
+ * Konfirmasi Buka Shift Baru (tolak buka ganda — shift lama wajib ditutup dulu)
  */
 export function submitStartShift() {
   const cashierInput = document.getElementById('startShiftCashierName');
   const initialCashInput = document.getElementById('startShiftInitialCash');
+
+  if (state.activeShift && state.activeShift.status === 'open') {
+    playClick('error');
+    showToast(`Shift ${state.activeShift.cashierName || ''} masih terbuka. Tutup dulu sebelum buka baru.`, 'warning', 4000);
+    closeStartShiftModal();
+    openCloseShiftModal();
+    return;
+  }
 
   const cashierName = (cashierInput?.value || '').trim() || state.auth?.ownerName || 'Kasir';
   const initialCash = Math.max(0, parseInt(initialCashInput?.value || 0, 10) || 0);
@@ -179,9 +187,9 @@ export function calculateShiftSummary(shift = null) {
   const startTime = new Date(targetShift.startTime);
   const endTime = targetShift.endTime ? new Date(targetShift.endTime) : new Date();
 
-  // Filter transaksi kasir selama shift
+  // Filter transaksi kasir selama shift (void tidak dihitung)
   const txs = (state.transactions || []).filter(t => {
-    if (!t.date) return false;
+    if (!t || t.voided || !t.date) return false;
     const d = new Date(t.date);
     return d >= startTime && d <= endTime;
   });
@@ -371,16 +379,41 @@ export async function finalizeCloseShift() {
   const actualInput = document.getElementById('closeShiftActualCash');
   const notesInput = document.getElementById('closeShiftNotes');
 
-  const actualVal = actualInput ? parseInt(actualInput.value || 0, 10) : 0;
+  // Wajib isi hitung fisik eksplisit (input kosong = belum dihitung, bukan Rp0).
+  const rawActual = actualInput ? String(actualInput.value).trim() : '';
+  if (rawActual === '') {
+    playClick('error');
+    showToast('Hitung dulu uang fisik di laci, lalu isi nominalnya. Tidak boleh kosong.', 'warning', 4000);
+    if (actualInput) actualInput.focus();
+    return;
+  }
+  const actualVal = parseInt(rawActual, 10);
+  if (isNaN(actualVal) || actualVal < 0) {
+    playClick('error');
+    showToast('Nominal uang fisik tidak valid.', 'warning');
+    return;
+  }
   const notes = notesInput ? notesInput.value.trim() : '';
 
   const summary = calculateShiftSummary(active);
   if (!summary) return;
 
-  summary.actualCash = isNaN(actualVal) ? summary.expectedCash : actualVal;
+  summary.actualCash = actualVal;
   summary.difference = summary.actualCash - summary.expectedCash;
   summary.closingNotes = notes;
   summary.endTime = new Date().toISOString();
+
+  // Selisih ≠ 0 wajib dikonfirmasi eksplisit (standar rekonsiliasi kas).
+  if (summary.difference !== 0) {
+    const ok = await showConfirmDialog({
+      title: summary.difference > 0 ? 'Laci Lebih — Tetap Tutup?' : 'Laci Kurang — Tetap Tutup?',
+      message: `Selisih ${formatRp(summary.difference)} (fisik ${formatRp(summary.actualCash)} vs sistem ${formatRp(summary.expectedCash)}). Selisih tercatat permanen di Laporan Z. Lanjut tutup shift?`,
+      confirmText: 'Ya, Tutup Shift',
+      confirmType: summary.difference > 0 ? 'success' : 'danger',
+      icon: 'account_balance_wallet'
+    });
+    if (!ok) return;
+  }
 
   const closedShift = {
     ...active,

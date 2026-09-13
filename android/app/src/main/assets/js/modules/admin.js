@@ -493,6 +493,11 @@ export function closeProductModal() {
 export function saveProduct(e) {
   if (e) e.preventDefault();
 
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Kelola menu hanya untuk Mode Owner.', 'warning');
+    return;
+  }
+
   const id = document.getElementById('editProductId').value;
   const name = document.getElementById('prodName').value.trim();
   const price = parseInt(document.getElementById('prodPrice').value, 10);
@@ -572,6 +577,10 @@ export function saveProduct(e) {
 }
 
 export async function deleteProduct(id) {
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Hapus menu hanya untuk Mode Owner.', 'warning');
+    return;
+  }
   const p = state.products.find(prod => prod.id === id);
   const prodName = p ? p.name : 'ini';
   const ok = await showConfirmDialog({
@@ -602,6 +611,10 @@ export async function deleteProduct(id) {
  */
 export async function deleteSelectedProducts() {
   playClick('pop');
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Hapus menu hanya untuk Mode Owner.', 'warning');
+    return;
+  }
   const count = selectedAdminProductIds.size;
   if (count === 0) {
     showToast('Pilih menu dulu', 'warning');
@@ -832,6 +845,10 @@ export function exportDataBackup() {
 }
 
 export function importDataBackup(event) {
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Pulihkan backup hanya untuk Mode Owner.', 'warning');
+    return;
+  }
   const file = event.target.files[0];
   if (!file) return;
 
@@ -840,7 +857,14 @@ export function importDataBackup(event) {
     try {
       const data = JSON.parse(e.target.result);
       if (data.products && Array.isArray(data.products)) {
-        state.products = data.products;
+        // Validasi + hormati kuota demo (mencegah bypass 10 produk via file).
+        const clean = data.products.filter(p => p && typeof p.name === 'string' && Number(p.price) > 0);
+        const licStatus = getStoreLicenseStatus(state.storeId);
+        if (!licStatus.isLicensed && clean.length > DEMO_MAX_PRODUCTS) {
+          showToast(`Backup ditolak: akun demo maksimal ${DEMO_MAX_PRODUCTS} produk (file berisi ${clean.length} valid). Aktivasi lisensi dulu.`, 'warning', 5000);
+          return;
+        }
+        state.products = clean;
         saveProducts();
       }
       if (data.transactions && Array.isArray(data.transactions)) {

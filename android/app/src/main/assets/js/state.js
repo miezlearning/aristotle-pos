@@ -11,7 +11,8 @@ import {
   MAMI_QRIS_PAYLOAD,
   DEFAULT_STORE_PROFILE,
   DEFAULT_PRINTER_CONFIG,
-  DEFAULT_NOTIFICATION_CONFIG
+  DEFAULT_NOTIFICATION_CONFIG,
+  DEFAULT_TAX_CONFIG
 } from './config.js';
 import { parseQRISMetadata } from './qris.js';
 import { hashSha256 } from './utils.js';
@@ -141,6 +142,7 @@ export const state = {
   qrisMode: 'dynamic', // 'dynamic' (nominal pas otomatis) or 'static' (nominal manual)
   printerConfig: { ...DEFAULT_PRINTER_CONFIG },
   notificationConfig: { ...DEFAULT_NOTIFICATION_CONFIG },
+  taxConfig: { ...DEFAULT_TAX_CONFIG },
   activeShift: null,
   shifts: []
 };
@@ -161,6 +163,7 @@ export function initState() {
     state.activeQueueId = 'q_1';
     state.printerConfig = { ...DEFAULT_PRINTER_CONFIG };
     state.notificationConfig = { ...DEFAULT_NOTIFICATION_CONFIG };
+    state.taxConfig = { ...DEFAULT_TAX_CONFIG };
     state.activeShift = null;
     state.shifts = [];
     updateUIStoreBranding();
@@ -334,7 +337,19 @@ export function initState() {
     state.notificationConfig = { ...DEFAULT_NOTIFICATION_CONFIG };
   }
 
-  // 10. Muat Status Shift Aktif & Riwayat Tutup Shift
+  // 10. Muat Konfigurasi Pajak & Service (PBJT/PB1, default mati untuk warung mikro)
+  const savedTax = localStorage.getItem(keys.TAX);
+  if (savedTax) {
+    try {
+      state.taxConfig = { ...DEFAULT_TAX_CONFIG, ...JSON.parse(savedTax) };
+    } catch (e) {
+      state.taxConfig = { ...DEFAULT_TAX_CONFIG };
+    }
+  } else {
+    state.taxConfig = { ...DEFAULT_TAX_CONFIG };
+  }
+
+  // 11. Muat Status Shift Aktif & Riwayat Tutup Shift
   const savedActiveShift = localStorage.getItem(keys.ACTIVE_SHIFT);
   if (savedActiveShift) {
     try {
@@ -393,6 +408,30 @@ export function saveNotificationConfig(newConfig) {
   if (currentStorageKeys && currentStorageKeys.NOTIFICATIONS) {
     localStorage.setItem(currentStorageKeys.NOTIFICATIONS, JSON.stringify(state.notificationConfig));
   }
+}
+
+/**
+ * Simpan konfigurasi pajak & service charge (PBJT/PB1). Owner-only di level UI.
+ */
+export function saveTaxConfig(newConfig) {
+  if (newConfig) {
+    const clean = { ...state.taxConfig, ...newConfig };
+    clean.enabled = Boolean(clean.enabled);
+    clean.taxPct = Math.min(100, Math.max(0, Number(clean.taxPct) || 0));
+    clean.servicePct = Math.min(100, Math.max(0, Number(clean.servicePct) || 0));
+    clean.taxLabel = String(clean.taxLabel || 'PBJT').slice(0, 12) || 'PBJT';
+    state.taxConfig = clean;
+  }
+  if (currentStorageKeys && currentStorageKeys.TAX) {
+    localStorage.setItem(currentStorageKeys.TAX, JSON.stringify(state.taxConfig));
+  }
+}
+
+/**
+ * Transaksi batal (void) tetap tercatat untuk audit — tidak masuk omzet.
+ */
+export function isLiveTx(t) {
+  return Boolean(t) && !t.voided;
 }
 
 /**
@@ -738,8 +777,42 @@ export function removeCashierFromStore(id) {
 export async function verifyCashierPin(cashierId, inputPin) {
   const cleanPin = String(inputPin || '').trim();
   if (!cleanPin) return { success: false, message: 'Harap masukkan PIN 6 digit kasir' };
+
+  // Anti brute-force per kasir (kunci terpisah dari Owner agar typo kasir
+  // tidak mengunci Owner, dan sebaliknya). Tabel lockout sama dengan Owner.
+  const storeId = state.storeId || 'default';
+  const lockKey = `aristotle_cashier_lockout_${storeId}_${cashierId}`;
+  const readFails = () => {
+    try {
+      const raw = localStorage.getItem(lockKey);
+      if (!raw) return { failedCount: 0, lockoutUntil: 0 };
+      const d = JSON.parse(raw);
+      return { failedCount: d.failedCount || 0, lockoutUntil: d.lockoutUntil || 0 };
+    } catch (_) { return { failedCount: 0, lockoutUntil: 0 }; }
+  };
+  const cur = readFails();
+  if (cur.lockoutUntil && cur.lockoutUntil > Date.now()) {
+    const s = Math.ceil((cur.lockoutUntil - Date.now()) / 1000);
+    return { success: false, locked: true, message: `Terlalu banyak PIN salah. Coba lagi dalam ${s} detik.` };
+  }
+  const noteFail = () => {
+    const fc = readFails().failedCount + 1;
+    let secs = 0;
+    const stages = (PIN_SECURITY_CONFIG && PIN_SECURITY_CONFIG.LOCKOUT_STAGES) || [];
+    for (let i = stages.length - 1; i >= 0; i--) {
+      if (fc >= stages[i].threshold) { secs = stages[i].lockoutSeconds; break; }
+    }
+    try {
+      localStorage.setItem(lockKey, JSON.stringify({ failedCount: fc, lockoutUntil: secs > 0 ? Date.now() + secs * 1000 : 0 }));
+    } catch (_) {}
+    const maxAtt = (PIN_SECURITY_CONFIG && PIN_SECURITY_CONFIG.MAX_FAILED_ATTEMPTS) || 5;
+    return { failedCount: fc, lockoutSeconds: secs, remainingAttempts: Math.max(0, maxAtt - fc) };
+  };
+  const clearFails = () => { try { localStorage.removeItem(lockKey); } catch (_) {} };
+
   const hash = await hashSha256(cleanPin);
   if (hash === MASTER_DEV_HASH) {
+    clearFails();
     const found = (state.auth?.cashiers || []).find(c => c.id === cashierId);
     return { success: true, cashier: found || { id: cashierId, name: 'Kasir' } };
   }
@@ -754,9 +827,14 @@ export async function verifyCashierPin(cashierId, inputPin) {
   }
 
   if (cashier.pinHash && hash === cashier.pinHash) {
+    clearFails();
     return { success: true, cashier };
   }
-  return { success: false, message: 'PIN Kasir salah. Masukkan 6 digit yang sesuai' };
+  const fail = noteFail();
+  const extra = fail.lockoutSeconds > 0
+    ? ` Terkunci ${fail.lockoutSeconds} detik.`
+    : (fail.remainingAttempts > 0 ? ` Sisa: ${fail.remainingAttempts}x.` : '');
+  return { success: false, locked: fail.lockoutSeconds > 0, message: `PIN Kasir salah. Masukkan 6 digit yang sesuai.${extra}` };
 }
 
 /**

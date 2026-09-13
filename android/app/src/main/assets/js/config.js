@@ -73,9 +73,20 @@ export function getStorageKeys(storeId = 'toko_utama') {
     PRINTER: `kasir_${safeId}_printer_v1`,
     SHIFTS: `kasir_${safeId}_shifts_v1`,
     ACTIVE_SHIFT: `kasir_${safeId}_active_shift_v1`,
-    NOTIFICATIONS: `kasir_${safeId}_notifications_v1`
+    NOTIFICATIONS: `kasir_${safeId}_notifications_v1`,
+    TAX: `kasir_${safeId}_taxconfig_v1`
   };
 }
+
+// Standar industri F&B Indonesia: service charge dihitung dulu ke DPP,
+// lalu PBJT/PB1 (maks 10%, ikut Perda) dihitung dari DPP. Default MATI —
+// warung mikro umumnya bukan objek pajak (ada batas omzet Perda).
+export const DEFAULT_TAX_CONFIG = {
+  enabled: false,
+  taxPct: 10,
+  taxLabel: 'PBJT',
+  servicePct: 0
+};
 
 export const STORAGE_KEYS = getStorageKeys('toko_utama');
 

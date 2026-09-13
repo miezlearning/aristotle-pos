@@ -2,6 +2,16 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.70] - 2026-09-13
+
+### 🧾 Standar POS Industri: Void Berjejak, Pajak PBJT, Disiplin Shift
+- **Void gantikan hapus:** tombol hapus transaksi menjadi pembatalan beralasan (Salah input/Batal/Rusak/Lainnya). Transaksi batal tetap di jurnal (badge VOID), keluar dari omzet/laporan/CSV/WA/shift, stok dikembalikan, tidak bisa di-unvoid.
+- **Pajak PBJT & service charge (opsional, Owner-only):** rumus standar service → DPP → pajak (maks 10%), default mati untuk warung mikro, tersimpan per toko + sync cloud, otomatis masuk total Tunai/QRIS dan tercetak di struk.
+- **Disiplin shift:** tolak buka shift ganda, tutup wajib isi hitung fisik eksplisit, selisih ≠ 0 wajib konfirmasi dan tercatat permanen di Laporan Z.
+- **Audit & pengaman:** laporan diskon per kasir (+ kolom Status CSV), hapus pengeluaran/data harian dikunci Owner, blokir oversell diam-diam saat bayar, tombol Uang Pas diselaraskan (kontras lansia lebih baik).
+
+---
+
 ## [v1.2.69] - 2026-09-13
 
 ### 🔑 Perbaikan Bug Lisensi Hilang: Entitlement Cloud + Restore Otomatis

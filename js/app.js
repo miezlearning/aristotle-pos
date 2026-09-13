@@ -299,7 +299,7 @@ export function updateStoreLicenseUI() {
     }
     if (btnActivate) { btnActivate.classList.add('hidden'); btnActivate.classList.remove('flex'); }
   } else {
-    const currentTx = state.history ? state.history.length : 0;
+    const currentTx = (state.transactions || []).length;
     const remaining = Math.max(0, 25 - currentTx);
     if (iconContainer) iconContainer.className = 'w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 border border-amber-200/70';
     if (icon) icon.textContent = 'science';
@@ -854,6 +854,11 @@ export async function handleStoreRegisterSubmit(e) {
 
 export function openActivateLicenseModal() {
   playClick('pop');
+  // Standar industri: lisensi = ranah Owner. Kasir tidak boleh melihat/menyentuh key.
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Kelola lisensi hanya untuk Mode Owner.', 'warning');
+    return;
+  }
   const modal = document.getElementById('activateLicenseModal');
   const input = document.getElementById('activateLicenseKeyInput');
   if (modal) {
@@ -876,6 +881,13 @@ export function renderInstalledLicenseBox() {
   const eyeIcon = document.getElementById('installedLicenseEyeIcon');
   if (!box || !keyText) return;
 
+  // Defense-in-depth: key tidak pernah dirender untuk peran kasir, apa pun jalurnya.
+  if (state.userRole === 'cashier') {
+    box.classList.add('hidden');
+    box.classList.remove('flex');
+    return;
+  }
+
   const status = state.storeId ? getStoreLicenseStatus(state.storeId) : null;
   if (status && status.isLicensed && status.licenseKey) {
     keyText.textContent = '••••-••••-••••-••••';
@@ -894,6 +906,10 @@ export function renderInstalledLicenseBox() {
  */
 export function toggleInstalledLicenseVisibility() {
   playClick('tap');
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Kelola lisensi hanya untuk Mode Owner.', 'warning');
+    return;
+  }
   const keyText = document.getElementById('installedLicenseKeyText');
   const eyeIcon = document.getElementById('installedLicenseEyeIcon');
   if (!keyText) return;
@@ -918,6 +934,10 @@ export function toggleInstalledLicenseVisibility() {
  */
 export function copyInstalledLicenseKey() {
   playClick('tap');
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Kelola lisensi hanya untuk Mode Owner.', 'warning');
+    return;
+  }
   const status = state.storeId ? getStoreLicenseStatus(state.storeId) : null;
   const key = status && status.licenseKey ? status.licenseKey : '';
   if (!key) {
@@ -955,6 +975,10 @@ export function closeActivateLicenseModal() {
 
 export async function handleActivateLicenseSubmit(e) {
   if (e) e.preventDefault();
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Aktivasi lisensi hanya untuk Mode Owner.', 'warning');
+    return;
+  }
   if (!state.storeId) {
     showToast('Pilih atau buka toko terlebih dahulu', 'warning');
     return;
@@ -1220,6 +1244,8 @@ export function syncLicenseAfterSession(storeId) {
         showToast('Aktivasi offline terverifikasi ke server. Lisensi resmi aktif.', 'success', 4500);
       } else if (res.changed === 'revoked') {
         showToast('Lisensi toko ini telah dibekukan. Aplikasi kembali ke Mode Demo.', 'danger', 6000);
+      } else if (res.changed === 'rejected') {
+        showToast(res.note || 'Lisensi tidak berlaku untuk toko ini. Aplikasi kembali ke Mode Demo.', 'danger', 6000);
       }
       return res;
     }).catch(() => null);
@@ -2983,7 +3009,12 @@ const KasirApp = {
   applyDiscount: payment.applyDiscount,
   removeDiscount: payment.removeDiscount,
   setDiscountModalType: payment.setDiscountModalType,
+  setDiscountReason: payment.setDiscountReason,
   submitCustomDiscount: payment.submitCustomDiscount,
+  toggleTaxEnabled: payment.toggleTaxEnabled,
+  setTaxPct: payment.setTaxPct,
+  setServicePct: payment.setServicePct,
+  renderTaxCard: payment.renderTaxCard,
   getActiveDiscount: payment.getActiveDiscount,
   getFinalPayableTotal: payment.getFinalPayableTotal,
 
@@ -3121,6 +3152,10 @@ const KasirApp = {
   saveExpense: report.saveExpense,
   deleteExpense: report.deleteExpense,
   deleteTransaction: report.deleteTransaction,
+  openVoidModal: report.openVoidModal,
+  closeVoidModal: report.closeVoidModal,
+  setVoidReason: report.setVoidReason,
+  submitVoid: report.submitVoid,
   clearTodayData: report.clearTodayData,
   clearAllHistory: report.clearAllHistory,
   clearTransactionHistory: report.clearTransactionHistory,

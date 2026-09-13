@@ -637,6 +637,35 @@
             </div>
           </div>
 
+          <!-- Pajak & Service (PBJT/PB1): setting Owner, berlaku otomatis bila aktif -->
+          <div class="bg-stone-50 border border-stone-200 rounded-2xl p-2.5 flex flex-col gap-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-stone-700 font-extrabold text-xs flex items-center gap-1.5 min-w-0">
+                <span class="material-symbols-rounded text-base text-stone-500 shrink-0">receipt_long</span>
+                <span class="truncate">Pajak & Service</span>
+              </span>
+              <label class="flex items-center gap-1.5 cursor-pointer shrink-0">
+                <span id="taxCardStatus" class="text-[10px] font-bold text-stone-500">Mati</span>
+                <input type="checkbox" id="taxToggleEnabled" onchange="window.KasirApp.toggleTaxEnabled(this.checked)" class="switch-input sr-only">
+                <span class="switch-track w-9 h-5 rounded-full p-0.5 flex shrink-0 transition" aria-hidden="true"><span class="switch-knob w-4 h-4 rounded-full bg-white shadow transition-all"></span></span>
+              </label>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5">
+              <label class="flex items-center justify-between gap-1 bg-white px-2 py-1.5 rounded-xl border border-stone-200 min-h-[40px]">
+                <span class="text-[11px] font-bold text-stone-600">Service %</span>
+                <input type="number" id="servicePctInput" min="0" max="100" step="1" value="0" onchange="window.KasirApp.setServicePct(this.value)"
+                  class="w-14 p-1 rounded-lg border border-stone-300 focus:border-emerald-600 focus:outline-none text-xs font-black text-center text-stone-900">
+              </label>
+              <label class="flex items-center justify-between gap-1 bg-white px-2 py-1.5 rounded-xl border border-stone-200 min-h-[40px]">
+                <span class="text-[11px] font-bold text-stone-600">PBJT %</span>
+                <input type="number" id="taxPctInput" min="0" max="100" step="1" value="10" onchange="window.KasirApp.setTaxPct(this.value)"
+                  class="w-14 p-1 rounded-lg border border-stone-300 focus:border-emerald-600 focus:outline-none text-xs font-black text-center text-stone-900">
+              </label>
+            </div>
+            <div id="taxCalcRows" class="flex flex-col gap-0.5"></div>
+            <p class="text-[10px] text-stone-400 leading-snug">Warung mikro umumnya bukan objek pajak — biarkan mati. Aktifkan bila Perda mewajibkan (maks 10%). Hanya Owner yang bisa mengubah.</p>
+          </div>
+
           <!-- AREA TUNAI: RESPONSIVE 2-COLUMN ON TABLET -->
           <div id="cashPaymentSection" class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
             <!-- Kolom Kiri: Quick Cash & Keypad -->
@@ -654,8 +683,8 @@
 
                 <div class="grid grid-cols-3 gap-2">
                   <button onclick="selectQuickCash('exact')"
-                    class="p-2.5 sm:p-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 border-2 border-emerald-400 font-black text-stone-950 text-xs sm:text-base flex flex-col items-center justify-center transition active:scale-95 touch-target-large shadow-sm">
-                    <span class="material-symbols-rounded text-xl sm:text-2xl text-stone-950">check_circle</span>
+                    class="p-2.5 sm:p-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-300 font-black text-emerald-900 text-xs sm:text-base flex flex-col items-center justify-center transition active:scale-95 touch-target-large shadow-2xs">
+                    <span class="material-symbols-rounded text-xl sm:text-2xl text-emerald-700">check_circle</span>
                     <span>Uang Pas</span>
                   </button>
                   <button onclick="selectQuickCash(10000)"
@@ -908,6 +937,53 @@
             class="py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer active:scale-95">
             <span class="material-symbols-rounded text-base">check</span>
             <span>Terapkan</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL VOID TRANSAKSI (BATAL BERJEJAK, BUKAN HAPUS) ==================== -->
+    <div id="voidTxModal"
+      class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
+      <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-stone-200 p-4 sm:p-5 flex flex-col gap-3">
+        <div class="flex items-center justify-between pb-2 border-b border-stone-100">
+          <div class="flex items-center gap-2">
+            <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
+              <span class="material-symbols-rounded text-xl">do_not_disturb_on</span>
+            </div>
+            <div class="min-w-0">
+              <h3 class="text-sm sm:text-base font-black text-stone-900 leading-tight">Batalkan Transaksi (Void)</h3>
+              <p id="voidTxModalSub" class="text-[11px] text-stone-500 font-semibold truncate">Catatan tetap tersimpan & tidak masuk omzet</p>
+            </div>
+          </div>
+          <button onclick="window.KasirApp.closeVoidModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer">
+            <span class="material-symbols-rounded text-xl">close</span>
+          </button>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-stone-700 font-extrabold text-xs">Alasan pembatalan (wajib):</label>
+          <div class="grid grid-cols-2 gap-1.5" id="voidReasonRow">
+            <button type="button" data-reason="salah" onclick="window.KasirApp.setVoidReason('salah')"
+              class="void-reason-chip py-2 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-xs text-stone-700 transition active:scale-95 touch-target-large text-center">Salah input</button>
+            <button type="button" data-reason="batal" onclick="window.KasirApp.setVoidReason('batal')"
+              class="void-reason-chip py-2 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-xs text-stone-700 transition active:scale-95 touch-target-large text-center">Batal pelanggan</button>
+            <button type="button" data-reason="rusak" onclick="window.KasirApp.setVoidReason('rusak')"
+              class="void-reason-chip py-2 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-xs text-stone-700 transition active:scale-95 touch-target-large text-center">Makanan rusak</button>
+            <button type="button" data-reason="lain" onclick="window.KasirApp.setVoidReason('lain')"
+              class="void-reason-chip py-2 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-xs text-stone-700 transition active:scale-95 touch-target-large text-center">Lainnya</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-stone-100">
+          <button type="button" onclick="window.KasirApp.closeVoidModal()"
+            class="py-2.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition cursor-pointer">
+            Batal
+          </button>
+          <button type="button" onclick="window.KasirApp.submitVoid()"
+            class="py-2.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer active:scale-95">
+            <span class="material-symbols-rounded text-base">check</span>
+            <span>Void Sekarang</span>
           </button>
         </div>
       </div>
@@ -1210,7 +1286,23 @@
             </span>
           </div>
 
-          <!-- Action Buttons -->
+        <!-- Alasan Diskon (opsional, tercatat di struk & audit) -->
+        <div class="flex flex-col gap-1.5 pt-1 border-t border-stone-100">
+          <label class="text-stone-700 font-extrabold text-xs">Alasan (opsional, tercatat di struk):</label>
+          <div class="grid grid-cols-4 gap-1.5" id="discountReasonRow">
+            <button type="button" data-reason="rutin" onclick="window.KasirApp.setDiscountReason('rutin')"
+              class="discount-reason-chip py-1.5 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-[11px] text-stone-700 transition active:scale-95 touch-target-large text-center">Pelanggan</button>
+            <button type="button" data-reason="promo" onclick="window.KasirApp.setDiscountReason('promo')"
+              class="discount-reason-chip py-1.5 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-[11px] text-stone-700 transition active:scale-95 touch-target-large text-center">Promo</button>
+            <button type="button" data-reason="rusak" onclick="window.KasirApp.setDiscountReason('rusak')"
+              class="discount-reason-chip py-1.5 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-[11px] text-stone-700 transition active:scale-95 touch-target-large text-center">Rusak</button>
+            <button type="button" data-reason="acara" onclick="window.KasirApp.setDiscountReason('acara')"
+              class="discount-reason-chip py-1.5 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-[11px] text-stone-700 transition active:scale-95 touch-target-large text-center">Acara</button>
+          </div>
+          <p id="discountRoleHint" class="hidden text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-2.5 py-1.5 font-semibold leading-snug">Mode Kasir: diskon cepat maks 10% langsung. Lebih dari itu butuh persetujuan Owner.</p>
+        </div>
+
+        <!-- Action Buttons -->
           <div class="flex items-center gap-2">
             <!-- Appears when >= 1 item is selected -->
             <div id="adminBulkActionContainer" class="hidden flex items-center gap-2 animate-fadeIn">
@@ -2939,6 +3031,14 @@ Kopi susu 7k"
             <span id="receiptDiscountLabel">Diskon:</span>
             <span id="receiptDiscountVal">-Rp 0</span>
           </div>
+          <div class="flex justify-between text-stone-600 text-[11px]" id="receiptServiceRow" style="display: none;">
+            <span id="receiptServiceLabel">Service:</span>
+            <span id="receiptServiceVal">Rp 0</span>
+          </div>
+          <div class="flex justify-between text-stone-600 text-[11px]" id="receiptTaxRow" style="display: none;">
+            <span id="receiptTaxLabel">PBJT:</span>
+            <span id="receiptTaxVal">Rp 0</span>
+          </div>
           <div class="flex justify-between font-black text-xs sm:text-sm pt-0.5">
             <span>TOTAL:</span>
             <span id="receiptTotal"></span>
@@ -4224,7 +4324,7 @@ Kopi susu 7k"
                 <span class="material-symbols-rounded text-base">system_update</span>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="font-bold text-stone-800 text-xs">Aplikasi <span id="appVersionLabel" class="text-stone-400 font-semibold">v1.2.69</span></p>
+                <p class="font-bold text-stone-800 text-xs">Aplikasi <span id="appVersionLabel" class="text-stone-400 font-semibold">v1.2.70</span></p>
                 <p class="text-[10.5px] text-stone-400 truncate">Pembaruan otomatis</p>
               </div>
               <button type="button" onclick="KasirApp.checkForAppUpdates(true)"
@@ -4948,7 +5048,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.69</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.70</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -5108,7 +5208,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.69</span>
+    <span id="appVersionBadge" class="hidden">v1.2.70</span>
   </div>
 
   <!-- Main JavaScript App Module -->

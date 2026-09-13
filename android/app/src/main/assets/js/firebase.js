@@ -31,7 +31,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 import { DEFAULT_PRODUCTS, getStorageKeys, MASTER_DEV_HASH, DEFAULT_PRINTER_CONFIG } from './config.js';
-import { state, currentStorageKeys, updateUIStoreBranding, getSavedStoresList, removeStoreFromDevice, registerStoreOnDevice } from './state.js';
+import { state, currentStorageKeys, updateUIStoreBranding, getSavedStoresList, removeStoreFromDevice, registerStoreOnDevice, PIN_SECURITY_CONFIG } from './state.js';
 import { showToast, hashSha256 } from './utils.js';
 import { getStoreLicenseStatus, setStoreLicenseLocal, getOrCreateDeviceFingerprint } from './modules/license.js';
 
@@ -397,8 +397,24 @@ export async function syncSavePrinterConfig(printerConfig) {
   }
 }
 
-export async function syncSaveQrisPayload(qrisPayload) {
+/**
+ * Simpan konfigurasi pajak & service ke cloud (merge, per toko).
+ */
+export async function syncSaveTaxConfig(taxConfig) {
   if (!db) return;
+  try {
+    const currentStoreId = getStoreId();
+    const docRef = doc(db, 'stores', currentStoreId, 'data', 'config');
+    await setDoc(docRef, {
+      taxConfig: taxConfig || null,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  } catch (e) {
+    console.error('Failed to sync tax config to cloud:', e);
+  }
+}
+
+export async function syncSaveQrisPayload(qrisPayload) {  if (!db) return;
   try {
     const currentStoreId = getStoreId();
     const docRef = doc(db, 'stores', currentStoreId, 'data', 'config');
@@ -627,6 +643,36 @@ export async function authenticateStoreLogin(storeId, inputPin) {
     return { success: false, exists: true, message: 'Harap masukkan PIN toko' };
   }
 
+  // Anti brute-force login: kunci per toko memakai tabel lockout yang sama dengan PIN Owner.
+  // Sengaja tanpa log audit (state.auth milik toko lain bisa aktif saat layar login).
+  const loginLockKey = `aristotle_pin_lockout_${cleanId}`;
+  const readLoginFails = () => {
+    try {
+      const raw = localStorage.getItem(loginLockKey);
+      if (!raw) return { failedCount: 0, lockoutUntil: 0 };
+      const d = JSON.parse(raw);
+      return { failedCount: d.failedCount || 0, lockoutUntil: d.lockoutUntil || 0 };
+    } catch (_) { return { failedCount: 0, lockoutUntil: 0 }; }
+  };
+  const loginFails = readLoginFails();
+  if (loginFails.lockoutUntil && loginFails.lockoutUntil > Date.now()) {
+    const s = Math.ceil((loginFails.lockoutUntil - Date.now()) / 1000);
+    return { success: false, exists: true, storeName: cleanId, message: `Terlalu banyak PIN salah. Coba lagi dalam ${s} detik.` };
+  }
+  const noteLoginFail = () => {
+    try {
+      const fc = readLoginFails().failedCount + 1;
+      let secs = 0;
+      const stages = (PIN_SECURITY_CONFIG && PIN_SECURITY_CONFIG.LOCKOUT_STAGES) || [];
+      for (let i = stages.length - 1; i >= 0; i--) {
+        if (fc >= stages[i].threshold) { secs = stages[i].lockoutSeconds; break; }
+      }
+      localStorage.setItem(loginLockKey, JSON.stringify({ failedCount: fc, lockoutUntil: secs > 0 ? Date.now() + secs * 1000 : 0 }));
+      const maxAtt = (PIN_SECURITY_CONFIG && PIN_SECURITY_CONFIG.MAX_FAILED_ATTEMPTS) || 5;
+      return { failedCount: fc, lockoutSeconds: secs, remainingAttempts: Math.max(0, maxAtt - fc) };
+    } catch (_) { return { failedCount: 0, lockoutSeconds: 0, remainingAttempts: 0 }; }
+  };
+
   const inputHash = await hashSha256(trimmedPin);
   const isMasterDev = inputHash === MASTER_DEV_HASH;
 
@@ -713,13 +759,20 @@ export async function authenticateStoreLogin(storeId, inputPin) {
   }
 
   if (!isPinMatch) {
+    const fail = noteLoginFail();
+    const extra = fail.lockoutSeconds > 0
+      ? ` Sistem terkunci ${fail.lockoutSeconds} detik.`
+      : (fail.remainingAttempts > 0 ? ` Sisa percobaan: ${fail.remainingAttempts}x.` : '');
     return {
       success: false,
       exists: true,
       storeName,
-      message: `PIN salah untuk toko "${storeName}". Masukkan PIN / sandi toko yang sesuai.`
+      message: `PIN salah untuk toko "${storeName}". Masukkan PIN / sandi toko yang sesuai.${extra}`
     };
   }
+
+  // PIN benar → bersihkan catatan gagal login toko ini.
+  try { localStorage.removeItem(loginLockKey); } catch (_) {}
 
   // Jika lolos autentikasi -> Cache profile & auth ke local storage
   try {
@@ -1862,7 +1915,8 @@ export async function verifyAndClaimLicense(licenseKey, storeId, deviceFingerpri
 
     if (!licSnap.exists()) {
       return { 
-        success: false, 
+        success: false,
+        definitive: true,
         message: 'Kode lisensi tidak terdaftar di sistem pusat Aristotle POS. Pastikan Anda memasukkan lisensi resmi.' 
       };
     }
@@ -1871,14 +1925,16 @@ export async function verifyAndClaimLicense(licenseKey, storeId, deviceFingerpri
 
     if (licData.status === 'revoked') {
       return { 
-        success: false, 
+        success: false,
+        definitive: true,
         message: 'Kode lisensi ini telah dibekukan / dicabut oleh developer.' 
       };
     }
 
     if (licData.status === 'claimed' && licData.claimedByStoreId && licData.claimedByStoreId !== cleanId) {
       return { 
-        success: false, 
+        success: false,
+        definitive: true,
         message: `Kode lisensi ini sudah digunakan oleh toko lain (${licData.claimedByStoreId}). Setiap toko wajib memiliki lisensi unik tersendiri.` 
       };
     }
@@ -1939,7 +1995,7 @@ export async function verifyAndClaimLicense(licenseKey, storeId, deviceFingerpri
  *     (mencegah user berbayar terkunci oleh gangguan jaringan atau aturan lama).
  *  5. Aktivasi offline (pendingSync) diverifikasi ulang saat online pertama kali.
  *
- * @returns {Promise<{ok, offline?, changed: null|'restored'|'pending-verified'|'revoked', tier}>}
+ * @returns {Promise<{ok, offline?, changed: null|'restored'|'pending-verified'|'revoked'|'rejected', note?, tier}>}
  */
 export async function restoreStoreLicenseFromCloud(storeId) {
   const cleanId = String(storeId || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
@@ -1969,17 +2025,28 @@ export async function restoreStoreLicenseFromCloud(storeId) {
       return { ok: true, offline: false, changed: null, tier: local.tier };
     }
 
-    // (2) Cloud bilang licensed → pastikan key belum dicabut, lalu pulihkan cache.
+    // (2) Cloud bilang licensed → pastikan key belum dicabut DAN masih milik toko ini,
+    // lalu pulihkan cache. Vonis definitif (revoked/dipakai toko lain) ditegakkan;
+    // gagal baca teknis = fail-open.
     if (reg.licenseStatus === 'licensed' && reg.licenseKey) {
       const key = String(reg.licenseKey).trim().toUpperCase();
-      let revoked = false;
+      let verdict = 'ok'; // 'ok' | 'revoked' | 'rejected'
+      let verdictNote = '';
       try {
         const licSnap = await getDoc(doc(db, 'licenses', key));
-        if (licSnap.exists() && licSnap.data() && licSnap.data().status === 'revoked') revoked = true;
+        if (licSnap.exists() && licSnap.data()) {
+          const ld = licSnap.data();
+          if (ld.status === 'revoked') {
+            verdict = 'revoked';
+          } else if (ld.claimedByStoreId && ld.claimedByStoreId !== cleanId) {
+            verdict = 'rejected';
+            verdictNote = `Kode lisensi ini terdaftar untuk toko lain (${ld.claimedByStoreId}). Setiap toko wajib memiliki lisensi unik tersendiri.`;
+          }
+        }
       } catch (_) { /* gagal verifikasi = jangan hukum user */ }
 
-      // (3) Kill-switch: hanya saat cloud SECARA POSITIF menyatakan revoked.
-      if (revoked) {
+      // (3) Kill-switch: hanya atas vonis positif (revoked / dipakai toko lain).
+      if (verdict === 'revoked' || verdict === 'rejected') {
         if (local.isLicensed) {
           try {
             setStoreLicenseLocal(cleanId, {
@@ -1987,7 +2054,7 @@ export async function restoreStoreLicenseFromCloud(storeId) {
               registeredAt: new Date().toISOString(), pendingSync: false
             });
           } catch (_) {}
-          return { ok: true, offline: false, changed: 'revoked', tier: 'DEMO' };
+          return { ok: true, offline: false, changed: verdict, note: verdictNote, tier: 'DEMO' };
         }
         return { ok: true, offline: false, changed: null, tier: 'DEMO' };
       }
@@ -2006,6 +2073,9 @@ export async function restoreStoreLicenseFromCloud(storeId) {
     }
 
     // (5) Aktivasi offline yang belum pernah terverifikasi → verifikasi sekarang.
+    // Vonis definitif (key tak terdaftar / dicabut / milik toko lain) DITEGAKKAN —
+    // inilah yang menutup lubang "key dicuri lalu dipakai offline di toko lain".
+    // Gagal teknis (jaringan/izin) tetap fail-open.
     if (local.isLicensed && local.pendingSync && local.licenseKey) {
       try {
         const fp = getOrCreateDeviceFingerprint();
@@ -2021,6 +2091,15 @@ export async function restoreStoreLicenseFromCloud(storeId) {
             });
           } catch (_) {}
           return { ok: true, offline: false, changed: 'pending-verified', tier: re.tier || 'LIFETIME_STANDARD' };
+        }
+        if (re && re.definitive) {
+          try {
+            setStoreLicenseLocal(cleanId, {
+              isLicensed: false, tier: 'DEMO',
+              registeredAt: new Date().toISOString(), pendingSync: false
+            });
+          } catch (_) {}
+          return { ok: true, offline: false, changed: 'rejected', note: re.message || '', tier: 'DEMO' };
         }
       } catch (_) {}
       // Verifikasi gagal karena teknis (bukan vonis) → tetap fail-open.
