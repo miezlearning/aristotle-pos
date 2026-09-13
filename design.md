@@ -144,6 +144,7 @@ Peta warna ikon (jangan acak):
 2. Jangan tulis kalimat panjang di badge. Badge di screenshot `Aktif (Diizinkan...` kepotong karena terlalu panjang. Badge maksimal 2 kata (`Aktif`, `Mati`, `Izin OK`, `Belum Izin`). Penjelasan panjang taruh di subtitle (`text-[10.5px] text-stone-400`).
 3. Jangan sejajarkan `Aktif` (pill) dengan `Ubah PIN` (kotak) dalam satu grup seolah setara. Bedakan visual: status = pill, aksi = kotak `rounded-xl`.
 4. Jangan pakai `<input type="checkbox" class="w-4 h-4">` untuk setting notifikasi. Di Android itu jadi biru bawaan dan tidak konsisten (lihat 4 checkbox biru di screenshot). Ganti ke pola Switch-row: label kiri + switch kanan, satu baris `min-h-[44px]`.
+5. Jangan tampilkan material key / kode lisensi di dashboard, kartu status, atau subtitle — bahkan terpotong sebagian. Kartu hanya boleh menunjukkan status (`Aktif • verifikasi otomatis`, `Sisa: X/25 transaksi`). Detail key hanya boleh dibuka di modal khusus (aktivasi/kelola) dalam keadaan tersembunyi (`••••`), dengan reveal-on-tap + tombol salin + peringatan "Hanya bagikan ke support resmi". Ini standar industri (Play Store/App Store tidak pernah memajang key) dan melindungi user lansia dari penipuan berbasis screenshot.
 
 Pola Switch-row pengganti checkbox (wajib untuk fitur baru):
 ```html

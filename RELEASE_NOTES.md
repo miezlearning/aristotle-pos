@@ -1,12 +1,11 @@
-# Aristotle POS v1.2.67 Release Notes
+# Aristotle POS v1.2.68 Release Notes
 
 **Tanggal Rilis:** 2026-09-13
 
 ### Catatan Pembaruan:
-- Modal profil toko compact & responsif: 2 kolom di tablet, hemat scroll
-- Kunci Menu dan Laporan jadi Switch, badge status anti-kepotong
-- Checkbox notifikasi biru bawaan Android diganti Switch emerald custom
-- Sistem panduan desain konsisten design.md + aturan compact-responsif
+- Hapus fragmen kode lisensi dari kartu profil toko, subtitle jadi status saja
+- Kode lisensi pindah ke modal aktivasi: tersembunyi by default, reveal-on-tap + salin
+- Subtitle peran dipendekkan agar tidak terpotong di kartu compact
 
 ---
 *Pembaruan ini dapat diunduh dan dipasang langsung dari dalam aplikasi (In-App Auto-Updater).*

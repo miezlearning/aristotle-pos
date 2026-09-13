@@ -294,8 +294,7 @@ export function updateStoreLicenseUI() {
       badge.textContent = status.tier === 'PRO_LIFETIME' ? 'Pro Lifetime' : 'Lifetime';
     }
     if (sub) {
-      const maskedKey = status.licenseKey ? `${status.licenseKey.substring(0, 9)}...${status.licenseKey.substring(status.licenseKey.length - 4)}` : 'Aktif';
-      sub.textContent = `Akses tak terbatas (${maskedKey})`;
+      sub.textContent = 'Aktif • verifikasi otomatis';
     }
     if (btnActivate) { btnActivate.classList.add('hidden'); btnActivate.classList.remove('flex'); }
   } else {
@@ -856,7 +855,89 @@ export function openActivateLicenseModal() {
       input.value = '';
       setTimeout(() => input.focus(), 150);
     }
+    renderInstalledLicenseBox();
     modal.classList.remove('hidden');
+  }
+}
+
+/**
+ * Tampilkan kode lisensi terpasang dalam keadaan TERSEMBUNYI (standar industri:
+ * key hanya dibuka atas aksi eksplisit user, tidak pernah dipajang di dashboard).
+ */
+export function renderInstalledLicenseBox() {
+  const box = document.getElementById('installedLicenseBox');
+  const keyText = document.getElementById('installedLicenseKeyText');
+  const eyeIcon = document.getElementById('installedLicenseEyeIcon');
+  if (!box || !keyText) return;
+
+  const status = state.storeId ? getStoreLicenseStatus(state.storeId) : null;
+  if (status && status.isLicensed && status.licenseKey) {
+    keyText.textContent = '••••-••••-••••-••••';
+    keyText.dataset.revealed = '0';
+    if (eyeIcon) eyeIcon.textContent = 'visibility';
+    box.classList.remove('hidden');
+    box.classList.add('flex');
+  } else {
+    box.classList.add('hidden');
+    box.classList.remove('flex');
+  }
+}
+
+/**
+ * Reveal / sembunyikan kode lisensi terpasang (tap-to-reveal seperti password).
+ */
+export function toggleInstalledLicenseVisibility() {
+  playClick('tap');
+  const keyText = document.getElementById('installedLicenseKeyText');
+  const eyeIcon = document.getElementById('installedLicenseEyeIcon');
+  if (!keyText) return;
+
+  const status = state.storeId ? getStoreLicenseStatus(state.storeId) : null;
+  if (!status || !status.licenseKey) return;
+
+  const isRevealed = keyText.dataset.revealed === '1';
+  if (isRevealed) {
+    keyText.textContent = '••••-••••-••••-••••';
+    keyText.dataset.revealed = '0';
+    if (eyeIcon) eyeIcon.textContent = 'visibility';
+  } else {
+    keyText.textContent = status.licenseKey;
+    keyText.dataset.revealed = '1';
+    if (eyeIcon) eyeIcon.textContent = 'visibility_off';
+  }
+}
+
+/**
+ * Salin kode lisensi terpasang ke clipboard (untuk pindah HP / lapor support resmi).
+ */
+export function copyInstalledLicenseKey() {
+  playClick('tap');
+  const status = state.storeId ? getStoreLicenseStatus(state.storeId) : null;
+  const key = status && status.licenseKey ? status.licenseKey : '';
+  if (!key) {
+    showToast('Belum ada lisensi terpasang di toko ini.', 'warning');
+    return;
+  }
+  const done = () => showToast('Kode lisensi disalin. Hanya bagikan ke support resmi.', 'success');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(key).then(done).catch(() => {
+      showToast('Gagal menyalin otomatis. Ketuk ikon mata untuk melihat kode.', 'warning');
+    });
+  } else {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = key;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'absolute';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      done();
+    } catch (_) {
+      showToast('Gagal menyalin otomatis. Ketuk ikon mata untuk melihat kode.', 'warning');
+    }
   }
 }
 
@@ -1220,7 +1301,7 @@ export function updateHeaderRoleBadgeUI() {
         roleBadge.textContent = 'Kasir';
       }
       roleTitle.textContent = `Kasir: ${cashierName}`;
-      if (roleSub) roleSub.textContent = 'Akses kasir & penjualan';
+      if (roleSub) roleSub.textContent = 'Akses kasir';
       if (roleCardBtn) {
         roleCardBtn.className = 'px-2.5 py-1.5 rounded-xl bg-amber-700 hover:bg-amber-800 active:scale-95 text-white font-extrabold text-[11px] transition shadow-xs shrink-0 cursor-pointer flex items-center gap-1';
         if (roleCardBtnIcon) roleCardBtnIcon.textContent = 'lock_open';
@@ -1241,7 +1322,7 @@ export function updateHeaderRoleBadgeUI() {
         roleBadge.textContent = 'Owner';
       }
       roleTitle.textContent = 'Mode Pemilik';
-      if (roleSub) roleSub.textContent = 'Akses penuh menu & laporan';
+      if (roleSub) roleSub.textContent = 'Akses penuh';
       if (roleCardBtn) {
         roleCardBtn.className = 'px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-extrabold text-[11px] transition shadow-xs shrink-0 cursor-pointer flex items-center gap-1';
         if (roleCardBtnIcon) roleCardBtnIcon.textContent = 'sync_alt';
@@ -2753,6 +2834,9 @@ const KasirApp = {
   openActivateLicenseModal,
   closeActivateLicenseModal,
   handleActivateLicenseSubmit,
+  renderInstalledLicenseBox,
+  toggleInstalledLicenseVisibility,
+  copyInstalledLicenseKey,
   openQuotaLimitModal,
   closeQuotaLimitModal,
   updateStoreLicenseUI,

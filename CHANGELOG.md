@@ -2,6 +2,16 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.68] - 2026-09-13
+
+### 🔒 Privasi Kode Lisensi Standar Industri (Minimal Disclosure)
+- **Hapus Fragmen Key dari Kartu Profil Toko:** Subtitle kartu lisensi kini hanya menampilkan status (`Aktif • verifikasi otomatis` / `Sisa: X/25 transaksi`). Potongan kode `ARIS-...` tidak lagi dipajang di dashboard — mengikuti standar Play Store/App Store yang hanya menampilkan entitlement, sekaligus melindungi user lansia dari penipuan berbasis screenshot.
+- **Key Pindah ke Modal Aktivasi (Reveal-on-Tap + Salin):** Seksi "Lisensi terpasang" hanya tampil bila toko berlisensi, dengan kode tersembunyi (`••••`) secara default, tombol mata untuk melihat (seperti field password), tombol salin untuk pindah HP/lapor support, dan peringatan "Hanya bagikan ke support resmi".
+- **Subtitle Anti-Kepotong:** Teks peran dipendekkan (`Akses penuh`, `Akses kasir`) agar tidak terpotong di kartu compact 2-kolom.
+- **Aturan Dikunci di `design.md`:** Larangan menampilkan material key di UI kini menjadi aturan baku agent (bagian 6, larangan no. 5).
+
+---
+
 ## [v1.2.67] - 2026-09-13
 
 ### 🎨 Modal Profil Toko Compact & Responsif + Sistem Panduan Desain Konsisten
