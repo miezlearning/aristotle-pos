@@ -2,6 +2,15 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.74] - 2026-09-14
+
+### Drag Antrian GPU-Smooth + Arbitrasi Pull-to-Refresh
+- **Gerak floating via transform:** layer tab digeser dengan `translate3d` kompositor GPU (bukan `left/top`), termasuk animasi mendarat — menghilangkan lag/jank drag di HP.
+- **Auto-scroll tepi proporsional (rAF):** kecepatan mengikuti kedalaman zona tepi + durasi menahan, sehingga strip panjang terjangkau; penanda slot ikut dihitung ulang mengikuti scroll.
+- **Pull-to-refresh yield:** usap vertikal saat susun-ulang tidak lagi memicu reload nyasar (flag sesi + guard 600ms pasca-drop). Getar penanda dibatasi agar hemat bridge HP.
+
+---
+
 ## [v1.2.73] - 2026-09-14
 
 ### Perbaikan Drag Antrian di Layar Kecil

@@ -118,13 +118,17 @@ export function initQueueDragScroll() {
 let queueTabReorderActive = false;
 let queueTabReorderSession = null;
 let suppressQueueTabClick = false;
+let queueTabReorderLastEnd = 0;
+
+// Dipakai arbitrasi gestur lintas modul (mis. pull-to-refresh wajib yield
+// saat susun-ulang berlangsung / baru selesai).
+export function isQueueTabReordering() { return queueTabReorderActive; }
+export function lastQueueTabReorderEnd() { return queueTabReorderLastEnd; }
 
 const QUEUE_REORDER_HOLD_MS = 320;
 const QUEUE_REORDER_MOVE_PX = 8;
 const QUEUE_REORDER_TOUCH_SLOP_PX = 14;
 const QUEUE_REORDER_EDGE_PX = 64;
-const QUEUE_REORDER_EDGE_STEP = 12;
-const QUEUE_REORDER_EDGE_MS = 20;
 
 export function initQueueTabReorder() {
   const slider = document.getElementById('orderQueueTabs');
@@ -263,7 +267,8 @@ function startQueueTabReorder(slider, tab, startX, startY) {
   try { triggerHaptic('medium'); } catch (_) {}
 
   let lastX = startX;
-  const session = { slider, tab, placeholder, floatingLayer, grabDX, grabDY, prevTouchAction, hadSmooth, lastPX: startX, edgeDir: 0, edgeTimer: null };
+  const perfNow = () => ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now());
+  const session = { slider, tab, placeholder, floatingLayer, grabDX, grabDY, prevTouchAction, hadSmooth, lastPX: startX, edgeDir: 0, edgeRaf: 0, baseLeft: rect.left, baseTop: rect.top, curTX: 0, curTY: 0, curTilt: 0, dragStart: perfNow(), liftAnimKilled: false, lastPlaceHaptic: 0 };
   queueTabReorderSession = session;
 
   // Selama drag berlangsung, matikan scroll natural di SELURUH dokumen untuk
@@ -272,20 +277,25 @@ function startQueueTabReorder(slider, tab, startX, startY) {
   const blockTouchScroll = (tev) => { if (tev.cancelable) tev.preventDefault(); };
   document.addEventListener('touchmove', blockTouchScroll, { passive: false });
 
-  // Auto-scroll tepi KONTINU (interval, bukan per-move): di layar kecil,
-  // menahan jari di tepi strip tetap menggeser daftar meski jari diam.
-  // Interval ikut menempatkan ulang penanda mengikuti posisi terakhir.
-  session.edgeTimer = setInterval(() => {
-    if (queueTabReorderSession !== session) {
-      clearInterval(session.edgeTimer);
-      session.edgeTimer = null;
-      return;
-    }
+  // Auto-scroll tepi via rAF (bukan interval): kecepatan proporsional —
+  // makin ke tepi + makin lama menahan, makin cepat — sehingga strip
+  // panjang tetap terjangkau di layar kecil. Berjalan meski jari diam.
+  const edgeLoop = (now) => {
+    if (queueTabReorderSession !== session) return;
     if (session.edgeDir !== 0) {
-      slider.scrollLeft += session.edgeDir * QUEUE_REORDER_EDGE_STEP;
+      const sRect = slider.getBoundingClientRect();
+      const x = session.lastPX;
+      const depth = session.edgeDir < 0
+        ? Math.min(1, Math.max(0, (sRect.left + QUEUE_REORDER_EDGE_PX - x) / QUEUE_REORDER_EDGE_PX))
+        : Math.min(1, Math.max(0, (x - (sRect.right - QUEUE_REORDER_EDGE_PX)) / QUEUE_REORDER_EDGE_PX));
+      const ramp = Math.min(1, (now - session.dragStart) / 900);
+      const speed = (5 + 30 * depth) * (0.55 + 1.1 * ramp);
+      slider.scrollLeft += session.edgeDir * speed;
       placeAt(session.lastPX);
     }
-  }, QUEUE_REORDER_EDGE_MS);
+    session.edgeRaf = requestAnimationFrame(edgeLoop);
+  };
+  session.edgeRaf = requestAnimationFrame(edgeLoop);
 
   // Sibling shifting: geser posisi penanda saat melayang di atas deretan antrian
   const placeAt = (x) => {
@@ -298,7 +308,7 @@ function startQueueTabReorder(slider, tab, startX, startY) {
       if (x < r.left + r.width / 2) {
         if (placeholder.nextSibling !== other) {
           slider.insertBefore(placeholder, other);
-          try { triggerHaptic('selection'); } catch (_) {}
+          placeHaptic();
         }
         placed = true;
         break;
@@ -306,33 +316,47 @@ function startQueueTabReorder(slider, tab, startX, startY) {
     }
     if (!placed && placeholder.parentNode && placeholder.nextSibling) {
       slider.appendChild(placeholder);
-      try { triggerHaptic('selection'); } catch (_) {}
+      placeHaptic();
     }
+  };
+
+  // Getar penanda dibatasi (maks ~11x/detik) agar tidak membebani bridge HP
+  const placeHaptic = () => {
+    const now = perfNow();
+    if (now - session.lastPlaceHaptic < 90) return;
+    session.lastPlaceHaptic = now;
+    try { triggerHaptic('selection'); } catch (_) {}
   };
 
   const onMove = (e) => {
     if (queueTabReorderSession !== session) return;
-    // Hentikan animasi angkat agar tidak berebut transform dengan jari
-    if (typeof window.anime !== 'undefined') { try { window.anime.remove(floatingLayer); } catch (_) {} }
+    // Hentikan animasi angkat sekali saja agar tidak berebut transform
+    if (!session.liftAnimKilled) {
+      session.liftAnimKilled = true;
+      if (typeof window.anime !== 'undefined') { try { window.anime.remove(floatingLayer); } catch (_) {} }
+    }
     const x = (e.clientX !== undefined && e.clientX !== null) ? e.clientX : startX;
     const y = (e.clientY !== undefined && e.clientY !== null) ? e.clientY : startY;
     session.lastPX = x;
 
-    const currentX = x - grabDX;
-    const currentY = y - grabDY;
+    // Gerak via transform (kompositor GPU, tanpa layout) — jauh lebih
+    // ringan daripada menggeser left/top setiap frame di HP kentang.
+    const dx = x - startX;
+    const dy = y - startY;
 
     // Gerak bebas di layar dengan physical tilt inersia
     const deltaX = x - lastX;
     lastX = x;
     const tilt = Math.min(3.5, Math.max(-3.5, deltaX * 0.45 + 1.2));
+    session.curTX = dx;
+    session.curTY = dy;
+    session.curTilt = tilt;
 
-    floatingLayer.style.left = `${currentX}px`;
-    floatingLayer.style.top = `${currentY}px`;
-    floatingLayer.style.transform = `scale(1.08) rotate(${tilt}deg)`;
+    floatingLayer.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(1.08) rotate(${tilt}deg)`;
 
     placeAt(x);
 
-    // Arah auto-scroll tepi (dieksekusi interval agar jalan meski jari diam)
+    // Arah auto-scroll tepi (dieksekusi loop rAF agar jalan meski jari diam)
     const sRect = slider.getBoundingClientRect();
     if (x < sRect.left + QUEUE_REORDER_EDGE_PX) session.edgeDir = -1;
     else if (x > sRect.right - QUEUE_REORDER_EDGE_PX) session.edgeDir = 1;
@@ -346,8 +370,9 @@ function startQueueTabReorder(slider, tab, startX, startY) {
     document.removeEventListener('pointerup', onUp);
     document.removeEventListener('pointercancel', onUp);
     document.removeEventListener('touchmove', blockTouchScroll);
-    if (session.edgeTimer) { clearInterval(session.edgeTimer); session.edgeTimer = null; }
+    if (session.edgeRaf) { cancelAnimationFrame(session.edgeRaf); session.edgeRaf = 0; }
     session.edgeDir = 0;
+    queueTabReorderLastEnd = Date.now();
     if (queueTabReorderSession !== session) return;
 
     slider.classList.remove('reordering');
@@ -419,15 +444,18 @@ function startQueueTabReorder(slider, tab, startX, startY) {
       setTimeout(() => { suppressQueueTabClick = false; }, 350);
     };
 
-    // 4. Animasi Mendarat (Landing Snap) ala Android Launcher via Anime.js
+    // 4. Animasi Mendarat via translate (kompositor GPU, tanpa layout
+    // trashing seperti animasi left/top) ala Android Launcher via Anime.js
+    const destTX = destRect ? (destRect.left - session.baseLeft) : session.curTX;
+    const destTY = destRect ? (destRect.top - session.baseTop) : session.curTY;
     if (commit && destRect && destRect.width > 0 && typeof window.anime !== 'undefined') {
       window.anime.remove(floatingLayer);
       window.anime({
         targets: floatingLayer,
-        left: `${destRect.left}px`,
-        top: `${destRect.top}px`,
+        translateX: [session.curTX, destTX],
+        translateY: [session.curTY, destTY],
         scale: [1.08, 1.0],
-        rotate: 0,
+        rotate: [session.curTilt, 0],
         duration: 240,
         easing: 'easeOutCubic',
         complete: () => {

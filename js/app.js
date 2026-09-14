@@ -2591,6 +2591,9 @@ function initPullToRefresh() {
   const THRESHOLD = 65;
 
   window.addEventListener('touchstart', (e) => {
+    // Arbitrasi gestur standar POS: susun-ulang tab antrian yang sedang
+    // berjalan memiliki aliran gestur — pull-to-refresh wajib yield.
+    if (pos.isQueueTabReordering()) return;
     if (window.scrollY <= 0 && e.touches.length === 1) {
       const hasOpenModal = document.querySelector('div[id$="Modal"]:not(.hidden)');
       if (!hasOpenModal) {
@@ -2603,6 +2606,14 @@ function initPullToRefresh() {
 
   window.addEventListener('touchmove', (e) => {
     if (!isPulling) return;
+    // Mode susun dimulai di tengah tarikan: batalkan indikasi refresh.
+    if (pos.isQueueTabReordering()) {
+      isPulling = false;
+      pullDistance = 0;
+      indicator.style.transform = '';
+      indicator.style.opacity = '0';
+      return;
+    }
     const diff = e.touches[0].clientY - startY;
 
     if (diff > 0 && window.scrollY <= 0) {
@@ -2620,6 +2631,15 @@ function initPullToRefresh() {
   window.addEventListener('touchend', () => {
     if (!isPulling) return;
     isPulling = false;
+
+    // touchend bisa tiba tepat sesudah drop (pointerup lebih dulu):
+    // abaikan refresh bila susun-ulang aktif / baru selesai <600ms.
+    if (pos.isQueueTabReordering() || Date.now() - pos.lastQueueTabReorderEnd() < 600) {
+      indicator.style.transform = '';
+      indicator.style.opacity = '0';
+      icon.style.transform = '';
+      return;
+    }
 
     if (pullDistance >= THRESHOLD) {
       indicator.style.transform = 'translate(-50%, 65px) scale(1)';
