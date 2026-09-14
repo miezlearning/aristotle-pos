@@ -37,7 +37,7 @@ export function setDiscountReason(r) {
   try {
     document.querySelectorAll('.discount-reason-chip').forEach(ch => {
       const on = ch.dataset.reason === discountReason;
-      ch.className = 'discount-reason-chip py-1.5 px-1 rounded-xl border font-bold text-[11px] transition active:scale-95 touch-target-large text-center ' +
+      ch.className = 'discount-reason-chip min-h-[44px] py-2 px-1 rounded-xl border font-bold text-[11px] transition active:scale-95 touch-target-large text-center truncate ' +
         (on ? 'bg-rose-600 border-rose-600 text-white shadow-xs'
             : 'bg-stone-100 border-stone-200 text-stone-700');
     });
@@ -253,7 +253,7 @@ export function openDiscountModal() {
   discountReason = null;
   try {
     document.querySelectorAll('.discount-reason-chip').forEach(ch => {
-      ch.className = 'discount-reason-chip py-1.5 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-[11px] text-stone-700 transition active:scale-95 touch-target-large text-center';
+      ch.className = 'discount-reason-chip min-h-[44px] py-2 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-[11px] text-stone-700 transition active:scale-95 touch-target-large text-center truncate';
     });
   } catch (_) {}
   const hint = document.getElementById('discountRoleHint');

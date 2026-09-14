@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aristotle-pos-v119';
+const CACHE_NAME = 'aristotle-pos-v120';
 const PRECACHE_ASSETS = [
   './',
   './index.html',
@@ -6,7 +6,7 @@ const PRECACHE_ASSETS = [
   './icon.svg',
   './css/style.css',
   './fonts/material-symbols-rounded-core.woff2',
-  './fonts/material-symbols-rounded.woff2',
+  './js/lib/anime.min.js',
   './js/app.js',
   './js/config.js',
   './js/state.js',
@@ -32,10 +32,15 @@ const PRECACHE_ASSETS = [
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS).catch((err) => {
-        console.warn('SW Precache non-critical item failed:', err);
-      });
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // Resilient precache: satu aset gagal tidak akan membatalkan aset lainnya
+      await Promise.allSettled(
+        PRECACHE_ASSETS.map((url) =>
+          cache.add(url).catch((err) => {
+            console.warn('SW Precache warning on ' + url + ':', err);
+          })
+        )
+      );
     })
   );
 });
@@ -47,6 +52,12 @@ self.addEventListener('activate', (event) => {
     )
   );
   self.clients.claim();
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', (event) => {

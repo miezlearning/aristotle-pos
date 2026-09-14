@@ -98,11 +98,42 @@ export function switchView(viewName) {
   const btnReportM = document.getElementById('btnNavReportMobile') || document.getElementById('btnNavReport');
   const btnAdminM = document.getElementById('btnNavAdminMobile') || document.getElementById('btnNavAdmin');
   
-  // Hide all screens
-  if (viewPos) viewPos.classList.add('hidden');
-  if (viewAdmin) viewAdmin.classList.add('hidden');
-  if (viewReport) viewReport.classList.add('hidden');
-  if (viewSuperAdmin) viewSuperAdmin.classList.add('hidden');
+  const views = [
+    { name: 'pos', el: viewPos },
+    { name: 'admin', el: viewAdmin },
+    { name: 'report', el: viewReport },
+    { name: 'superadmin', el: viewSuperAdmin }
+  ];
+
+  // Hide all screens & strip animation class
+  views.forEach(v => {
+    if (v.el) {
+      v.el.classList.add('hidden');
+      v.el.classList.remove('view-page-enter');
+    }
+  });
+
+  // Activate target screen with Anime.js silky-smooth motion & fallback
+  const activeView = views.find(v => v.name === viewName);
+  if (activeView && activeView.el) {
+    activeView.el.classList.remove('hidden');
+    if (typeof window.anime !== 'undefined') {
+      window.anime.remove(activeView.el);
+      window.anime({
+        targets: activeView.el,
+        opacity: [0, 1],
+        translateY: [24, 0],
+        duration: 280,
+        easing: 'easeOutCubic'
+      });
+    } else {
+      void activeView.el.offsetWidth;
+      activeView.el.classList.add('view-page-enter');
+    }
+  }
+
+  state.currentView = viewName;
+  window.scrollTo({ top: 0, behavior: 'instant' });
 
   // Reset Mobile Navigation Buttons
   const navInactiveClass = 'flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-xl text-stone-500 hover:text-stone-800 font-bold text-xs touch-target-large transition active:scale-95';
@@ -123,7 +154,6 @@ export function switchView(viewName) {
   if (viewName === 'pos') {
     if (mainHeader) mainHeader.classList.remove('hidden');
     if (mobileNav) mobileNav.classList.remove('hidden');
-    if (viewPos) viewPos.classList.remove('hidden');
     if (btnPosM) btnPosM.className = navActiveClass;
     pos.renderOrderQueueTabs();
     pos.renderProducts();
@@ -134,7 +164,6 @@ export function switchView(viewName) {
   } else if (viewName === 'admin') {
     if (mainHeader) mainHeader.classList.remove('hidden');
     if (mobileNav) mobileNav.classList.remove('hidden');
-    if (viewAdmin) viewAdmin.classList.remove('hidden');
     if (btnAdminM) btnAdminM.className = navActiveClass;
     admin.renderAdminTable();
     if (state.storeId) {
@@ -143,7 +172,6 @@ export function switchView(viewName) {
   } else if (viewName === 'report') {
     if (mainHeader) mainHeader.classList.remove('hidden');
     if (mobileNav) mobileNav.classList.remove('hidden');
-    if (viewReport) viewReport.classList.remove('hidden');
     if (btnReportM) btnReportM.className = navActiveClass;
     setTimeout(() => {
       report.updateReportToggleUI(report.currentReportViewMode);
@@ -155,7 +183,6 @@ export function switchView(viewName) {
   } else if (viewName === 'superadmin') {
     if (mainHeader) mainHeader.classList.add('hidden'); // Sembunyikan header utama toko agar tidak double header dengan M3 Top Bar
     if (mobileNav) mobileNav.classList.add('hidden'); // Sembunyikan bottom bar kasir saat mode Super Admin
-    if (viewSuperAdmin) viewSuperAdmin.classList.remove('hidden');
     window.history.replaceState(null, '', `${window.location.pathname}?view=superadmin`);
     superadmin.renderSuperAdminDashboard();
   }
@@ -2233,11 +2260,20 @@ function registerSW() {
   // Hanya daftarkan Service Worker jika didukung dan berjalan di protokol HTTP/HTTPS
   if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('./sw.js').then(reg => {
-      // Pantau pembaruan di latar belakang secara senyap TANPA reload otomatis saat startup
+      // Selalu cek pembaruan sw.js seketika saat halaman dibuka
+      reg.update().catch(() => {});
+      if (reg.waiting) {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+
+      // Pantau pembaruan di latar belakang
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+            }
             if (newWorker.state === 'activated') {
               console.log('Aristotle POS: ServiceWorker aktif & siap melayani cache di latar belakang.');
             }
@@ -2974,6 +3010,7 @@ const KasirApp = {
   renderProductSkeletons: pos.renderProductSkeletons,
   addToCart: pos.addToCart,
   updateCartQty: pos.updateCartQty,
+  removeCartLine: pos.removeCartLine,
   confirmClearCart: pos.confirmClearCart,
   renderCart: pos.renderCart,
   toggleMobileCartDrawer: pos.toggleMobileCartDrawer,

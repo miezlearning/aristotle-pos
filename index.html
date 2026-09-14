@@ -61,6 +61,8 @@
   <!-- QRCode & jsQR CDN for Dynamic QRIS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <!-- Anime.js Engine for Ultra-Smooth & Lightweight UI Motion -->
+  <script src="js/lib/anime.min.js"></script>
 
   <!-- Enterprise Error Telemetry & Discord Crash Reporter -->
   <script type="module">
@@ -316,7 +318,7 @@
     <main class="flex-1 max-w-7xl w-full mx-auto p-2.5 sm:p-4 lg:p-5 flex flex-col pb-36 sm:pb-40 md:pb-6">
 
       <!-- ==================== SCREEN 1: MAIN POS ==================== -->
-      <div id="viewPos" class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4">
+      <div id="viewPos" class="view-page-enter flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4">
 
         <!-- LEFT COLUMN: PRODUCT GRID -->
         <section class="md:col-span-7 lg:col-span-7 xl:col-span-8 flex flex-col gap-2.5 sm:gap-3">
@@ -927,6 +929,22 @@
           </div>
         </div>
 
+        <!-- Alasan Diskon (opsional, tercatat di struk & audit) -->
+        <div class="flex flex-col gap-1.5 pt-2 border-t border-stone-100">
+          <label class="text-stone-700 font-extrabold text-xs">Alasan (opsional, tercatat di struk):</label>
+          <div class="grid grid-cols-4 gap-1.5" id="discountReasonRow">
+            <button type="button" data-reason="rutin" onclick="window.KasirApp.setDiscountReason('rutin')"
+              class="discount-reason-chip min-h-[44px] py-2 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-[11px] text-stone-700 transition active:scale-95 touch-target-large text-center truncate">Pelanggan</button>
+            <button type="button" data-reason="promo" onclick="window.KasirApp.setDiscountReason('promo')"
+              class="discount-reason-chip min-h-[44px] py-2 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-[11px] text-stone-700 transition active:scale-95 touch-target-large text-center truncate">Promo</button>
+            <button type="button" data-reason="rusak" onclick="window.KasirApp.setDiscountReason('rusak')"
+              class="discount-reason-chip min-h-[44px] py-2 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-[11px] text-stone-700 transition active:scale-95 touch-target-large text-center truncate">Rusak</button>
+            <button type="button" data-reason="acara" onclick="window.KasirApp.setDiscountReason('acara')"
+              class="discount-reason-chip min-h-[44px] py-2 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-[11px] text-stone-700 transition active:scale-95 touch-target-large text-center truncate">Acara</button>
+          </div>
+          <p id="discountRoleHint" class="hidden text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-2.5 py-1.5 font-semibold leading-snug">Mode Kasir: diskon cepat maks 10% langsung. Lebih dari itu butuh persetujuan Owner.</p>
+        </div>
+
         <!-- Action Buttons -->
         <div class="grid grid-cols-2 gap-2 pt-2 border-t border-stone-100">
           <button type="button" onclick="window.KasirApp.closeDiscountModal()"
@@ -1163,59 +1181,62 @@
 
     <!-- ==================== SCREEN 3: PRODUCT MANAGEMENT & DATA BACKUP ==================== -->
     <div id="viewAdmin" class="hidden flex-1 flex-col gap-3.5">
-      <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div>
-          <div class="flex items-center gap-2">
-            <h2 class="text-base sm:text-lg font-black text-stone-900">Menu & Pengaturan</h2>
-            <span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Katalog Produk</span>
+      <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200/90 shadow-2xs flex flex-col gap-3">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h2 class="text-base sm:text-lg font-black text-stone-900 leading-tight">Menu & Pengaturan</h2>
+            <span class="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 whitespace-nowrap">Katalog Produk</span>
           </div>
-          <p class="text-xs text-stone-500 mt-0.5">Atur menu makanan, minuman, dan pengaturan kasir</p>
+          <p class="text-xs text-stone-500 mt-0.5 truncate">Atur menu makanan, minuman, dan pengaturan kasir</p>
         </div>
-        
-        <div class="flex items-center gap-2 flex-wrap">
-          <button onclick="openAddProductModal()"
-            class="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm touch-target-large cursor-pointer">
-            <span class="material-symbols-rounded text-lg">add_circle</span>
-            <span>+ Tambah Menu</span>
-          </button>
-          
-          <button onclick="openBulkImportModal()"
-            class="px-3.5 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-95 touch-target-large cursor-pointer shadow-2xs"
-            title="Tambah banyak menu sekaligus (Tabel cepat atau tempel teks WA)">
-            <span class="material-symbols-rounded text-lg">playlist_add</span>
-            <span>+ Tambah Banyak (Bulk)</span>
-          </button>
 
-          <div class="flex items-center gap-1.5">
+        <div class="flex flex-col gap-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button onclick="openAddProductModal()"
+              class="w-full min-h-[44px] px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm touch-target-large cursor-pointer">
+              <span class="material-symbols-rounded text-lg">add_circle</span>
+              <span>+ Tambah Menu</span>
+            </button>
+
+            <button onclick="openBulkImportModal()"
+              class="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-95 touch-target-large cursor-pointer shadow-2xs"
+              title="Tambah banyak menu sekaligus (Tabel cepat atau tempel teks WA)">
+              <span class="material-symbols-rounded text-lg">playlist_add</span>
+              <span class="truncate">+ Tambah Banyak (Bulk)</span>
+            </button>
+          </div>
+
+          <p class="text-[10px] font-extrabold uppercase tracking-wider text-stone-400 px-1">Pengaturan & Data</p>
+          <div class="grid grid-cols-5 gap-1.5">
             <button type="button" onclick="window.KasirApp.openCashierManageModal()"
-              class="p-2 sm:px-2.5 sm:py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95 touch-target-large cursor-pointer shadow-2xs"
+              class="min-h-[52px] px-0.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold flex flex-col items-center justify-center gap-0.5 transition active:scale-95 touch-target-large cursor-pointer shadow-2xs"
               title="Kelola Akun Kasir & PIN 6 Digit">
-              <span class="material-symbols-rounded text-base text-amber-700">badge</span>
-              <span class="hidden md:inline">Staf Kasir</span>
+              <span class="material-symbols-rounded text-lg text-amber-700">badge</span>
+              <span class="text-[10px] font-bold leading-none">Kasir</span>
             </button>
             <button type="button" onclick="window.KasirApp.openPrinterConfigModal()"
-              class="p-2 sm:px-2.5 sm:py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95 touch-target-large cursor-pointer"
+              class="min-h-[52px] px-0.5 py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold flex flex-col items-center justify-center gap-0.5 transition active:scale-95 touch-target-large cursor-pointer"
               title="Atur printer thermal & struk">
-              <span class="material-symbols-rounded text-base text-stone-500">print</span>
-              <span class="hidden md:inline">Printer</span>
+              <span class="material-symbols-rounded text-lg text-stone-500">print</span>
+              <span class="text-[10px] font-bold leading-none">Printer</span>
             </button>
             <button onclick="openQrisModal()"
-              class="p-2 sm:px-2.5 sm:py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95 touch-target-large cursor-pointer"
+              class="min-h-[52px] px-0.5 py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold flex flex-col items-center justify-center gap-0.5 transition active:scale-95 touch-target-large cursor-pointer"
               title="Atur QRIS toko">
-              <span class="material-symbols-rounded text-base text-stone-500">qr_code_2</span>
-              <span class="hidden md:inline">QRIS</span>
+              <span class="material-symbols-rounded text-lg text-stone-500">qr_code_2</span>
+              <span class="text-[10px] font-bold leading-none">QRIS</span>
             </button>
             <button onclick="exportDataBackup()"
-              class="p-2 sm:px-2.5 sm:py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95 touch-target-large cursor-pointer"
+              class="min-h-[52px] px-0.5 py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold flex flex-col items-center justify-center gap-0.5 transition active:scale-95 touch-target-large cursor-pointer"
               title="Cadangkan seluruh data toko ke file JSON">
-              <span class="material-symbols-rounded text-base text-stone-500">download</span>
-              <span class="hidden md:inline">Cadangkan</span>
+              <span class="material-symbols-rounded text-lg text-stone-500">download</span>
+              <span class="text-[10px] font-bold leading-none">Cadang</span>
             </button>
             <button onclick="document.getElementById('importFileInput').click()"
-              class="p-2 sm:px-2.5 sm:py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95 touch-target-large cursor-pointer"
+              class="min-h-[52px] px-0.5 py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold flex flex-col items-center justify-center gap-0.5 transition active:scale-95 touch-target-large cursor-pointer"
               title="Pulihkan data toko dari file JSON cadangan">
-              <span class="material-symbols-rounded text-base text-stone-500">upload</span>
-              <span class="hidden md:inline">Pulihkan</span>
+              <span class="material-symbols-rounded text-lg text-stone-500">upload</span>
+              <span class="text-[10px] font-bold leading-none">Pulih</span>
             </button>
           </div>
           <input type="file" id="importFileInput" accept=".json" onchange="importDataBackup(event)" class="hidden">
@@ -1227,11 +1248,11 @@
         <div id="adminSearchFilterStickyBar"
           class="sticky top-[52px] sm:top-[58px] z-10 p-2.5 sm:p-3.5 bg-white border-b border-stone-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shadow-xs rounded-t-2xl transition-all duration-150">
           <!-- Search Bar -->
-          <div class="relative flex-1 max-w-md group">
+          <div class="relative w-full sm:flex-1 sm:max-w-md group">
             <span class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 group-focus-within:text-emerald-700 text-lg transition-colors pointer-events-none">search</span>
             <input type="text" id="adminProductSearch" oninput="window.KasirApp.handleAdminSearch(this.value)"
               placeholder="Cari nama menu atau kategori..."
-              class="w-full pl-9 pr-14 py-2 bg-stone-50 group-focus-within:bg-white rounded-xl border border-stone-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none transition shadow-2xs">
+              class="w-full min-h-[44px] pl-9 pr-14 py-2 bg-stone-50 group-focus-within:bg-white rounded-xl border border-stone-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none transition shadow-2xs">
             
             <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
               <span id="adminSearchKbdHint"
@@ -1249,71 +1270,55 @@
           </div>
 
           <!-- Category Filter Pills -->
-          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 custom-scroll text-xs">
+          <div class="flex items-center gap-1.5 overflow-x-auto custom-scroll text-xs w-full sm:w-auto py-0.5">
             <button type="button" onclick="window.KasirApp.setAdminCategoryFilter('all')" data-cat="all"
-              class="admin-cat-pill px-3 py-1.5 rounded-xl font-bold bg-emerald-700 text-white shadow-2xs transition whitespace-nowrap cursor-pointer active:scale-95">
+              class="admin-cat-pill shrink-0 px-3.5 py-2 min-h-[40px] rounded-xl font-bold bg-emerald-700 border border-emerald-700 text-white shadow-2xs transition whitespace-nowrap cursor-pointer active:scale-95">
               Semua
             </button>
             <button type="button" onclick="window.KasirApp.setAdminCategoryFilter('makanan')" data-cat="makanan"
-              class="admin-cat-pill px-3 py-1.5 rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap cursor-pointer active:scale-95">
+              class="admin-cat-pill shrink-0 px-3.5 py-2 min-h-[40px] rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap cursor-pointer active:scale-95">
               Makanan
             </button>
             <button type="button" onclick="window.KasirApp.setAdminCategoryFilter('minuman')" data-cat="minuman"
-              class="admin-cat-pill px-3 py-1.5 rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap cursor-pointer active:scale-95">
+              class="admin-cat-pill shrink-0 px-3.5 py-2 min-h-[40px] rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap cursor-pointer active:scale-95">
               Minuman
             </button>
             <button type="button" onclick="window.KasirApp.setAdminCategoryFilter('camilan')" data-cat="camilan"
-              class="admin-cat-pill px-3 py-1.5 rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap cursor-pointer active:scale-95">
+              class="admin-cat-pill shrink-0 px-3.5 py-2 min-h-[40px] rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap cursor-pointer active:scale-95">
               Camilan
             </button>
             <button type="button" onclick="window.KasirApp.setAdminCategoryFilter('topping')" data-cat="topping"
-              class="admin-cat-pill px-3 py-1.5 rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap cursor-pointer active:scale-95">
+              class="admin-cat-pill shrink-0 px-3.5 py-2 min-h-[40px] rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap cursor-pointer active:scale-95">
               Topping
             </button>
           </div>
         </div>
 
         <!-- Bulk Selection & Action Toolbar -->
-        <div class="px-3 sm:px-4 py-2.5 bg-white border-b border-stone-200 flex items-center justify-between gap-3 text-xs">
-          <div class="flex items-center gap-2.5">
-            <label class="flex items-center gap-2 cursor-pointer select-none">
+        <div class="px-3 sm:px-4 py-2 bg-white border-b border-stone-200 flex flex-wrap sm:flex-nowrap items-center justify-between gap-x-3 gap-y-2 text-xs">
+          <div class="flex items-center gap-2 min-w-0 flex-wrap">
+            <label class="flex items-center gap-2 cursor-pointer select-none min-h-[44px] py-1 pr-1">
               <input type="checkbox" id="selectAllAdminProductsCheck" onchange="window.KasirApp.toggleSelectAllAdminProducts(this.checked)"
-                class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-stone-300">
-              <span class="font-extrabold text-stone-800 text-xs">Pilih Semua</span>
+                class="w-5 h-5 rounded accent-emerald-700 focus:ring-emerald-500 border-stone-300 cursor-pointer shrink-0">
+              <span class="font-extrabold text-stone-800 text-xs whitespace-nowrap">Pilih Semua</span>
             </label>
-            <span id="adminSelectionSummary" class="text-[11px] font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-md border border-stone-200">
+            <span id="adminSelectionSummary" class="text-[11px] font-bold text-stone-500 bg-stone-100 px-2 py-1 rounded-full border border-stone-200 whitespace-nowrap shrink-0">
               Memuat...
             </span>
           </div>
 
-        <!-- Alasan Diskon (opsional, tercatat di struk & audit) -->
-        <div class="flex flex-col gap-1.5 pt-1 border-t border-stone-100">
-          <label class="text-stone-700 font-extrabold text-xs">Alasan (opsional, tercatat di struk):</label>
-          <div class="grid grid-cols-4 gap-1.5" id="discountReasonRow">
-            <button type="button" data-reason="rutin" onclick="window.KasirApp.setDiscountReason('rutin')"
-              class="discount-reason-chip py-1.5 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-[11px] text-stone-700 transition active:scale-95 touch-target-large text-center">Pelanggan</button>
-            <button type="button" data-reason="promo" onclick="window.KasirApp.setDiscountReason('promo')"
-              class="discount-reason-chip py-1.5 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-[11px] text-stone-700 transition active:scale-95 touch-target-large text-center">Promo</button>
-            <button type="button" data-reason="rusak" onclick="window.KasirApp.setDiscountReason('rusak')"
-              class="discount-reason-chip py-1.5 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-[11px] text-stone-700 transition active:scale-95 touch-target-large text-center">Rusak</button>
-            <button type="button" data-reason="acara" onclick="window.KasirApp.setDiscountReason('acara')"
-              class="discount-reason-chip py-1.5 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-[11px] text-stone-700 transition active:scale-95 touch-target-large text-center">Acara</button>
-          </div>
-          <p id="discountRoleHint" class="hidden text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-2.5 py-1.5 font-semibold leading-snug">Mode Kasir: diskon cepat maks 10% langsung. Lebih dari itu butuh persetujuan Owner.</p>
-        </div>
-
-        <!-- Action Buttons -->
-          <div class="flex items-center gap-2">
+          <!-- Action Buttons -->
+          <div class="flex items-center gap-2 shrink-0 ml-auto">
             <!-- Appears when >= 1 item is selected -->
             <div id="adminBulkActionContainer" class="hidden flex items-center gap-2 animate-fadeIn">
               <button type="button" onclick="window.KasirApp.deleteSelectedProducts()"
-                class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95 touch-target-large"
+                class="px-3 py-2 min-h-[40px] rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95 touch-target-large whitespace-nowrap"
                 title="Hapus semua menu yang dicentang">
                 <span class="material-symbols-rounded text-base">delete</span>
                 <span id="adminDeleteSelectedBtnText">Hapus Terpilih</span>
               </button>
               <button type="button" onclick="window.KasirApp.clearAdminSelection()"
-                class="px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition"
+                class="px-3 py-2 min-h-[40px] rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition whitespace-nowrap"
                 title="Batalkan pilihan centang">
                 Batal
               </button>
@@ -1322,7 +1327,7 @@
             <!-- Normal state when 0 selected: option to wipe all products -->
             <div id="adminNormalActionContainer" class="flex items-center gap-2">
               <button type="button" onclick="window.KasirApp.openDeleteAllModal()"
-                class="px-2.5 sm:px-3 py-1.5 rounded-xl text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 font-extrabold text-xs flex items-center gap-1 transition"
+                class="px-3 py-2 min-h-[40px] rounded-xl text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 font-extrabold text-xs flex items-center gap-1.5 transition whitespace-nowrap"
                 title="Hapus seluruh daftar menu sekaligus">
                 <span class="material-symbols-rounded text-base">delete_sweep</span>
                 <span class="hidden sm:inline">Hapus Seluruh Menu</span>
@@ -5048,7 +5053,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.70</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.71</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -5208,7 +5213,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.70</span>
+    <span id="appVersionBadge" class="hidden">v1.2.71</span>
   </div>
 
   <!-- Main JavaScript App Module -->

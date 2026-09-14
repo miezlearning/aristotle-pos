@@ -83,9 +83,9 @@ export function setAdminCategoryFilter(cat) {
   pills.forEach(pill => {
     const isTarget = pill.getAttribute('data-cat') === adminCategoryFilter;
     if (isTarget) {
-      pill.className = 'admin-cat-pill px-3 py-1.5 rounded-xl font-bold bg-emerald-700 text-white shadow-2xs transition whitespace-nowrap';
+      pill.className = 'admin-cat-pill shrink-0 px-3.5 py-2 min-h-[40px] rounded-xl font-bold bg-emerald-700 border border-emerald-700 text-white shadow-2xs transition whitespace-nowrap cursor-pointer active:scale-95';
     } else {
-      pill.className = 'admin-cat-pill px-3 py-1.5 rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap';
+      pill.className = 'admin-cat-pill shrink-0 px-3.5 py-2 min-h-[40px] rounded-xl font-bold bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 transition whitespace-nowrap cursor-pointer active:scale-95';
     }
   });
   renderAdminTable();
@@ -187,10 +187,10 @@ export function renderAdminTable() {
           Tambah satu-satu atau sekaligus.
         </p>
         <div class="flex items-center gap-2 mt-2 flex-wrap justify-center">
-          <button onclick="window.KasirApp.openAddProductModal()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-stone-950 font-black text-xs sm:text-sm shadow-sm transition active:scale-95 touch-target-large">
+          <button onclick="window.KasirApp.openAddProductModal()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-sm transition active:scale-95 touch-target-large">
             + Tambah Menu
           </button>
-          <button onclick="window.KasirApp.openBulkImportModal()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs sm:text-sm shadow-sm transition active:scale-95 touch-target-large">
+          <button onclick="window.KasirApp.openBulkImportModal()" class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs sm:text-sm shadow-sm transition active:scale-95 touch-target-large">
             Tambah Banyak
           </button>
         </div>
@@ -219,59 +219,59 @@ export function renderAdminTable() {
     const isSelected = selectedAdminProductIds.has(p.id);
 
     return `
-      <div class="p-2.5 sm:p-3.5 flex items-center justify-between gap-2 sm:gap-3 hover:bg-stone-50 transition border-b border-stone-100 last:border-0 ${isSelected ? 'bg-emerald-50/70 border-l-4 border-l-emerald-600' : (!isReady ? 'bg-stone-50/60' : '')}">
+      <div class="p-2.5 sm:p-3.5 flex items-center justify-between gap-2 sm:gap-3 hover:bg-stone-50 transition border-b border-stone-100 last:border-0 min-h-[68px] ${isSelected ? 'bg-emerald-50/70 border-l-4 border-l-emerald-600' : (!isReady ? 'bg-stone-50/60' : '')}">
         <div class="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
           <!-- Checkbox seleksi per baris -->
-          <label class="flex items-center justify-center p-1 cursor-pointer rounded-lg hover:bg-stone-200/60 transition touch-target-large shrink-0" onclick="event.stopPropagation()">
+          <label class="flex items-center justify-center w-9 h-9 cursor-pointer rounded-xl hover:bg-stone-200/60 transition touch-target-large shrink-0" onclick="event.stopPropagation()">
             <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="window.KasirApp.toggleSelectAdminProduct('${p.id}')"
-              class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-stone-300 cursor-pointer">
+              class="w-5 h-5 rounded accent-emerald-700 focus:ring-emerald-500 border-stone-300 cursor-pointer">
           </label>
 
           ${p.image ? `
             <img src="${p.image}" alt="${escapeHtml(p.name)}" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover shrink-0 border border-stone-200 shadow-2xs" loading="lazy">
           ` : `
-            <span class="material-symbols-rounded text-xl sm:text-2xl text-stone-950 p-2 sm:p-2.5 ${isReady ? 'bg-emerald-100/80' : 'bg-stone-200 text-stone-500'} rounded-xl shrink-0 border border-emerald-200">${p.icon || 'lunch_dining'}</span>
+            <span class="material-symbols-rounded text-xl sm:text-2xl p-2 sm:p-2.5 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center shrink-0 rounded-xl border ${isReady ? 'bg-emerald-100/80 text-stone-950 border-emerald-200' : 'bg-stone-200 text-stone-500 border-stone-200'}">${p.icon || 'lunch_dining'}</span>
           `}
           
-          <div class="truncate flex-1 min-w-0">
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <h4 class="font-black text-stone-900 text-xs sm:text-sm truncate ${!isReady ? 'line-through text-stone-500' : ''}">${escapeHtml(p.name)}</h4>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <h4 class="font-black text-stone-900 text-xs sm:text-sm truncate min-w-0 flex-1 ${!isReady ? 'line-through text-stone-500' : ''}">${escapeHtml(p.name)}</h4>
               ${p.trackStock ? `
-                <span class="px-1.5 py-0.5 rounded-md text-[10.5px] font-black ${(p.stock || 0) > 0 ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-red-100 text-red-700 border border-red-300'}">
+                <span class="shrink-0 px-1.5 py-0.5 rounded-md text-[10.5px] font-black whitespace-nowrap ${(p.stock || 0) > 0 ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-red-100 text-red-700 border border-red-300'}">
                   Stok: ${p.stock || 0}
                 </span>
               ` : `
-                <span class="px-1.5 py-0.5 rounded-md text-[10.5px] font-bold bg-stone-100 text-stone-600 border border-stone-200">
+                <span class="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-black whitespace-nowrap bg-stone-100 text-stone-600 border border-stone-200">
                   Ready
                 </span>
               `}
             </div>
-            <p class="font-black text-emerald-800 text-xs mt-0.5">${formatRp(p.price)} <span class="text-[10.5px] text-stone-400 font-medium">(${escapeHtml(p.category)})</span></p>
+            <p class="font-black text-emerald-800 text-xs mt-0.5 truncate">${formatRp(p.price)} <span class="text-[10.5px] text-stone-400 font-medium">(${escapeHtml(p.category)})</span></p>
           </div>
         </div>
 
         <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
           <!-- 1-Tap Toggle Status Ready / Habis -->
           <button onclick="window.KasirApp.toggleProductAvailability('${p.id}')" 
-            class="px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-xl font-black text-xs transition touch-target-large flex items-center gap-1 border cursor-pointer ${isReady ? 'bg-emerald-50 text-emerald-950 border-emerald-300 hover:bg-emerald-100' : 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100'}"
+            class="w-9 h-9 sm:w-auto sm:h-auto sm:px-2.5 sm:py-2 sm:min-h-[40px] p-0 rounded-xl font-black text-xs transition touch-target-large flex items-center justify-center gap-1 border cursor-pointer ${isReady ? 'bg-emerald-50 text-emerald-950 border-emerald-300 hover:bg-emerald-100' : 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100'}"
             title="Klik untuk ubah status Ready/Habis">
-            <span class="material-symbols-rounded text-base">${isReady ? 'check_circle' : 'cancel'}</span>
+            <span class="material-symbols-rounded text-lg sm:text-base">${isReady ? 'check_circle' : 'cancel'}</span>
             <span class="hidden sm:inline">${isReady ? 'Ready' : 'Habis'}</span>
           </button>
           
           <!-- Tombol Ubah Menu -->
           <button onclick="window.KasirApp.openEditProductModal('${p.id}')" 
-            class="px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-xl bg-stone-100 text-stone-800 hover:bg-emerald-100 hover:text-emerald-900 border border-stone-200 font-black text-xs flex items-center gap-1 transition touch-target-large cursor-pointer" 
+            class="w-9 h-9 sm:w-auto sm:h-auto sm:px-2.5 sm:py-2 sm:min-h-[40px] p-0 rounded-xl bg-stone-100 text-stone-800 hover:bg-emerald-100 hover:text-emerald-900 border border-stone-200 font-black text-xs flex items-center justify-center gap-1 transition touch-target-large cursor-pointer" 
             title="Ubah nama, harga, atau stok menu">
-            <span class="material-symbols-rounded text-base">edit</span>
+            <span class="material-symbols-rounded text-lg sm:text-base">edit</span>
             <span class="hidden sm:inline">Ubah</span>
           </button>
           
           <!-- Hapus Menu Tunggal -->
           <button onclick="window.KasirApp.deleteProduct('${p.id}')" 
-            class="p-1.5 sm:p-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 font-bold touch-target-large cursor-pointer" 
+            class="w-9 h-9 sm:h-auto sm:min-h-[40px] sm:px-2.5 p-0 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 font-bold touch-target-large cursor-pointer flex items-center justify-center" 
             title="Hapus menu">
-            <span class="material-symbols-rounded text-base">delete</span>
+            <span class="material-symbols-rounded text-lg sm:text-base">delete</span>
           </button>
         </div>
       </div>
@@ -1110,8 +1110,14 @@ export function switchBulkMode(mode = 'table') {
     if (tabText) {
       tabText.className = 'px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-bold flex items-center gap-1.5 border-b-2 border-transparent text-stone-500 hover:text-stone-800 rounded-t-xl transition cursor-pointer';
     }
-    if (viewTable) viewTable.classList.remove('hidden');
-    if (viewText) viewText.classList.add('hidden');
+    if (viewTable) {
+      viewTable.classList.remove('hidden');
+      viewTable.classList.add('view-page-enter');
+    }
+    if (viewText) {
+      viewText.classList.add('hidden');
+      viewText.classList.remove('view-page-enter');
+    }
     renderBulkTable();
   } else {
     if (tabTable) {
@@ -1120,8 +1126,14 @@ export function switchBulkMode(mode = 'table') {
     if (tabText) {
       tabText.className = 'px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-extrabold flex items-center gap-1.5 border-b-2 border-indigo-600 text-indigo-700 bg-white rounded-t-xl transition shadow-2xs cursor-pointer';
     }
-    if (viewTable) viewTable.classList.add('hidden');
-    if (viewText) viewText.classList.remove('hidden');
+    if (viewTable) {
+      viewTable.classList.add('hidden');
+      viewTable.classList.remove('view-page-enter');
+    }
+    if (viewText) {
+      viewText.classList.remove('hidden');
+      viewText.classList.add('view-page-enter');
+    }
   }
   updateBulkSummary();
 }

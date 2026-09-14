@@ -1,12 +1,11 @@
 {
-  "versionCode": 119,
-  "versionName": "1.2.70",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.70/Aristotle-POS.apk",
+  "versionCode": 120,
+  "versionName": "1.2.71",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.71/Aristotle-POS.apk",
   "changelog": [
-    "Void transaksi beralasan gantikan hapus: jejak audit, keluar omzet, stok kembali",
-    "Pajak PBJT/service charge opsional Owner-only + tercetak di struk",
-    "Disiplin shift anti double-open, wajib hitung fisik, konfirmasi selisih",
-    "Laporan diskon per kasir, validasi stok anti-oversell, Uang Pas diselaraskan"
+    "Transisi halaman mulus Anime.js di semua view",
+    "Perbaikan Service Worker resilient precache & auto-update anti-freeze",
+    "Sinkronisasi penuh aset Android WebView & PWA"
   ],
-  "releaseDate": "2026-09-13"
+  "releaseDate": "2026-09-14"
 }

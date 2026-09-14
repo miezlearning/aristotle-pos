@@ -458,6 +458,11 @@ export function initM3RippleSystem() {
     const target = e.target.closest('button, [role="button"], .m3-ripple-surface, .active-queue-tab-wrapper');
     if (!target || target.disabled || target.getAttribute('aria-disabled') === 'true') return;
 
+    // Pill filter kategori Menu = segmented control: pada mouse desktop,
+    // gelombang ripple yang menumpuk dengan press-scale + ganti warna
+    // membuat tombol terasa bergetar. Cukup umpan balik warna status.
+    if (e.pointerType === 'mouse' && target.closest('.admin-cat-pill')) return;
+
     // Picu getaran taktil ringan
     triggerHaptic('light');
 

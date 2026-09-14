@@ -48,6 +48,12 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Kunci gutter scrollbar: daftar menu yang memendek/memajang saat filter
+   tidak boleh menggeser seluruh halaman secara horizontal */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 16px;
@@ -627,6 +633,16 @@ button:active:not(:disabled),
   }
 }
 
+/* 3b. Pill filter kategori Menu adalah segmented control: pada perangkat
+   mouse presisi, matikan efek tekan (press-scale) agar ganti kategori
+   terasa stabil dan tidak bergetar. Umpan balik cukup dari perubahan
+   warna status; layar sentuh tetap memakai tactile + ripple biasa. */
+@media (hover: hover) and (pointer: fine) {
+  .admin-cat-pill:active {
+    transform: none !important;
+  }
+}
+
 /* 4. Akselerasi perangkat keras GPU untuk Modal & Drawer agar bebas lag saat dibuka */
 div[id$="Modal"] {
   -webkit-transform: translateZ(0);
@@ -717,31 +733,31 @@ div[id$="Modal"] > div {
 @keyframes reportSlideInRight {
   from {
     opacity: 0;
-    transform: translateX(20px);
+    transform: translate3d(16px, 0, 0);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: none;
   }
 }
 
 @keyframes reportSlideInLeft {
   from {
     opacity: 0;
-    transform: translateX(-20px);
+    transform: translate3d(-16px, 0, 0);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: none;
   }
 }
 
 .report-slide-right {
-  animation: reportSlideInRight 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: reportSlideInRight 0.2s cubic-bezier(0.05, 0.7, 0.1, 1.0) forwards;
 }
 
 .report-slide-left {
-  animation: reportSlideInLeft 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: reportSlideInLeft 0.2s cubic-bezier(0.05, 0.7, 0.1, 1.0) forwards;
 }
 
 /* 10. Compact Switch (pengganti checkbox biru bawaan Android) */
@@ -761,5 +777,111 @@ div[id$="Modal"] > div {
 #btnTogglePinSetting .switch-knob {
   transition: margin 0.18s ease;
 }
+
+/* 11. Page & View Transitions (M3 Hardware-Accelerated Smooth Motion) */
+@keyframes viewPageEnter {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.view-page-enter {
+  animation: viewPageEnter 0.24s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  will-change: transform, opacity;
+}
+
+/* 12b. Interaktif kasir: DnD susun antrian, usap-hapus baris, stepper.
+   Semua umpan balik visual; gestur ketuk biasa tidak berubah. */
+#orderQueueTabs {
+  -webkit-touch-callout: none;
+}
+#orderQueueTabs.reordering,
+#orderQueueTabs.reordering * {
+  cursor: grabbing !important;
+}
+.queue-tab-dragging {
+  box-shadow: 0 12px 24px -6px rgba(4, 120, 87, 0.35), 0 4px 10px -2px rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  opacity: 0.96;
+}
+.queue-tab-placeholder {
+  border: 2px dashed rgba(4, 120, 87, 0.55);
+  background: rgba(236, 253, 245, 0.7);
+  border-radius: 12px;
+}
+.cart-line-swipe {
+  touch-action: pan-y;
+  -webkit-touch-callout: none;
+}
+.cart-line-swipe .cart-swipe-fg {
+  transition: transform 0.18s ease;
+}
+.cart-line-swipe .cart-swipe-fg.swiping {
+  transition: none;
+}
+
+/* 12. Native View Transitions API Integration (Shared-Axis Cross-Dissolve) */
+#mainAppHeader {
+  view-transition-name: main-app-header;
+}
+#mobileBottomNav {
+  view-transition-name: mobile-bottom-nav;
+}
+#m3NavRail {
+  view-transition-name: m3-nav-rail;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  mix-blend-mode: normal;
+  height: 100%;
+}
+
+::view-transition-old(root) {
+  animation: viewTransitionOut 0.2s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-new(root) {
+  animation: viewTransitionIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes viewTransitionOut {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, -12px, 0) scale(0.99);
+  }
+}
+
+@keyframes viewTransitionIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 22px, 0) scale(0.988);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view-page-enter,
+  .report-slide-right,
+  .report-slide-left,
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
 
 

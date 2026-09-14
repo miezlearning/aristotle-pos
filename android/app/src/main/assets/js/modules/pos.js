@@ -3,7 +3,7 @@
  */
 
 import { state, saveQueues, getCurrentCart, getActiveQueue, calculateCartTotal, getQueueLineItems, syncQueueCartFromItems } from '../state.js';
-import { formatRp, playBeep, playClick, escapeHtml, showToast, showConfirmDialog } from '../utils.js';
+import { formatRp, playBeep, playClick, escapeHtml, showToast, showConfirmDialog, triggerHaptic } from '../utils.js';
 import { syncSaveQueues } from '../firebase.js';
 
 // ================= MULTI-ORDER QUEUE =================
@@ -32,14 +32,14 @@ export function renderOrderQueueTabs(autoScrollTab = false) {
     }
 
     return `
-      <div class="active-queue-tab-wrapper flex items-center rounded-xl transition shrink-0 ${tabStyle}">
+      <div class="active-queue-tab-wrapper flex items-center rounded-xl transition shrink-0 ${tabStyle}" data-qid="${q.id}" title="Tahan lalu geser untuk mengubah urutan">
         <button onclick="window.KasirApp.switchOrderQueue('${q.id}')"
           class="px-3 py-2 text-xs sm:text-sm flex items-center gap-1.5 touch-target-large">
           <span>${escapeHtml(q.name)}</span>
           ${itemCount > 0 ? `<span class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs ${badgeStyle}">${itemCount}</span>` : ''}
         </button>
         ${isActive ? `
-          <button type="button" onclick="event.stopPropagation(); window.KasirApp.promptRenameQueue()"
+          <button type="button" data-no-reorder onclick="event.stopPropagation(); window.KasirApp.promptRenameQueue()"
             title="Ubah nama antrian" class="pr-2.5 pl-0.5 py-2 text-white/80 hover:text-white transition flex items-center">
             <span class="material-symbols-rounded text-sm">edit</span>
           </button>
@@ -56,6 +56,7 @@ export function renderOrderQueueTabs(autoScrollTab = false) {
   if (drawerTitleEl) drawerTitleEl.innerText = queueName;
 
   initQueueDragScroll();
+  initQueueTabReorder();
 
   // PENTING: Hanya geser kontainer horizontal slider orderQueueTabs itu sendiri jika diminta (misal: saat ganti antrian)
   // JANGAN PERNAH gunakan activeTab.scrollIntoView() karena browser akan menggulir seluruh halaman (window/body) ke atas!
@@ -100,12 +101,187 @@ export function initQueueDragScroll() {
   });
 
   slider.addEventListener('mousemove', (e) => {
-    if (!isDown) return;
+    if (!isDown || queueTabReorderActive) return;
     e.preventDefault();
     const x = e.pageX - slider.offsetLeft;
     const walk = (x - startX) * 1.5;
     slider.scrollLeft = scrollLeft - walk;
   });
+}
+
+// ============ DRAG & DROP URUTAN TAB ANTRIAN (tahan + geser) ============
+// Ramah lansia: ketuk = pindah antrian (tetap seperti biasa),
+// tahan 0,5 detik = tab terangkat lalu geser untuk menyusun ulang.
+// Berbasis Pointer Events sehingga jalan di mouse maupun layar sentuh,
+// dan tidak berebut dengan geser-scroll strip (scroll hanya jalan
+// sebelum timer tahan selesai).
+let queueTabReorderActive = false;
+let queueTabReorderSession = null;
+let suppressQueueTabClick = false;
+
+const QUEUE_REORDER_HOLD_MS = 500;
+const QUEUE_REORDER_MOVE_PX = 10;
+
+export function initQueueTabReorder() {
+  const slider = document.getElementById('orderQueueTabs');
+  if (!slider || slider.dataset.reorderInit) return;
+  slider.dataset.reorderInit = 'true';
+
+  // Tahan lama di HP tidak boleh memunculkan menu konteks browser
+  slider.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // Telan klik yang lahir dari akhir gestur susun-ulang (bukan ketukan)
+  slider.addEventListener('click', (e) => {
+    if (suppressQueueTabClick) {
+      suppressQueueTabClick = false;
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, true);
+
+  slider.addEventListener('pointerdown', (e) => {
+    if (e.button !== undefined && e.button > 0) return;
+    if (state.orderQueues.length < 2) return;
+    if (e.target.closest('[data-no-reorder]')) return;
+    const tab = e.target.closest('.active-queue-tab-wrapper');
+    if (!tab || !slider.contains(tab)) return;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let holdTimer = null;
+    const cancelHold = () => {
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      slider.removeEventListener('pointermove', onMove);
+      slider.removeEventListener('pointerup', onUp);
+      slider.removeEventListener('pointercancel', onUp);
+    };
+    const onMove = (ev) => {
+      if (Math.hypot(ev.clientX - startX, ev.clientY - startY) > QUEUE_REORDER_MOVE_PX) cancelHold();
+    };
+    const onUp = () => cancelHold();
+    holdTimer = setTimeout(() => {
+      holdTimer = null;
+      slider.removeEventListener('pointermove', onMove);
+      slider.removeEventListener('pointerup', onUp);
+      slider.removeEventListener('pointercancel', onUp);
+      startQueueTabReorder(slider, tab, startX, startY);
+    }, QUEUE_REORDER_HOLD_MS);
+    slider.addEventListener('pointermove', onMove);
+    slider.addEventListener('pointerup', onUp);
+    slider.addEventListener('pointercancel', onUp);
+  });
+}
+
+function startQueueTabReorder(slider, tab, startX, startY) {
+  const rect = tab.getBoundingClientRect();
+  const grabDX = startX - rect.left;
+  const grabDY = startY - rect.top;
+
+  const placeholder = document.createElement('div');
+  placeholder.className = 'queue-tab-placeholder shrink-0';
+  placeholder.style.width = `${rect.width}px`;
+  placeholder.style.height = `${rect.height}px`;
+  // Tab terangkat keluar dari alur (fixed), posisinya digantikan penanda
+  tab.parentNode.replaceChild(placeholder, tab);
+
+  const prevTouchAction = slider.style.touchAction;
+  const hadSmooth = slider.classList.contains('scroll-smooth');
+  slider.classList.add('reordering');
+  slider.style.touchAction = 'none';
+  if (hadSmooth) slider.classList.remove('scroll-smooth');
+
+  Object.assign(tab.style, {
+    position: 'fixed', left: `${rect.left}px`, top: `${rect.top}px`,
+    width: `${rect.width}px`, height: `${rect.height}px`, margin: '0',
+    zIndex: '60', pointerEvents: 'none'
+  });
+  tab.classList.add('queue-tab-dragging');
+
+  queueTabReorderActive = true;
+  suppressQueueTabClick = true;
+  try { triggerHaptic('medium'); } catch (_) {}
+
+  const session = { slider, tab, placeholder, grabDX, grabDY, prevTouchAction, hadSmooth };
+  queueTabReorderSession = session;
+
+  const siblings = () => Array.from(slider.querySelectorAll('.active-queue-tab-wrapper')).filter(t => t !== tab);
+
+  const onMove = (e) => {
+    if (queueTabReorderSession !== session) return;
+    const x = (e.clientX !== undefined && e.clientX !== null) ? e.clientX : startX;
+    const y = (e.clientY !== undefined && e.clientY !== null) ? e.clientY : startY;
+    tab.style.left = `${x - grabDX}px`;
+    tab.style.top = `${y - grabDY}px`;
+    // Pindahkan penanda ke posisi sisip berdasarkan titik tengah tab lain
+    let placed = false;
+    for (const other of siblings()) {
+      const r = other.getBoundingClientRect();
+      if (x < r.left + r.width / 2) {
+        if (placeholder.nextSibling !== other) slider.insertBefore(placeholder, other);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed && placeholder.parentNode && placeholder.nextSibling) {
+      slider.appendChild(placeholder);
+    }
+    // Auto-scroll saat jari/kursor dekat tepi strip
+    const sRect = slider.getBoundingClientRect();
+    if (x < sRect.left + 56) slider.scrollLeft -= 12;
+    else if (x > sRect.right - 56) slider.scrollLeft += 12;
+    if (e.cancelable) e.preventDefault();
+  };
+
+  const finish = (commit) => {
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    document.removeEventListener('pointercancel', onUp);
+    if (queueTabReorderSession !== session) return;
+    queueTabReorderSession = null;
+    queueTabReorderActive = false;
+    slider.classList.remove('reordering');
+    slider.style.touchAction = prevTouchAction;
+    if (hadSmooth) slider.classList.add('scroll-smooth');
+    // Hitung posisi sisip dari penanda SEBELUM penanda dilepas dari DOM
+    const phKids = Array.from(slider.children);
+    const phIdx = phKids.indexOf(placeholder);
+    const draggedId = tab.getAttribute('data-qid');
+    const otherIds = Array.from(slider.querySelectorAll('.active-queue-tab-wrapper')).map(el => el.getAttribute('data-qid'));
+    let insertAt = otherIds.length;
+    if (phIdx !== -1) {
+      insertAt = phKids.slice(0, phIdx).filter(el => el !== tab && el.classList && el.classList.contains('active-queue-tab-wrapper')).length;
+    }
+    placeholder.remove();
+    tab.classList.remove('queue-tab-dragging');
+    tab.style.position = ''; tab.style.left = ''; tab.style.top = '';
+    tab.style.width = ''; tab.style.height = ''; tab.style.margin = '';
+    tab.style.zIndex = ''; tab.style.pointerEvents = '';
+    if (commit) {
+      otherIds.splice(Math.max(0, Math.min(insertAt, otherIds.length)), 0, draggedId);
+      const byId = new Map(state.orderQueues.map(q => [q.id, q]));
+      const next = [];
+      otherIds.forEach(id => { if (byId.has(id)) { next.push(byId.get(id)); byId.delete(id); } });
+      byId.forEach(q => next.push(q));
+      state.orderQueues = next;
+      saveQueues();
+      syncSaveQueues(state.orderQueues);
+      renderOrderQueueTabs(false);
+      try { triggerHaptic('light'); } catch (_) {}
+      try {
+        if (!localStorage.getItem('kasir_queue_reorder_hint_v1')) {
+          localStorage.setItem('kasir_queue_reorder_hint_v1', '1');
+          showToast('Urutan antrian tersimpan', 'success');
+        }
+      } catch (_) {}
+    } else {
+      renderOrderQueueTabs(false);
+    }
+    setTimeout(() => { suppressQueueTabClick = false; }, 350);
+  };
+
+  const onUp = () => finish(true);
+  document.addEventListener('pointermove', onMove, { passive: false });
+  document.addEventListener('pointerup', onUp);
+  document.addEventListener('pointercancel', onUp);
 }
 
 export function scrollQueueTabs(direction) {
@@ -430,7 +606,7 @@ export function renderProductCardActionHTML(product, qty, isReady) {
     return `
       <div class="flex items-center gap-1.5 pt-0.5" onclick="event.stopPropagation()">
         <div class="flex-1 bg-stone-100/90 rounded-xl p-0.5 flex items-center justify-between border border-stone-200/70">
-          <button onclick="window.KasirApp.updateCartQty('${product.id}', -1)"
+          <button data-repeat-target="${product.id}" data-repeat-delta="-1" onclick="window.KasirApp.updateCartQty('${product.id}', -1)"
             class="w-7 h-7 rounded-lg ${qty === 1 ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' : 'bg-white text-stone-700 hover:bg-stone-50'} shadow-2xs font-black text-sm flex items-center justify-center transition active:scale-90 cursor-pointer"
             title="${qty === 1 ? 'Hapus dari pesanan' : 'Kurangi 1 porsi'}">
             ${qty === 1 ? '<span class="material-symbols-rounded text-sm">delete</span>' : '<span class="material-symbols-rounded text-sm">remove</span>'}
@@ -439,7 +615,7 @@ export function renderProductCardActionHTML(product, qty, isReady) {
             <span class="font-black text-stone-900 text-xs">${qty}</span>
             <span class="text-[8px] font-extrabold text-stone-500 uppercase tracking-tighter">porsi</span>
           </div>
-          <button onclick="window.KasirApp.updateCartQty('${product.id}', 1)"
+          <button data-repeat-target="${product.id}" data-repeat-delta="1" onclick="window.KasirApp.updateCartQty('${product.id}', 1)"
             class="w-7 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs font-black text-sm flex items-center justify-center transition active:scale-90 cursor-pointer"
             title="Tambah 1 porsi">
             <span class="material-symbols-rounded text-sm">add</span>
@@ -670,6 +846,8 @@ export function renderProducts() {
   if (typeof window !== 'undefined' && window.scrollY !== currentScrollY) {
     window.scrollTo({ top: currentScrollY, behavior: 'instant' });
   }
+
+  initCartGestures();
 }
 
 // ================= CART OPERATIONS =================
@@ -778,6 +956,213 @@ export function updateCartQty(targetId, delta) {
   }
 }
 
+// Hapus satu baris pesanan (dipakai usap-hapus) + tombol Urungkan via toast
+export function removeCartLine(lineId) {
+  playClick('del');
+  const q = getActiveQueue();
+  if (!q) return;
+  const items = getQueueLineItems(q);
+  const idx = items.findIndex(it => it.lineId === lineId);
+  if (idx === -1) return;
+  const item = items[idx];
+  const p = state.products.find(prod => prod.id === item.productId);
+  const snapshot = {
+    queueId: q.id,
+    index: idx,
+    lineId: item.lineId,
+    item: JSON.parse(JSON.stringify(item)),
+    done: false
+  };
+  items.splice(idx, 1);
+  syncQueueCartFromItems(q);
+  saveQueues();
+  syncSaveQueues(state.orderQueues);
+  renderOrderQueueTabs(false);
+  renderCart();
+  if (p) updateProductCardDOM(p.id);
+  const label = p ? p.name : 'Item';
+  showToast(`"${label}" dihapus dari pesanan`, 'info', 4500, {
+    label: 'Urungkan',
+    onClick: () => restoreCartLine(snapshot)
+  });
+}
+
+function restoreCartLine(snapshot) {
+  if (!snapshot || snapshot.done) return;
+  const q = state.orderQueues.find(x => x.id === snapshot.queueId) || getActiveQueue();
+  if (!q) return;
+  const items = getQueueLineItems(q);
+  if (items.some(it => it.lineId === snapshot.lineId)) {
+    showToast('Item tersebut sudah kembali di pesanan', 'info');
+    return;
+  }
+  snapshot.done = true;
+  items.splice(Math.min(snapshot.index, items.length), 0, snapshot.item);
+  const p = state.products.find(prod => prod.id === snapshot.item.productId);
+  syncQueueCartFromItems(q);
+  saveQueues();
+  syncSaveQueues(state.orderQueues);
+  renderOrderQueueTabs(false);
+  renderCart();
+  if (p) updateProductCardDOM(p.id); else renderProducts();
+  showToast(`"${p ? p.name : 'Item'}" dikembalikan ke pesanan`, 'success');
+}
+
+// ============ GESER-HAPUS BARIS + TAHAN-ULANG STEPPER ============
+// Satu delegasi untuk daftar kasir (desktop + drawer HP) dan grid katalog.
+// - Usap baris ke kiri: tampilkan Hapus; lepas jauh/cepat = langsung hapus.
+// - Tahan tombol +/- 0,45 dtk: qty jalan terus tiap 90ms sampai dilepas.
+// - Ketukan biasa 100% tidak berubah (inline onclick tetap yang jalan).
+let cartGestureInitDone = false;
+let pressRepeatState = null;
+let swipeState = null;
+let suppressStepperClick = false;
+
+const REPEAT_HOLD_MS = 450;
+const REPEAT_TICK_MS = 90;
+const SWIPE_MIN_PX = 12;
+const SWIPE_REVEAL_PX = 92;
+
+function stopPressRepeat() {
+  if (!pressRepeatState) return;
+  if (pressRepeatState.timer) clearTimeout(pressRepeatState.timer);
+  if (pressRepeatState.interval) clearInterval(pressRepeatState.interval);
+  pressRepeatState = null;
+  window.removeEventListener('pointerup', stopPressRepeat);
+  window.removeEventListener('pointercancel', stopPressRepeat);
+}
+
+function cleanupSwipeListeners() {
+  window.removeEventListener('pointermove', onSwipeMove);
+  window.removeEventListener('pointerup', onSwipeEnd);
+  window.removeEventListener('pointercancel', onSwipeEnd);
+}
+
+function closeOpenSwipeRow(except) {
+  document.querySelectorAll('.cart-line-swipe.cart-line-open').forEach((row) => {
+    if (row === except) return;
+    row.classList.remove('cart-line-open');
+    const fg = row.querySelector('.cart-swipe-fg');
+    if (fg) fg.style.transform = '';
+  });
+}
+
+function onSwipeMove(e) {
+  const s = swipeState;
+  if (!s) return;
+  const dx = e.clientX - s.startX;
+  const dy = e.clientY - s.startY;
+  if (!s.active) {
+    if (Math.abs(dx) < SWIPE_MIN_PX) return;
+    // Niat scroll vertikal: batalkan, biarkan browser menggulir natural
+    if (Math.abs(dx) < Math.abs(dy) * 1.4) {
+      cleanupSwipeListeners();
+      swipeState = null;
+      return;
+    }
+    s.active = true;
+    s.fg.classList.add('swiping');
+  }
+  if (e.cancelable) e.preventDefault();
+  const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  s.vx = (e.clientX - s.lastX) / Math.max(1, now - s.lastT);
+  s.lastX = e.clientX;
+  s.lastT = now;
+  s.dx = Math.max(-SWIPE_REVEAL_PX - 24, Math.min(0, dx));
+  s.fg.style.transform = `translateX(${s.dx}px)`;
+}
+
+function onSwipeEnd(e) {
+  const s = swipeState;
+  cleanupSwipeListeners();
+  swipeState = null;
+  if (!s) return;
+  s.fg.classList.remove('swiping');
+  // Browser mengambil alih (mis. scroll): kembalikan rapi, jangan hapus
+  if (e && e.type === 'pointercancel') {
+    s.fg.style.transform = '';
+    s.row.classList.remove('cart-line-open');
+    return;
+  }
+  const w = s.row.offsetWidth || 1;
+  const fling = s.vx < -0.55;
+  const past = s.dx < -Math.max(48, w * 0.42);
+  if (s.active && (fling || past)) {
+    s.fg.style.transform = `translateX(${-w}px)`;
+    const lineId = s.row.getAttribute('data-cart-line');
+    setTimeout(() => { if (lineId) removeCartLine(lineId); }, 160);
+  } else if (s.active) {
+    if (s.dx < -24) {
+      s.fg.style.transform = `translateX(${-SWIPE_REVEAL_PX}px)`;
+      s.row.classList.add('cart-line-open');
+    } else {
+      s.fg.style.transform = '';
+      s.row.classList.remove('cart-line-open');
+    }
+  }
+}
+
+export function initCartGestures() {
+  if (cartGestureInitDone) return;
+  const zones = [
+    document.getElementById('cartItemsList'),
+    document.getElementById('mobileDrawerCartItems'),
+    document.getElementById('productGrid')
+  ].filter(Boolean);
+  if (!zones.length) return;
+  cartGestureInitDone = true;
+
+  zones.forEach((zone) => {
+    // Telan klik susulan gestur (bukan ketukan) + tombol Hapus hasil usapan
+    zone.addEventListener('click', (e) => {
+      if (suppressStepperClick) {
+        suppressStepperClick = false;
+        e.stopPropagation();
+        e.preventDefault();
+        return;
+      }
+      const del = e.target.closest('[data-swipe-delete]');
+      if (del && zone.contains(del)) {
+        const lineId = del.getAttribute('data-swipe-delete');
+        if (lineId) removeCartLine(lineId);
+      }
+    }, true);
+
+    zone.addEventListener('pointerdown', (e) => {
+      if (e.button !== undefined && e.button > 0) return;
+      // 1) Stepper tahan-ulang (+/- kasir & kartu katalog)
+      const stepper = e.target.closest('[data-repeat-target]');
+      if (stepper && !stepper.disabled && zone.contains(stepper)) {
+        const target = stepper.getAttribute('data-repeat-target');
+        const delta = Number(stepper.getAttribute('data-repeat-delta')) || 1;
+        const tick = () => updateCartQty(target, delta);
+        const timer = setTimeout(() => {
+          pressRepeatState.interval = setInterval(tick, REPEAT_TICK_MS);
+          tick();
+          try { triggerHaptic('medium'); } catch (_) {}
+          suppressStepperClick = true;
+        }, REPEAT_HOLD_MS);
+        pressRepeatState = { timer, interval: null };
+        window.addEventListener('pointerup', stopPressRepeat);
+        window.addEventListener('pointercancel', stopPressRepeat);
+        return;
+      }
+      // 2) Usap-hapus baris (jangan mulai dari tombol/tautan/input)
+      if (e.target.closest('button, a, input, select, textarea')) return;
+      const row = e.target.closest('.cart-line-swipe');
+      if (!row || !zone.contains(row)) return;
+      const fg = row.querySelector('.cart-swipe-fg');
+      if (!fg) return;
+      closeOpenSwipeRow(row);
+      const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      swipeState = { row, fg, zone, startX: e.clientX, startY: e.clientY, dx: 0, active: false, lastX: e.clientX, lastT: now, vx: 0 };
+      window.addEventListener('pointermove', onSwipeMove, { passive: false });
+      window.addEventListener('pointerup', onSwipeEnd);
+      window.addEventListener('pointercancel', onSwipeEnd);
+    });
+  });
+}
+
 export async function confirmClearCart() {
   const q = getActiveQueue();
   if (!q) return;
@@ -869,7 +1254,15 @@ export function renderCart() {
     const hasNote = Boolean(item.note && item.note.trim());
 
     return `
-      <div class="py-2.5 flex items-start justify-between gap-1.5 border-b border-stone-100 last:border-0">
+      <div class="cart-line-swipe relative overflow-hidden border-b border-stone-100 last:border-0" data-cart-line="${item.lineId}">
+        <div class="absolute inset-y-0 right-0 w-[92px] bg-rose-600 text-white" aria-hidden="true">
+          <button type="button" data-swipe-delete="${item.lineId}" title="Hapus item ini" aria-label="Hapus ${escapeHtml(p.name)}"
+            class="absolute inset-0 flex flex-col items-center justify-center gap-0.5 cursor-pointer">
+            <span class="material-symbols-rounded text-xl">delete</span>
+            <span class="text-[10px] font-black leading-none">Hapus</span>
+          </button>
+        </div>
+        <div class="cart-swipe-fg relative bg-white py-2.5 flex items-start justify-between gap-1.5">
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1.5 flex-wrap">
             <h4 class="font-extrabold text-stone-900 text-xs sm:text-sm leading-tight">${escapeHtml(p.name)}</h4>
@@ -918,9 +1311,10 @@ export function renderCart() {
             title="${hasNote ? `Catatan: ${escapeHtml(item.note)}` : 'Tambah Catatan / Add-on'}">
             <span class="material-symbols-rounded text-base sm:text-lg ${hasNote || hasAddOns ? 'text-amber-700' : 'text-stone-500'}">edit_note</span>
           </button>
-          <button onclick="window.KasirApp.updateCartQty('${item.lineId}', -1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 font-black text-sm flex items-center justify-center touch-target-large transition cursor-pointer">-</button>
+          <button data-repeat-target="${item.lineId}" data-repeat-delta="-1" onclick="window.KasirApp.updateCartQty('${item.lineId}', -1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 font-black text-sm flex items-center justify-center touch-target-large transition cursor-pointer">-</button>
           <span class="w-5 text-center font-black text-xs sm:text-sm text-stone-800">${item.qty}</span>
-          <button onclick="window.KasirApp.updateCartQty('${item.lineId}', 1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm flex items-center justify-center touch-target-large shadow-sm transition cursor-pointer">+</button>
+          <button data-repeat-target="${item.lineId}" data-repeat-delta="1" onclick="window.KasirApp.updateCartQty('${item.lineId}', 1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm flex items-center justify-center touch-target-large shadow-sm transition cursor-pointer">+</button>
+        </div>
         </div>
       </div>
     `;
