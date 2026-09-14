@@ -1,12 +1,10 @@
 {
-  "versionCode": 121,
-  "versionName": "1.2.72",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.72/Aristotle-POS.apk",
+  "versionCode": 122,
+  "versionName": "1.2.73",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.73/Aristotle-POS.apk",
   "changelog": [
-    "Keamanan: tautan/QR login kini hanya penunjuk toko, masuk tetap wajib PIN",
-    "Peran default perangkat baru = kasir terkunci (fail-closed)",
-    "Susun ulang tab antrian gaya launcher: tahan-geser + pendaratan pegas",
-    "Usap-hapus item pesanan + tombol Urungkan; tahan +/- untuk qty cepat"
+    "Drag susun antrian andal di layar kecil: tahan tidak lagi direbut scroll strip",
+    "Auto-scroll tepi kontinu + penanda mengikuti saat strip bergeser"
   ],
   "releaseDate": "2026-09-14"
 }

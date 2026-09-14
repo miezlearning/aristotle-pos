@@ -121,6 +121,10 @@ let suppressQueueTabClick = false;
 
 const QUEUE_REORDER_HOLD_MS = 320;
 const QUEUE_REORDER_MOVE_PX = 8;
+const QUEUE_REORDER_TOUCH_SLOP_PX = 14;
+const QUEUE_REORDER_EDGE_PX = 64;
+const QUEUE_REORDER_EDGE_STEP = 12;
+const QUEUE_REORDER_EDGE_MS = 20;
 
 export function initQueueTabReorder() {
   const slider = document.getElementById('orderQueueTabs');
@@ -147,17 +151,21 @@ export function initQueueTabReorder() {
     if (!tab || !slider.contains(tab)) return;
     const startX = e.clientX;
     const startY = e.clientY;
+    // Layar sentuh bergetar: beri toleransi gerak lebih longgar dari mouse
+    const holdSlop = (e.pointerType && e.pointerType === 'mouse') ? QUEUE_REORDER_MOVE_PX : QUEUE_REORDER_TOUCH_SLOP_PX;
     let holdTimer = null;
+    let holdTouchGuard = null;
 
     const cancelHold = () => {
       if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
       slider.removeEventListener('pointermove', onMove);
       slider.removeEventListener('pointerup', onUp);
       slider.removeEventListener('pointercancel', onUp);
+      if (holdTouchGuard) { slider.removeEventListener('touchmove', holdTouchGuard); holdTouchGuard = null; }
     };
 
     const onMove = (ev) => {
-      if (Math.hypot(ev.clientX - startX, ev.clientY - startY) > QUEUE_REORDER_MOVE_PX) {
+      if (Math.hypot(ev.clientX - startX, ev.clientY - startY) > holdSlop) {
         cancelHold();
       }
     };
@@ -169,12 +177,31 @@ export function initQueueTabReorder() {
       slider.removeEventListener('pointermove', onMove);
       slider.removeEventListener('pointerup', onUp);
       slider.removeEventListener('pointercancel', onUp);
+      if (holdTouchGuard) { slider.removeEventListener('touchmove', holdTouchGuard); holdTouchGuard = null; }
       startQueueTabReorder(slider, tab, startX, startY);
     }, QUEUE_REORDER_HOLD_MS);
 
     slider.addEventListener('pointermove', onMove);
     slider.addEventListener('pointerup', onUp);
     slider.addEventListener('pointercancel', onUp);
+
+    // KHUSUS SENTUH: selama timer tahan berjalan, tahan micro-jitter agar
+    // browser tidak merebut gestur menjadi scroll (pointercancel) — yang
+    // selama ini membuat mode susun tidak pernah aktif di layar kecil.
+    // Begitu jari bergeser melewati ambang, lepas kendali ke scroll natural.
+    if (!e.pointerType || e.pointerType !== 'mouse') {
+      holdTouchGuard = (tev) => {
+        if (!holdTimer) return;
+        const t = tev.touches && tev.touches[0];
+        if (!t) return;
+        if (Math.hypot(t.clientX - startX, t.clientY - startY) > holdSlop) {
+          cancelHold();
+          return;
+        }
+        if (tev.cancelable) tev.preventDefault();
+      };
+      slider.addEventListener('touchmove', holdTouchGuard, { passive: false });
+    }
   });
 }
 
@@ -236,29 +263,32 @@ function startQueueTabReorder(slider, tab, startX, startY) {
   try { triggerHaptic('medium'); } catch (_) {}
 
   let lastX = startX;
-  const session = { slider, tab, placeholder, floatingLayer, grabDX, grabDY, prevTouchAction, hadSmooth };
+  const session = { slider, tab, placeholder, floatingLayer, grabDX, grabDY, prevTouchAction, hadSmooth, lastPX: startX, edgeDir: 0, edgeTimer: null };
   queueTabReorderSession = session;
 
-  const onMove = (e) => {
-    if (queueTabReorderSession !== session) return;
-    // Hentikan animasi angkat agar tidak berebut transform dengan jari
-    if (typeof window.anime !== 'undefined') { try { window.anime.remove(floatingLayer); } catch (_) {} }
-    const x = (e.clientX !== undefined && e.clientX !== null) ? e.clientX : startX;
-    const y = (e.clientY !== undefined && e.clientY !== null) ? e.clientY : startY;
+  // Selama drag berlangsung, matikan scroll natural di SELURUH dokumen untuk
+  // gestur ini (touchmove preventDefault satu-satunya cara yang mempan di
+  // tengah gestur sentuh). Strip digerakkan manual via auto-scroll tepi.
+  const blockTouchScroll = (tev) => { if (tev.cancelable) tev.preventDefault(); };
+  document.addEventListener('touchmove', blockTouchScroll, { passive: false });
 
-    const currentX = x - grabDX;
-    const currentY = y - grabDY;
+  // Auto-scroll tepi KONTINU (interval, bukan per-move): di layar kecil,
+  // menahan jari di tepi strip tetap menggeser daftar meski jari diam.
+  // Interval ikut menempatkan ulang penanda mengikuti posisi terakhir.
+  session.edgeTimer = setInterval(() => {
+    if (queueTabReorderSession !== session) {
+      clearInterval(session.edgeTimer);
+      session.edgeTimer = null;
+      return;
+    }
+    if (session.edgeDir !== 0) {
+      slider.scrollLeft += session.edgeDir * QUEUE_REORDER_EDGE_STEP;
+      placeAt(session.lastPX);
+    }
+  }, QUEUE_REORDER_EDGE_MS);
 
-    // Gerak bebas di layar dengan physical tilt inersia
-    const deltaX = x - lastX;
-    lastX = x;
-    const tilt = Math.min(3.5, Math.max(-3.5, deltaX * 0.45 + 1.2));
-
-    floatingLayer.style.left = `${currentX}px`;
-    floatingLayer.style.top = `${currentY}px`;
-    floatingLayer.style.transform = `scale(1.08) rotate(${tilt}deg)`;
-
-    // Sibling shifting: geser posisi penanda saat melayang di atas deretan antrian
+  // Sibling shifting: geser posisi penanda saat melayang di atas deretan antrian
+  const placeAt = (x) => {
     const siblings = Array.from(slider.querySelectorAll('.active-queue-tab-wrapper'))
       .filter(t => t !== tab && t.style.display !== 'none');
 
@@ -278,14 +308,35 @@ function startQueueTabReorder(slider, tab, startX, startY) {
       slider.appendChild(placeholder);
       try { triggerHaptic('selection'); } catch (_) {}
     }
+  };
 
-    // Auto-scroll strip antrian jika pointer mendekati tepi kiri/kanan
+  const onMove = (e) => {
+    if (queueTabReorderSession !== session) return;
+    // Hentikan animasi angkat agar tidak berebut transform dengan jari
+    if (typeof window.anime !== 'undefined') { try { window.anime.remove(floatingLayer); } catch (_) {} }
+    const x = (e.clientX !== undefined && e.clientX !== null) ? e.clientX : startX;
+    const y = (e.clientY !== undefined && e.clientY !== null) ? e.clientY : startY;
+    session.lastPX = x;
+
+    const currentX = x - grabDX;
+    const currentY = y - grabDY;
+
+    // Gerak bebas di layar dengan physical tilt inersia
+    const deltaX = x - lastX;
+    lastX = x;
+    const tilt = Math.min(3.5, Math.max(-3.5, deltaX * 0.45 + 1.2));
+
+    floatingLayer.style.left = `${currentX}px`;
+    floatingLayer.style.top = `${currentY}px`;
+    floatingLayer.style.transform = `scale(1.08) rotate(${tilt}deg)`;
+
+    placeAt(x);
+
+    // Arah auto-scroll tepi (dieksekusi interval agar jalan meski jari diam)
     const sRect = slider.getBoundingClientRect();
-    if (x < sRect.left + 48) {
-      slider.scrollLeft -= 10;
-    } else if (x > sRect.right - 48) {
-      slider.scrollLeft += 10;
-    }
+    if (x < sRect.left + QUEUE_REORDER_EDGE_PX) session.edgeDir = -1;
+    else if (x > sRect.right - QUEUE_REORDER_EDGE_PX) session.edgeDir = 1;
+    else session.edgeDir = 0;
 
     if (e.cancelable) e.preventDefault();
   };
@@ -294,6 +345,9 @@ function startQueueTabReorder(slider, tab, startX, startY) {
     document.removeEventListener('pointermove', onMove);
     document.removeEventListener('pointerup', onUp);
     document.removeEventListener('pointercancel', onUp);
+    document.removeEventListener('touchmove', blockTouchScroll);
+    if (session.edgeTimer) { clearInterval(session.edgeTimer); session.edgeTimer = null; }
+    session.edgeDir = 0;
     if (queueTabReorderSession !== session) return;
 
     slider.classList.remove('reordering');

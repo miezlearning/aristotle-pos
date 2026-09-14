@@ -2,6 +2,15 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.73] - 2026-09-14
+
+### Perbaikan Drag Antrian di Layar Kecil
+- **Tahan tidak lagi direbut scroll:** selama 320ms menunggu, micro-jitter jari ditahan agar browser tidak mengambil alih gestur menjadi scroll strip (penyebab mode susun tidak pernah aktif di HP kecil seperti Xiaomi 14T). Toleransi sentuh 14px; lewat ambang, kendali kembali ke scroll natural.
+- **Auto-scroll tepi kontinu:** interval 20ms menggeser strip saat jari ditahan di zona tepi 64px — tetap jalan meski jari diam — dengan penanda slot yang ikut dihitung ulang mengikuti scroll.
+- **Pengaman sesi:** blokir scroll dokumen dilepas tuntas tiap drag selesai; interval membersihkan diri bila tertimpa; tab basi pasca-render diabaikan.
+
+---
+
 ## [v1.2.72] - 2026-09-14
 
 ### Keamanan Login Tautan/QR + Susun Ulang Antrian Gaya Launcher
