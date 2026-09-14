@@ -221,3 +221,11 @@ Masalah di screenshot → perbaikan baku:
 - Anti brute-force berlaku di SEMUA jalur PIN (login toko, PIN kasir per-ID, PIN Owner) memakai tabel `PIN_SECURITY_CONFIG` yang sama. Kunci kasir terpisah dari kunci Owner.
 - Kebijakan diskon warung: preset cepat (5/10/15/20%, Rp5/10/20rb) + input bebas + alasan opsional (Pelanggan/Promo/Rusak/Acara). Kasir boleh langsung maks `CASHIER_DISCOUNT_MAX_PCT` (10%); selebihnya wajib approval Owner via ganti peran. Setiap diskon mencatat `reason/by/approvedBy` dan tampil di struk.
 - Standar POS wajib: (1) Void beralasan, bukan hapus — transaksi batal tetap di jurnal (badge VOID), keluar dari omzet, stok dikembalikan, irreversible. (2) Pajak PBJT/service opsional Owner-only, rumus service → DPP → pajak, tampil di struk. (3) Shift anti double-open; tutup wajib isi hitung fisik eksplisit + konfirmasi bila selisih ≠ 0. (4) Mutasi destruktif & diskon = Owner-only di level fungsi.
+
+## 14. Aturan Tautan/QR Login (keamanan — Opsi A, berlaku sejak 2026)
+- Tautan/QR (`?store=`, QR pairing) = PENUNJUK TOKO, bukan kunci. Param `role`/`auth`/`token` di URL TIDAK PERNAH memberi sesi atau peran; hanya `store` (pra-isi) + `hostIp` (routing printer) yang dibaca.
+- Masuk SELALU via PIN terverifikasi: PIN toko (rate-limit + lockout `PIN_SECURITY_CONFIG` di `authenticateStoreLogin`), PIN kasir per-ID, atau PIN Owner. Jangan tambah jalur masuk baru tanpa PIN.
+- Default peran perangkat = kasir terkunci (`state.js`: `userRole` default `'cashier'`). Peran `owner` HANYA via `setUserRole('owner')` eksplisit sesudah PIN terverifikasi (login, registrasi, demo lokal, ganti peran). Jangan kembalikan default `'owner'`.
+- Link/QR TIDAK PERNAH menghasilkan owner. Grant pairing maksimal = mode relay printer (`pelayan`, tanpa hak aplikasi). Naik ke owner wajib PIN Owner via ganti peran.
+- Flag sesi (`auth_store_session_*`) hanya ditulis sesudah autentikasi sukses (`handleStoreLoginSubmit`, `quickSelectStore` pasca-PIN). Jangan tulis flag ini di resolver URL, boot param, atau handler scan.
+- Token `getLocalPosToken` = obskuritas LAN printer, BUKAN kredensial login. Jangan validasi login dengannya, jangan anggap rahasia (deterministik dari storeId).

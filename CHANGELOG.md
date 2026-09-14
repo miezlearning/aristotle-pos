@@ -2,6 +2,16 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.72] - 2026-09-14
+
+### Keamanan Login Tautan/QR + Susun Ulang Antrian Gaya Launcher
+- **Tautan/QR bukan lagi kunci masuk (Opsi A):** parameter `role`/`auth`/`token` di URL/QR tidak pernah memberi sesi atau peran — hanya penunjuk toko (pra-isi + fokus PIN). Masuk tetap wajib PIN terverifikasi (rate-limit + lockout `PIN_SECURITY_CONFIG`, tetap jalan offline).
+- **Fail-closed:** peran default perangkat baru = kasir terkunci; `owner` hanya via PIN eksplisit (login, registrasi, demo, ganti peran). Hasil scan QR pairing kini mengarah ke modal login PIN, bukan auto-login.
+- **Susun ulang tab antrian gaya launcher:** tahan 320ms → tab terangkat melayang (membesar + tilt + bayangan 3D) → geser bebas → mendarat pegas via Anime.js. Commit urutan anti-rusak (potret sinkron + fallback aman).
+- **Interaktivitas kasir (ikut terkirim):** usap-hapus baris pesanan + tombol Urungkan; tahan tombol +/- (keranjang & kartu katalog) untuk qty jalan terus; ketukan biasa tidak berubah.
+
+---
+
 ## [v1.2.70] - 2026-09-13
 
 ### 🧾 Standar POS Industri: Void Berjejak, Pajak PBJT, Disiplin Shift

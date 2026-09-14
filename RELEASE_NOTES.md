@@ -1,11 +1,12 @@
-# Aristotle POS v1.2.71 Release Notes
+# Aristotle POS v1.2.72 Release Notes
 
 **Tanggal Rilis:** 2026-09-14
 
 ### Catatan Pembaruan:
-- Transisi halaman mulus Anime.js di semua view
-- Perbaikan Service Worker resilient precache & auto-update anti-freeze
-- Sinkronisasi penuh aset Android WebView & PWA
+- Keamanan: tautan/QR login kini hanya penunjuk toko, masuk tetap wajib PIN
+- Peran default perangkat baru = kasir terkunci (fail-closed)
+- Susun ulang tab antrian gaya launcher: tahan-geser + pendaratan pegas
+- Usap-hapus item pesanan + tombol Urungkan; tahan +/- untuk qty cepat
 
 ---
 *Pembaruan ini dapat diunduh dan dipasang langsung dari dalam aplikasi (In-App Auto-Updater).*

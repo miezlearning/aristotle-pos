@@ -69,24 +69,10 @@ export function resolveActiveStoreId() {
     const storeParam = params.get('store');
     if (storeParam && storeParam.trim()) {
       const sanitized = storeParam.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
-      const roleParam = params.get('role');
-      const authParam = params.get('auth');
-      const isPairingLink = (roleParam === 'client' || roleParam === 'pelayan' || authParam === '1');
 
-      // Auto-authorize jika dibuka dari tautan/QR pairing kasir
-      if (isPairingLink) {
-        sessionStorage.removeItem('is_logged_out_state');
-        localStorage.setItem('auth_store_session_' + sanitized, '1');
-        localStorage.setItem(GLOBAL_STORAGE_KEYS.ACTIVE_STORE_ID, sanitized);
-        localStorage.setItem('aristotle_device_role', 'pelayan');
-        localStorage.setItem('aristotle_printer_mode', 'pelayan');
-        const hostIp = params.get('hostIp');
-        if (hostIp) {
-          localStorage.setItem('aristotle_local_host_ip', hostIp);
-        }
-        return sanitized;
-      }
-      
+      // Keamanan tautan (Opsi A): parameter URL APAPUN — termasuk role,
+      // auth, token pairing — TIDAK PERNAH memberi sesi atau peran.
+      // Tautan/QR hanya penunjuk toko; masuk tetap wajib PIN di modal login.
       // Auto-restore hanya jika perangkat ini sudah memiliki sesi auth terverifikasi
       const isDeviceAuth = localStorage.getItem('auth_store_session_' + sanitized) === '1';
       if (isDeviceAuth) {
@@ -123,10 +109,13 @@ export const state = {
     requirePinForAdmin: false,
     cashiers: []
   },
-  userRole: localStorage.getItem(GLOBAL_STORAGE_KEYS.AUTH_ROLE) || 'owner', // 'owner' or 'cashier'
-  activeCashier: null, // { id, name }
+  // Fail-closed: perangkat tanpa peran tersimpan = kasir terkunci.
+  // Peran owner HANYA via PIN terverifikasi (login, registrasi, ganti peran).
+  userRole: localStorage.getItem(GLOBAL_STORAGE_KEYS.AUTH_ROLE) || 'cashier', // 'owner' or 'cashier'
+  activeCashier: { id: 'default', name: 'Kasir' }, // { id, name }
   currentUser: null,   // Firebase Google User
-  isUnlockedOwner: true,
+  // Selaras peran: hanya sesi owner tersimpan yang boot dalam keadaan terbuka.
+  isUnlockedOwner: (localStorage.getItem(GLOBAL_STORAGE_KEYS.AUTH_ROLE) || 'cashier') === 'owner',
   products: [],
   transactions: [],
   expenses: [],

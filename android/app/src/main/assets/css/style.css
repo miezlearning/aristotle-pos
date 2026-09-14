@@ -804,15 +804,43 @@ div[id$="Modal"] > div {
 #orderQueueTabs.reordering * {
   cursor: grabbing !important;
 }
-.queue-tab-dragging {
-  box-shadow: 0 12px 24px -6px rgba(4, 120, 87, 0.35), 0 4px 10px -2px rgba(0, 0, 0, 0.12);
-  border-radius: 12px;
-  opacity: 0.96;
+#orderQueueTabs.reordering .active-queue-tab-wrapper {
+  transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1);
 }
+
+/* Floating Layer Android Launcher Style (terlepas dari container ke body) */
+.queue-tab-floating-layer {
+  position: fixed !important;
+  z-index: 99999 !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  will-change: transform, left, top, box-shadow;
+  border-radius: 14px !important;
+  box-shadow: 0 24px 48px -10px rgba(0, 0, 0, 0.35), 0 10px 20px -4px rgba(4, 120, 87, 0.4) !important;
+  outline: 2px solid rgba(16, 185, 129, 0.9) !important;
+  outline-offset: 2px !important;
+  transform-origin: center center;
+}
+
 .queue-tab-placeholder {
-  border: 2px dashed rgba(4, 120, 87, 0.55);
-  background: rgba(236, 253, 245, 0.7);
-  border-radius: 12px;
+  border: 2px dashed rgba(4, 120, 87, 0.55) !important;
+  background: rgba(236, 253, 245, 0.85) !important;
+  border-radius: 14px !important;
+  min-width: 80px;
+  position: relative;
+  transition: width 0.22s cubic-bezier(0.2, 0, 0, 1), transform 0.22s cubic-bezier(0.2, 0, 0, 1) !important;
+}
+.queue-tab-placeholder::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 10px;
+  background: rgba(4, 120, 87, 0.08);
+  animation: pulseQueuePlaceholder 1.6s infinite ease-in-out;
+}
+@keyframes pulseQueuePlaceholder {
+  0%, 100% { opacity: 0.35; transform: scale(0.98); }
+  50% { opacity: 0.85; transform: scale(1); }
 }
 .cart-line-swipe {
   touch-action: pan-y;

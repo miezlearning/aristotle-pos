@@ -109,18 +109,18 @@ export function initQueueDragScroll() {
   });
 }
 
-// ============ DRAG & DROP URUTAN TAB ANTRIAN (tahan + geser) ============
-// Ramah lansia: ketuk = pindah antrian (tetap seperti biasa),
-// tahan 0,5 detik = tab terangkat lalu geser untuk menyusun ulang.
-// Berbasis Pointer Events sehingga jalan di mouse maupun layar sentuh,
-// dan tidak berebut dengan geser-scroll strip (scroll hanya jalan
-// sebelum timer tahan selesai).
+// ============ DRAG & DROP URUTAN TAB ANTRIAN (Android Launcher Style dengan Anime.js) ============
+// Ramah lansia: ketuk = pindah antrian biasa (<320ms).
+// Tahan 320ms = Tab terangkat sebagai layer melayang di atas layar (lepas dari batas kontainer),
+// membesar halus dengan bayangan 3D, sedikit tilt mengikuti gerakan, dan dapat digeser bebas
+// seperti memindahkan ikon aplikasi di layar utama Android.
+// Saat dilepas, Anime.js menerbangkan layer kembali ke slot tujuan (spring cushion landing).
 let queueTabReorderActive = false;
 let queueTabReorderSession = null;
 let suppressQueueTabClick = false;
 
-const QUEUE_REORDER_HOLD_MS = 500;
-const QUEUE_REORDER_MOVE_PX = 10;
+const QUEUE_REORDER_HOLD_MS = 320;
+const QUEUE_REORDER_MOVE_PX = 8;
 
 export function initQueueTabReorder() {
   const slider = document.getElementById('orderQueueTabs');
@@ -148,16 +148,22 @@ export function initQueueTabReorder() {
     const startX = e.clientX;
     const startY = e.clientY;
     let holdTimer = null;
+
     const cancelHold = () => {
       if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
       slider.removeEventListener('pointermove', onMove);
       slider.removeEventListener('pointerup', onUp);
       slider.removeEventListener('pointercancel', onUp);
     };
+
     const onMove = (ev) => {
-      if (Math.hypot(ev.clientX - startX, ev.clientY - startY) > QUEUE_REORDER_MOVE_PX) cancelHold();
+      if (Math.hypot(ev.clientX - startX, ev.clientY - startY) > QUEUE_REORDER_MOVE_PX) {
+        cancelHold();
+      }
     };
+
     const onUp = () => cancelHold();
+
     holdTimer = setTimeout(() => {
       holdTimer = null;
       slider.removeEventListener('pointermove', onMove);
@@ -165,6 +171,7 @@ export function initQueueTabReorder() {
       slider.removeEventListener('pointercancel', onUp);
       startQueueTabReorder(slider, tab, startX, startY);
     }, QUEUE_REORDER_HOLD_MS);
+
     slider.addEventListener('pointermove', onMove);
     slider.addEventListener('pointerup', onUp);
     slider.addEventListener('pointercancel', onUp);
@@ -172,16 +179,51 @@ export function initQueueTabReorder() {
 }
 
 function startQueueTabReorder(slider, tab, startX, startY) {
+  // Abaikan timer basi (mis. render asing terjadi selama tahan): tab harus
+  // masih menempel di strip saat mode susun dimulai.
+  if (!tab.isConnected || !slider.contains(tab)) return;
   const rect = tab.getBoundingClientRect();
   const grabDX = startX - rect.left;
   const grabDY = startY - rect.top;
 
+  // 1. Buat slot penanda (placeholder) di posisi asli
   const placeholder = document.createElement('div');
   placeholder.className = 'queue-tab-placeholder shrink-0';
   placeholder.style.width = `${rect.width}px`;
   placeholder.style.height = `${rect.height}px`;
-  // Tab terangkat keluar dari alur (fixed), posisinya digantikan penanda
-  tab.parentNode.replaceChild(placeholder, tab);
+  slider.insertBefore(placeholder, tab);
+
+  // Sembunyikan tab asli di alur DOM sementara
+  tab.style.display = 'none';
+
+  // 2. Buat Floating Layer terlepas dari kontainer (langsung di document.body)
+  const floatingLayer = tab.cloneNode(true);
+  floatingLayer.style.display = '';
+  floatingLayer.className = 'queue-tab-floating-layer flex items-center shrink-0 ' + (tab.className || '');
+  Object.assign(floatingLayer.style, {
+    position: 'fixed',
+    left: `${rect.left}px`,
+    top: `${rect.top}px`,
+    width: `${rect.width}px`,
+    height: `${rect.height}px`,
+    margin: '0',
+    zIndex: '99999',
+    pointerEvents: 'none',
+    transformOrigin: 'center center'
+  });
+  document.body.appendChild(floatingLayer);
+
+  // 3. Animasi Angkat (Lift-off) ala Android Launcher via Anime.js
+  if (typeof window.anime !== 'undefined') {
+    window.anime.remove(floatingLayer);
+    window.anime({
+      targets: floatingLayer,
+      scale: [1, 1.08],
+      rotate: [-0.6, 1.8],
+      duration: 220,
+      easing: 'easeOutCubic'
+    });
+  }
 
   const prevTouchAction = slider.style.touchAction;
   const hadSmooth = slider.classList.contains('scroll-smooth');
@@ -189,45 +231,62 @@ function startQueueTabReorder(slider, tab, startX, startY) {
   slider.style.touchAction = 'none';
   if (hadSmooth) slider.classList.remove('scroll-smooth');
 
-  Object.assign(tab.style, {
-    position: 'fixed', left: `${rect.left}px`, top: `${rect.top}px`,
-    width: `${rect.width}px`, height: `${rect.height}px`, margin: '0',
-    zIndex: '60', pointerEvents: 'none'
-  });
-  tab.classList.add('queue-tab-dragging');
-
   queueTabReorderActive = true;
   suppressQueueTabClick = true;
   try { triggerHaptic('medium'); } catch (_) {}
 
-  const session = { slider, tab, placeholder, grabDX, grabDY, prevTouchAction, hadSmooth };
+  let lastX = startX;
+  const session = { slider, tab, placeholder, floatingLayer, grabDX, grabDY, prevTouchAction, hadSmooth };
   queueTabReorderSession = session;
-
-  const siblings = () => Array.from(slider.querySelectorAll('.active-queue-tab-wrapper')).filter(t => t !== tab);
 
   const onMove = (e) => {
     if (queueTabReorderSession !== session) return;
+    // Hentikan animasi angkat agar tidak berebut transform dengan jari
+    if (typeof window.anime !== 'undefined') { try { window.anime.remove(floatingLayer); } catch (_) {} }
     const x = (e.clientX !== undefined && e.clientX !== null) ? e.clientX : startX;
     const y = (e.clientY !== undefined && e.clientY !== null) ? e.clientY : startY;
-    tab.style.left = `${x - grabDX}px`;
-    tab.style.top = `${y - grabDY}px`;
-    // Pindahkan penanda ke posisi sisip berdasarkan titik tengah tab lain
+
+    const currentX = x - grabDX;
+    const currentY = y - grabDY;
+
+    // Gerak bebas di layar dengan physical tilt inersia
+    const deltaX = x - lastX;
+    lastX = x;
+    const tilt = Math.min(3.5, Math.max(-3.5, deltaX * 0.45 + 1.2));
+
+    floatingLayer.style.left = `${currentX}px`;
+    floatingLayer.style.top = `${currentY}px`;
+    floatingLayer.style.transform = `scale(1.08) rotate(${tilt}deg)`;
+
+    // Sibling shifting: geser posisi penanda saat melayang di atas deretan antrian
+    const siblings = Array.from(slider.querySelectorAll('.active-queue-tab-wrapper'))
+      .filter(t => t !== tab && t.style.display !== 'none');
+
     let placed = false;
-    for (const other of siblings()) {
+    for (const other of siblings) {
       const r = other.getBoundingClientRect();
       if (x < r.left + r.width / 2) {
-        if (placeholder.nextSibling !== other) slider.insertBefore(placeholder, other);
+        if (placeholder.nextSibling !== other) {
+          slider.insertBefore(placeholder, other);
+          try { triggerHaptic('selection'); } catch (_) {}
+        }
         placed = true;
         break;
       }
     }
     if (!placed && placeholder.parentNode && placeholder.nextSibling) {
       slider.appendChild(placeholder);
+      try { triggerHaptic('selection'); } catch (_) {}
     }
-    // Auto-scroll saat jari/kursor dekat tepi strip
+
+    // Auto-scroll strip antrian jika pointer mendekati tepi kiri/kanan
     const sRect = slider.getBoundingClientRect();
-    if (x < sRect.left + 56) slider.scrollLeft -= 12;
-    else if (x > sRect.right - 56) slider.scrollLeft += 12;
+    if (x < sRect.left + 48) {
+      slider.scrollLeft -= 10;
+    } else if (x > sRect.right - 48) {
+      slider.scrollLeft += 10;
+    }
+
     if (e.cancelable) e.preventDefault();
   };
 
@@ -236,46 +295,94 @@ function startQueueTabReorder(slider, tab, startX, startY) {
     document.removeEventListener('pointerup', onUp);
     document.removeEventListener('pointercancel', onUp);
     if (queueTabReorderSession !== session) return;
-    queueTabReorderSession = null;
-    queueTabReorderActive = false;
+
     slider.classList.remove('reordering');
     slider.style.touchAction = prevTouchAction;
     if (hadSmooth) slider.classList.add('scroll-smooth');
-    // Hitung posisi sisip dari penanda SEBELUM penanda dilepas dari DOM
-    const phKids = Array.from(slider.children);
-    const phIdx = phKids.indexOf(placeholder);
-    const draggedId = tab.getAttribute('data-qid');
-    const otherIds = Array.from(slider.querySelectorAll('.active-queue-tab-wrapper')).map(el => el.getAttribute('data-qid'));
-    let insertAt = otherIds.length;
-    if (phIdx !== -1) {
-      insertAt = phKids.slice(0, phIdx).filter(el => el !== tab && el.classList && el.classList.contains('active-queue-tab-wrapper')).length;
-    }
-    placeholder.remove();
-    tab.classList.remove('queue-tab-dragging');
-    tab.style.position = ''; tab.style.left = ''; tab.style.top = '';
-    tab.style.width = ''; tab.style.height = ''; tab.style.margin = '';
-    tab.style.zIndex = ''; tab.style.pointerEvents = '';
+
+    // Potret urutan baru SECARA SINKRON di sini: render asing (mis. echo
+    // cloud) selama animasi mendarat tidak boleh merusak commit.
+    // Duplikat id (tab basi hasil render tengah-jalan) dimenangkan oleh
+    // kemunculan TERAKHIR = posisi baru pilihan pengguna.
+    let pendingOrder = null;
     if (commit) {
-      otherIds.splice(Math.max(0, Math.min(insertAt, otherIds.length)), 0, draggedId);
-      const byId = new Map(state.orderQueues.map(q => [q.id, q]));
-      const next = [];
-      otherIds.forEach(id => { if (byId.has(id)) { next.push(byId.get(id)); byId.delete(id); } });
-      byId.forEach(q => next.push(q));
-      state.orderQueues = next;
-      saveQueues();
-      syncSaveQueues(state.orderQueues);
-      renderOrderQueueTabs(false);
-      try { triggerHaptic('light'); } catch (_) {}
       try {
-        if (!localStorage.getItem('kasir_queue_reorder_hint_v1')) {
-          localStorage.setItem('kasir_queue_reorder_hint_v1', '1');
-          showToast('Urutan antrian tersimpan', 'success');
+        if (placeholder.parentNode) {
+          slider.insertBefore(tab, placeholder);
+          const rawOrder = Array.from(slider.querySelectorAll('.active-queue-tab-wrapper'))
+            .map(el => el.getAttribute('data-qid'))
+            .filter(Boolean);
+          const seen = new Set();
+          pendingOrder = [];
+          for (let i = rawOrder.length - 1; i >= 0; i--) {
+            if (!seen.has(rawOrder[i])) { seen.add(rawOrder[i]); pendingOrder.unshift(rawOrder[i]); }
+          }
         }
-      } catch (_) {}
-    } else {
-      renderOrderQueueTabs(false);
+      } catch (_) { pendingOrder = null; }
     }
-    setTimeout(() => { suppressQueueTabClick = false; }, 350);
+    let destRect = null;
+    try {
+      destRect = (placeholder.parentNode ? placeholder : tab).getBoundingClientRect();
+    } catch (_) { destRect = null; }
+
+    const cleanupAndApply = () => {
+      queueTabReorderSession = null;
+      queueTabReorderActive = false;
+      try { if (floatingLayer && floatingLayer.parentNode) floatingLayer.remove(); } catch (_) {}
+
+      try {
+        if (commit && pendingOrder && pendingOrder.length) {
+          const byId = new Map(state.orderQueues.map(q => [q.id, q]));
+          const next = [];
+          pendingOrder.forEach(id => {
+            if (byId.has(id)) {
+              next.push(byId.get(id));
+              byId.delete(id);
+            }
+          });
+          byId.forEach(q => next.push(q));
+          state.orderQueues = next;
+
+          saveQueues();
+          syncSaveQueues(state.orderQueues);
+        }
+        if (placeholder.parentNode) placeholder.remove();
+        tab.style.display = '';
+        renderOrderQueueTabs(false);
+        if (commit && pendingOrder && pendingOrder.length) {
+          try { triggerHaptic('light'); } catch (_) {}
+          try {
+            if (!localStorage.getItem('kasir_queue_reorder_hint_v1')) {
+              localStorage.setItem('kasir_queue_reorder_hint_v1', '1');
+              showToast('Urutan antrian tersimpan', 'success');
+            }
+          } catch (_) {}
+        }
+      } catch (_) {
+        try { renderOrderQueueTabs(false); } catch (_) {}
+      }
+
+      setTimeout(() => { suppressQueueTabClick = false; }, 350);
+    };
+
+    // 4. Animasi Mendarat (Landing Snap) ala Android Launcher via Anime.js
+    if (commit && destRect && destRect.width > 0 && typeof window.anime !== 'undefined') {
+      window.anime.remove(floatingLayer);
+      window.anime({
+        targets: floatingLayer,
+        left: `${destRect.left}px`,
+        top: `${destRect.top}px`,
+        scale: [1.08, 1.0],
+        rotate: 0,
+        duration: 240,
+        easing: 'easeOutCubic',
+        complete: () => {
+          cleanupAndApply();
+        }
+      });
+    } else {
+      cleanupAndApply();
+    }
   };
 
   const onUp = () => finish(true);

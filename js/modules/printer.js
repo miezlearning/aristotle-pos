@@ -3956,8 +3956,10 @@ export function closeQrPairingScannerModal() {
 }
 
 /**
- * Tangani Data QR yang Terbaca (Auto-Pairing & Auto-Login Toko)
- */
+  * Tangani Data QR yang Terbaca (Pairing Printer & Pra-isi Login Toko).
+  * Keamanan tautan (Opsi A): QR TIDAK PERNAH memberi sesi toko.
+  * Hasil scan hanya mengisi nama toko + info printer, masuk tetap wajib PIN.
+  */
 export function handleScannedPairingData(rawText) {
   closeQrPairingScannerModal();
   if (!rawText || typeof rawText !== 'string') {
@@ -4021,40 +4023,37 @@ export function handleScannedPairingData(rawText) {
 
     const cleanStore = store.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
 
-    // 1. Otorisasi sesi toko ini di perangkat ini secara permanen sebagai Staf
-    sessionStorage.removeItem('is_logged_out_state');
-    localStorage.setItem('auth_store_session_' + cleanStore, '1');
-    localStorage.setItem(GLOBAL_STORAGE_KEYS.ACTIVE_STORE_ID, cleanStore);
-    localStorage.setItem('aristotle_active_store_id', cleanStore);
-    localStorage.setItem('aristotle_device_role', role);
-    localStorage.setItem('aristotle_printer_mode', role);
-
+    // 1. Keamanan tautan (Opsi A): isi QR TIDAK PERNAH memberi sesi toko.
+    //    Yang diterapkan hanya info routing printer lokal (bukan kredensial).
     if (hostIp) {
       localStorage.setItem('aristotle_local_host_ip', hostIp);
       if (!state.printerConfig) state.printerConfig = {};
       state.printerConfig.localHostIp = hostIp;
     }
 
-    // 2. Terapkan peran printer
+    // 2. Terapkan peran printer (relay cetak saja, BUKAN hak aplikasi)
     setDevicePrinterMode(role);
 
-    // 3. Beralih ke toko langsung di memori tanpa reload halaman sama sekali
-    if (window.KasirApp && typeof window.KasirApp.quickSelectStore === 'function') {
-      window.KasirApp.quickSelectStore(cleanStore);
-    }
-
-    // 4. Tutup modal yang sedang terbuka
-    if (window.KasirApp && typeof window.KasirApp.closeUniversalLoginModal === 'function') {
-      window.KasirApp.closeUniversalLoginModal();
-    }
+    // 3. Arahkan ke login PIN: pra-isi nama toko + buka modal login
     closePrinterConfigModal();
+    if (window.KasirApp && typeof window.KasirApp.openUniversalLoginModal === 'function') {
+      window.KasirApp.openUniversalLoginModal('login');
+    }
+    if (window.KasirApp && typeof window.KasirApp.selectStoreForLogin === 'function') {
+      window.KasirApp.selectStoreForLogin(cleanStore);
+    } else {
+      const storeInput = document.getElementById('loginStoreIdInput');
+      const pinInput = document.getElementById('loginPinInput');
+      if (storeInput) storeInput.value = cleanStore;
+      if (pinInput) { pinInput.value = ''; pinInput.focus(); }
+    }
 
-    // 5. Trigger auto-connect ke kasir utama
+    // 4. Coba sambungkan relay printer ke kasir utama
     setTimeout(() => {
       reconnectPrinterHost(false, hostIp || null);
     }, 120);
 
-    showToast(`Berhasil login ke toko [${cleanStore.replace(/_/g, ' ').toUpperCase()}] sebagai HP Staf!`, 'success', 3500);
+    showToast(`Toko [${cleanStore.replace(/_/g, ' ').toUpperCase()}] ditemukan. Masukkan PIN untuk masuk.`, 'info', 4000);
   } catch (err) {
     console.error('Scan parse error:', err);
     showToast('Gagal memproses kode QR.', 'warning', 3000);

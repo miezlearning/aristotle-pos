@@ -533,6 +533,10 @@ export function quickDemoStore() {
     });
   } catch (_) {}
 
+  // Toko demo = data lokal palsu: peran owner eksplisit agar semua
+  // fitur bisa dicoba (default peran perangkat adalah kasir terkunci).
+  setUserRole('owner', null);
+  applyRoleUIPermissions();
   quickSelectStore(demoId);
   showToast('Masuk ke Toko Demo. Silakan coba semua fitur kasir!', 'success', 3500);
 }
@@ -678,6 +682,10 @@ export async function handleStoreLoginSubmit(e) {
       name: authResult.storeName
     });
 
+    // PIN toko terverifikasi = bukti kepemilikan → peran owner eksplisit
+    // (default peran perangkat adalah kasir terkunci).
+    setUserRole('owner', null);
+    applyRoleUIPermissions();
     quickSelectStore(cleanId);
     if (pinInput) pinInput.value = '';
     showToast(`Login Berhasil! Kasir [${authResult.storeName}] siap melayani.`, 'success');
@@ -859,6 +867,9 @@ export async function handleStoreRegisterSubmit(e) {
     }
   } catch (err) {}
 
+  // Pembuat toko = owner. Tetapkan eksplisit (default peran = kasir).
+  setUserRole('owner', null);
+  applyRoleUIPermissions();
   quickSelectStore(cleanId);
   syncSaveStoreProfile(newProfile);
   syncSaveStoreAuth(newAuth);
@@ -2326,34 +2337,26 @@ export async function init() {
     initState();
 
     // Baca parameter pairing (store, role, hostIp, auth) jika ada di URL (misal dibuka dari scan QR / link WA)
+    // Keamanan tautan (Opsi A): param role/auth/token TIDAK PERNAH memberi
+    // sesi atau peran. URL dibersihkan (sisakan store+hostIp sebagai
+    // petunjuk), selebihnya alur login PIN normal yang berlaku. hostIp
+    // murni info routing printer lokal, bukan kredensial.
     const urlParams = new URLSearchParams(window.location.search);
-    const storeParam = urlParams.get('store');
-    const roleParam = urlParams.get('role');
-    const authParam = urlParams.get('auth');
     const hostIpParam = urlParams.get('hostIp');
-
-    if (storeParam && (roleParam === 'client' || roleParam === 'pelayan' || authParam === '1')) {
-      const cleanStore = storeParam.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
-      sessionStorage.removeItem('is_logged_out_state');
-      localStorage.setItem('auth_store_session_' + cleanStore, '1');
-      localStorage.setItem(GLOBAL_STORAGE_KEYS.ACTIVE_STORE_ID, cleanStore);
-      localStorage.setItem('aristotle_active_store_id', cleanStore);
-      localStorage.setItem('aristotle_device_role', 'pelayan');
-      localStorage.setItem('aristotle_printer_mode', 'pelayan');
-      if (hostIpParam) {
-        localStorage.setItem('aristotle_local_host_ip', hostIpParam);
-        if (!state.printerConfig) state.printerConfig = {};
-        state.printerConfig.localHostIp = hostIpParam;
+    try {
+      if (urlParams.has('auth') || urlParams.has('role') || urlParams.has('token')) {
+        const cleanParams = new URLSearchParams(window.location.search);
+        cleanParams.delete('auth');
+        cleanParams.delete('role');
+        cleanParams.delete('token');
+        const qs = cleanParams.toString();
+        window.history.replaceState(null, '', window.location.pathname + (qs ? `?${qs}` : ''));
       }
-      state.storeId = cleanStore;
-      state.isSessionActive = true;
-    } else if (roleParam) {
-      localStorage.setItem('aristotle_device_role', roleParam);
-      if (hostIpParam) {
-        localStorage.setItem('aristotle_local_host_ip', hostIpParam);
-        if (!state.printerConfig) state.printerConfig = {};
-        state.printerConfig.localHostIp = hostIpParam;
-      }
+    } catch (_) {}
+    if (hostIpParam) {
+      localStorage.setItem('aristotle_local_host_ip', hostIpParam);
+      if (!state.printerConfig) state.printerConfig = {};
+      state.printerConfig.localHostIp = hostIpParam;
     }
 
     // 2. Render UI katalog, antrean, dan keranjang (45%)
@@ -2528,12 +2531,13 @@ export async function init() {
         openUniversalLoginModal('login');
       }
       
-      // Jika tautan mengandung ?store=... (dan BUKAN pairing pelayan), otomatis isikan nama toko & fokuskan kolom PIN!
+      // Jika tautan mengandung ?store=... (termasuk ex-tautan pairing),
+      // otomatis isikan nama toko & fokuskan kolom PIN. Tautan TIDAK PERNAH
+      // memberi sesi — masuk tetap wajib PIN.
       try {
         const params = new URLSearchParams(window.location.search);
         const storeParam = params.get('store');
-        const isPairing = params.get('role') === 'pelayan' || params.get('auth') === '1';
-        if (storeParam && storeParam.trim() && !isPairing) {
+        if (storeParam && storeParam.trim()) {
           const sanitized = storeParam.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
           const storeInput = document.getElementById('loginStoreIdInput');
           const pinInput = document.getElementById('loginPinInput');
