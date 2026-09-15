@@ -71,46 +71,58 @@
 
 ---
 
-## 💡 Tentang Aristotle POS
+## Tentang Aristotle POS
 
-**Aristotle POS** adalah aplikasi kasir (*Point of Sale*) generasi baru yang dirancang khusus untuk memecahkan kendala digitalisasi UMKM di Indonesia — seperti warung makan, kedai kopi, kedai cemilan, hingga toko kelontong. 
+**Aristotle POS** adalah aplikasi kasir untuk usaha kecil di Indonesia, seperti warung makan, kedai kopi, kedai camilan, dan toko kelontong.
 
-Dibangun dengan arsitektur **Hybrid Modern** (Progressive Web App + Native Android WebView), Aristotle POS memadukan kesederhanaan antarmuka tingkat tinggi (*low cognitive load*) dengan keandalan operasional kelas industri: **bekerja 100% saat tidak ada internet**, serta otomatis menyinkronkan data keuangan antarperangkat ketika online.
+Aplikasi ini berupa web app yang bisa dipasang sebagai PWA dan juga tersedia sebagai APK Android. Semua fungsi kasir utama tetap jalan tanpa internet. Data tersimpan di perangkat, lalu disinkron ke cloud saat online.
 
 ---
 
-## 📸 Antarmuka Aplikasi (Showcase)
+## Tampilan Aplikasi
 
-| Layar Utama Kasir (POS) | Kalkulator Pembayaran & Kembalian Cepat |
+Gambar di bawah diambil otomatis dari aplikasi versi terbaru memakai script `scripts/screenshot-docs.py` (Playwright, viewport desktop 1440x900). Data contoh memakai Toko Demo.
+
+| Layar kasir | Pembayaran |
 | :---: | :---: |
-| ![Layar Utama Kasir](docs/images/screenshot-pos.png) | ![Pembayaran Kasir](docs/images/screenshot-checkout.png) |
-| *Katalog grid responsif, multi-antrian, kartu menu foto visual, dan keranjang live.* | *Pilihan nominal uang pas, kalkulasi kembalian otomatis, diskon, & QRIS.* |
+| ![Layar kasir](docs/images/screenshot-pos.png) | ![Layar pembayaran](docs/images/screenshot-checkout.png) |
+| *Katalog menu, filter kategori, antrian pesanan, dan keranjang belanja.* | *Total tagihan, pilihan tunai atau QRIS, tombol uang pas, dan hitung kembalian otomatis.* |
 
 <br>
 
 <p align="center">
-  <b>🧾 Pengaturan Hardware Printer Thermal & Pratinjau Struk Nyata (Sticky Live Preview)</b><br>
-  <em>Mendukung pencetakan Bluetooth SPP / USB ESC/POS 58mm & 80mm, tiket dapur 🍳, rincian add-on per baris, dan buka laci kasir otomatis.</em>
+  <b>Pengaturan printer dan contoh struk</b><br>
+  <em>Koneksi Bluetooth atau USB, ukuran kertas 58mm dan 80mm, tes cetak struk dan tiket dapur, buka laci otomatis, dan pratinjau struk langsung.</em>
 </p>
 
 <p align="center">
-  <img src="docs/images/screenshot-printer.png" alt="Pengaturan Printer dan Pratinjau Struk" width="88%">
+  <img src="docs/images/screenshot-printer.png" alt="Pengaturan printer dan contoh struk" width="88%">
 </p>
+
+<br>
+
+| Laporan usaha | Kelola menu |
+| :---: | :---: |
+| ![Layar laporan](docs/images/screenshot-report.png) | ![Layar kelola menu](docs/images/screenshot-admin.png) |
+| *Omzet, pengeluaran, laba bersih, riwayat transaksi, dan tombol ekspor.* | *Tambah menu satu per satu atau banyak sekaligus, atur harga, stok, dan status jual.* |
 
 ---
 
-## ✨ Fitur Unggulan
+## Kelebihan Aplikasi
 
-- 🖼️ **Foto Menu Produk Visual & Auto-Kompresi Canvas**: Setiap menu kini bisa dilengkapi foto makanan/minuman yang menggugah selera. Foto langsung dari kamera/galeri HP otomatis dikompresi ringan (~20KB) sehingga tetap 100% offline-ready dan hemat kuota.
-- ⚡ **100% Offline-First**: Seluruh transaksi, katalog produk, dan laporan tetap berjalan normal tanpa koneksi internet. Data tersimpan aman di perangkat lokal dan otomatis disinkronkan ke cloud saat jaringan tersedia.
-- 👵 **Effortless UI (Ramah Lansia)**: Mengadopsi prinsip Google Material Design 3 dengan ukuran tombol sentuh besar (min 48dp), kontras warna tinggi, konfirmasi audio haptik, serta panduan sorot interaktif (*Tour Guide*).
-- 📑 **Multi-Antrian Pesanan (*Order Queues*)**: Melayani banyak pelanggan atau nomor meja secara simultan tanpa khawatir pesanan tertukar atau terhapus.
-- 🍳 **Add-On Menu & Tiket Dapur (Kitchen Checkpoint)**: Mendukung kustomisasi topping tambahan berbayar/gratis, live kalkulator harga satuan, perincian formula harga di keranjang, dan format cetak khusus koki/barista dengan kotak centang `[  ]`.
-- 🖨️ **Integrasi Printer Thermal Sesuai Standar Industri**: Kompatibel dengan printer Bluetooth ESC/POS (58mm/80mm), cetak struk berlogo, rincian matematis harga dasar + add-on yang cocok persis dengan subtotal, kustomisasi spasi hemat kertas, dan perintah buka laci uang kasir (*cash drawer kick*).
-- 💳 **QRIS Dinamis EMVCo & Kalkulator Kembalian**: Mengubah QRIS statis toko menjadi QRIS dinamis ber-nominal pas secara instan, dilengkapi kalkulator uang kembalian cepat dan fitur bagi rata (*split bill*).
-- 🕒 **Manajemen Shift Kasir & Laporan Z**: Pencatatan modal laci awal (*cash float*), audit rekonsiliasi fisik uang kasir (Pas / Kurang / Lebih), serta cetak rekap Laporan Z resmi tutup toko.
-- 👥 **Multi-Perangkat & Multi-Tenant**: Sambungkan HP staf ke kasir utama via Wi-Fi/Hotspot lokal tanpa kuota internet, serta kelola banyak cabang usaha dalam satu aplikasi dengan proteksi 6-digit PIN.
-- 📊 **Laporan Finansial & Margin Laba**: Rekap otomatis omzet harian, pencatatan biaya operasional, estimasi laba bersih, serta ekspor pembukuan ke format CSV/Excel.
+- **Tetap jalan tanpa internet.** Transaksi, katalog, dan laporan tersimpan di perangkat. Data disinkron ke cloud saat online.
+- **Mudah dipakai.** Tombol besar, tulisan jelas, dan ada panduan langkah di dalam aplikasi.
+- **Banyak antrian dalam satu layar.** Kasir bisa menangani beberapa pesanan atau nomor meja sekaligus.
+- **Bayar tunai cepat.** Ada tombol uang pas dan nominal umum, kembalian dihitung otomatis.
+- **Bisa terima QRIS.** QRIS statis toko diubah jadi QRIS dinamis sesuai total tagihan.
+- **Diskon fleksibel.** Potongan persen atau rupiah per transaksi, plus pajak dan service opsional yang hanya bisa diubah Owner.
+- **Patungan otomatis.** Total bisa dibagi rata untuk 2 sampai 5 orang.
+- **Cetak struk thermal.** Mendukung kertas 58mm dan 80mm lewat Bluetooth atau kabel USB. Ada pratinjau struk, tiket dapur, dan perintah buka laci kasir.
+- **Kelola menu lengkap.** Tambah menu satu per satu atau banyak sekaligus, pakai foto, atur harga, stok, dan status ready atau habis.
+- **Laporan jelas.** Omzet, pengeluaran, laba bersih, menu laris, riwayat transaksi, dan ekspor ke CSV atau Excel. Laporan bisa dikirim lewat WA.
+- **Shift kasir tercatat.** Ada modal awal, hitung uang fisik saat tutup, dan rekap Laporan Z.
+- **Bisa multi perangkat.** HP staf bisa terhubung ke kasir utama. Satu aplikasi bisa dipakai untuk banyak toko.
+- **Akses bertingkat.** Peran Owner dan Kasir dipisah dan dilindungi PIN 6 digit.
 
 ---
 
@@ -205,9 +217,9 @@ Bagi pemilik bisnis atau franchise yang memiliki banyak cabang UMKM mitra:
 
 ## 📚 Tautan Dokumentasi Terkait
 
-* [📘 Panduan Edukasi Ramah Lansia](PANDUAN_EDUKASI_LANSIA.md) — Panduan visual dan langkah operasional kasir untuk pemilik usaha lansia.
-* [📜 Riwayat Pembaruan (Changelog Lengkap)](CHANGELOG.md) — Rincian teknis setiap rilis versi dari v1.0 hingga rilis terbaru.
-* [📋 Dokumen Kebutuhan Produk (PRD)](PRD.MD) — Spesifikasi dasar, filosofi desain M3, dan arsitektur produk.
+* [Panduan Edukasi Ramah Lansia](PANDUAN_EDUKASI_LANSIA.md): panduan visual dan langkah operasional kasir untuk pemilik usaha lansia.
+* [Riwayat Pembaruan (Changelog Lengkap)](CHANGELOG.md): rincian teknis setiap rilis versi dari v1.0 sampai rilis terbaru.
+* [Dokumen Kebutuhan Produk (PRD)](PRD.MD): spesifikasi dasar, filosofi desain M3, dan arsitektur produk.
 
 ---
 
