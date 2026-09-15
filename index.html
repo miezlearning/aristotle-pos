@@ -3733,6 +3733,62 @@ Kopi susu 7k"
     </div>
   </div>
 
+  <!-- ==================== MODAL: ISI JUMLAH MANUAL (KETUK ANGKA PORSI) ==================== -->
+  <div id="qtyEditModal"
+    class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div
+      class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-stone-200 animate-in zoom-in-95">
+      <div class="px-5 py-4 border-b border-stone-200 flex items-center justify-between bg-stone-50">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+            <span class="material-symbols-rounded text-xl">pin</span>
+          </div>
+          <div class="min-w-0">
+            <h3 class="text-sm font-black text-stone-900">Isi Jumlah Pesanan</h3>
+            <p class="text-[11px] text-stone-500 font-medium truncate"><span id="qtyEditProductName">Nama Menu</span> • <span id="qtyEditProductPrice">Rp 0</span></p>
+          </div>
+        </div>
+        <button type="button" onclick="KasirApp.closeQtyEditor()"
+          class="p-1.5 rounded-full hover:bg-stone-200 text-stone-400 hover:text-stone-700 transition">
+          <span class="material-symbols-rounded text-xl">close</span>
+        </button>
+      </div>
+
+      <form onsubmit="KasirApp.confirmQtyEditor(event)" class="p-5 flex flex-col gap-4">
+        <p id="qtyEditStockInfo" class="text-[11px] font-bold text-stone-500">Stok tidak dibatasi</p>
+        <p id="qtyEditSpecialNote" class="hidden text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2"></p>
+        <div class="flex items-center justify-center gap-3">
+          <button type="button" onclick="KasirApp.changeQtyEditorDelta(-1)"
+            class="w-12 h-12 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-black text-xl flex items-center justify-center transition active:scale-90 touch-target-large cursor-pointer"
+            title="Kurangi 1" aria-label="Kurangi 1">
+            <span class="material-symbols-rounded text-2xl">remove</span>
+          </button>
+          <input type="number" id="qtyEditInput" min="0" max="999" step="1" inputmode="numeric" required
+            placeholder="0"
+            class="w-28 px-4 py-3 rounded-2xl border-2 border-emerald-500 focus:border-emerald-600 focus:outline-none text-2xl font-black text-center text-stone-900 bg-white shadow-sm transition">
+          <button type="button" onclick="KasirApp.changeQtyEditorDelta(1)"
+            class="w-12 h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xl flex items-center justify-center transition active:scale-90 touch-target-large cursor-pointer shadow-md shadow-emerald-600/20"
+            title="Tambah 1" aria-label="Tambah 1">
+            <span class="material-symbols-rounded text-2xl">add</span>
+          </button>
+        </div>
+        <p class="text-[11px] text-stone-400 font-medium text-center">Ketuk angka lalu ketik jumlah pasti, atau pakai tombol − / +. Isi 0 untuk menghapus dari pesanan.</p>
+
+        <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-stone-100">
+          <button type="button" onclick="KasirApp.closeQtyEditor()"
+            class="px-4 py-2.5 rounded-xl border border-stone-300 font-bold text-stone-700 hover:bg-stone-100 text-xs sm:text-sm transition">
+            Batal
+          </button>
+          <button type="submit"
+            class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center gap-1.5">
+            <span class="material-symbols-rounded text-base">check</span>
+            <span>Simpan Jumlah</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ==================== MODAL: CATATAN PESANAN CEPAT (SENIOR-FRIENDLY QUICK CHIPS) ==================== -->
   <div id="itemNoteModal"
     class="fixed inset-0 z-50 bg-black/50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -5053,7 +5109,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.74</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.75</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -5213,7 +5269,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.74</span>
+    <span id="appVersionBadge" class="hidden">v1.2.75</span>
   </div>
 
   <!-- Main JavaScript App Module -->

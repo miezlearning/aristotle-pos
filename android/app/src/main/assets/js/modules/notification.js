@@ -10,6 +10,42 @@ import { formatRp, showToast, playSuccessChime, playClick } from '../utils.js';
 // Cache status izin notifikasi
 let hasPromptedPermissionThisSession = false;
 
+// Persisten anti-spam: keputusan/tunda disimpan di localStorage (global,
+// karena izin browser per-origin bukan per-toko) agar modal TIDAK muncul
+// lagi setiap buka/tutup tab. "Nanti Saja" = tunda 7 hari, "ditolak" = 30 hari.
+const NOTIF_SNOOZE_KEY = 'aristotle_notif_prompt_snooze_until_v1';
+const NOTIF_SNOOZE_SOFT_DAYS = 7;
+const NOTIF_SNOOZE_DENIED_DAYS = 30;
+
+function getNotifSnoozeUntil() {
+  try {
+    return Number(localStorage.getItem(NOTIF_SNOOZE_KEY) || 0) || 0;
+  } catch (_) {
+    return 0;
+  }
+}
+
+function setNotifSnooze(days) {
+  try {
+    localStorage.setItem(NOTIF_SNOOZE_KEY, String(Date.now() + days * 24 * 60 * 60 * 1000));
+  } catch (_) {}
+}
+
+function clearNotifSnooze() {
+  try {
+    localStorage.removeItem(NOTIF_SNOOZE_KEY);
+  } catch (_) {}
+}
+
+function isNotifSnoozed() {
+  return Date.now() < getNotifSnoozeUntil();
+}
+
+/** Dipakai saat user eksplisit mengaktifkan ulang notifikasi dari pengaturan. */
+export function clearNotificationPromptSnooze() {
+  clearNotifSnooze();
+}
+
 /**
  * Cek status izin notifikasi saat ini
  * @returns {'granted' | 'denied' | 'default' | 'unsupported'}
@@ -36,6 +72,7 @@ export async function requestNotificationPermission() {
   if (window.AndroidBridge && typeof window.AndroidBridge.requestNotificationPermission === 'function') {
     window.AndroidBridge.requestNotificationPermission();
     saveNotificationConfig({ enabled: true });
+    clearNotifSnooze();
     showToast('Izin notifikasi diminta dari sistem HP.', 'info');
     updateNotificationUiState();
     return true;
@@ -51,6 +88,7 @@ export async function requestNotificationPermission() {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
       saveNotificationConfig({ enabled: true });
+      clearNotifSnooze();
       showToast('Notifikasi HP berhasil diaktifkan!', 'success');
       // Kirim notifikasi uji coba
       sendSystemNotification({
@@ -62,9 +100,15 @@ export async function requestNotificationPermission() {
       return true;
     } else if (permission === 'denied') {
       saveNotificationConfig({ enabled: false });
+      // Browser kini memblokir permanen → jangan pernah tawarkan otomatis lagi
+      // (hanya bisa diubah manual lewat Pengaturan Browser / ikon gembok).
+      setNotifSnooze(NOTIF_SNOOZE_DENIED_DAYS);
       showToast('Izin notifikasi ditolak. Anda dapat mengaktifkannya di Pengaturan Browser.', 'warning', 4000);
       updateNotificationUiState();
       return false;
+    } else {
+      // Pengguna menutup dialog browser tanpa memilih ("default") → tunda lunak
+      setNotifSnooze(NOTIF_SNOOZE_SOFT_DAYS);
     }
   } catch (err) {
     console.warn('Gagal meminta izin notifikasi:', err);
@@ -191,17 +235,27 @@ export function notifyLowStock(product) {
 export function initNotificationModule() {
   updateNotificationUiState();
 
-  // Tampilkan tawaran izin notifikasi jika belum pernah diatur (sekali saja secara halus)
+  // Tawaran otomatis HANYA bila: izin masih "default" (belum pernah diputuskan
+  // di browser), user belum mematikan notifikasi di pengaturan, belum ditunda,
+  // dan belum ditawarkan di sesi ini. Hasil (granted/denied/nanti) persisten
+  // di localStorage sehingga TIDAK muncul lagi tiap buka/tutup tab.
+  if (hasPromptedPermissionThisSession) return;
   const perm = getNotificationPermissionStatus();
-  if (perm === 'default' && !hasPromptedPermissionThisSession) {
-    hasPromptedPermissionThisSession = true;
-    setTimeout(() => {
-      // Hanya tawarkan jika toko sudah aktif dan bukan mode tamu tanpa store
-      if (state.storeId && state.isSessionActive) {
-        showNotificationPermissionModal();
-      }
-    }, 4000);
-  }
+  if (perm !== 'default') return;
+  const cfg = state.notificationConfig || {};
+  if (cfg.enabled === false) return;
+  if (isNotifSnoozed()) return;
+  hasPromptedPermissionThisSession = true;
+  setTimeout(() => {
+    // Cek ulang sesaat sebelum tampil (toko/izin bisa berubah dalam 4 detik)
+    if (getNotificationPermissionStatus() !== 'default') return;
+    if ((state.notificationConfig || {}).enabled === false) return;
+    if (isNotifSnoozed()) return;
+    // Hanya tawarkan jika toko sudah aktif dan bukan mode tamu tanpa store
+    if (state.storeId && state.isSessionActive) {
+      showNotificationPermissionModal();
+    }
+  }, 4000);
 }
 
 /**
@@ -219,6 +273,15 @@ export function closeNotificationPermissionModal() {
   if (modal) {
     modal.classList.add('hidden');
   }
+  // "Nanti Saja" / tutup = tunda 7 hari agar tidak nagih tiap buka tab.
+  // Dikecualikan bila izin sudah granted (tak perlu tunda apa pun).
+  try {
+    if (getNotificationPermissionStatus() !== 'granted') {
+      setNotifSnooze(NOTIF_SNOOZE_SOFT_DAYS);
+    } else {
+      clearNotifSnooze();
+    }
+  } catch (_) {}
 }
 
 /**

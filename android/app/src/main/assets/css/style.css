@@ -814,7 +814,7 @@ div[id$="Modal"] > div {
   z-index: 99999 !important;
   pointer-events: none !important;
   user-select: none !important;
-  will-change: transform, left, top, box-shadow;
+  will-change: transform, scale, rotate;
   border-radius: 14px !important;
   box-shadow: 0 24px 48px -10px rgba(0, 0, 0, 0.35), 0 10px 20px -4px rgba(4, 120, 87, 0.4) !important;
   outline: 2px solid rgba(16, 185, 129, 0.9) !important;
@@ -851,6 +851,23 @@ div[id$="Modal"] > div {
 }
 .cart-line-swipe .cart-swipe-fg.swiping {
   transition: none;
+}
+
+/* 12a. Stepper +/- & kartu katalog: kunci gestur browser selama tahan agar
+   repeat tidak ter-batal oleh scroll (pointercancel) di HP. */
+[data-repeat-target] {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Umpan balik visual saat badan kartu ditahan (hold-to-add aktif) */
+.pos-product-card.card-press-hold {
+  border-color: #059669 !important;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.45), 0 10px 24px -6px rgba(5, 150, 105, 0.35) !important;
+  transform: scale(0.985);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 /* 12. Native View Transitions API Integration (Shared-Axis Cross-Dissolve) */

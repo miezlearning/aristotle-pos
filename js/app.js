@@ -2786,6 +2786,7 @@ const MODAL_CLOSE_DISPATCHER = {
   'discountSelectionModal': () => payment.closeDiscountModal(),
   'receiptModal': () => payment.closeReceiptModal(),
   'itemNoteModal': () => pos.closeItemNoteModal(),
+  'qtyEditModal': () => pos.closeQtyEditor(),
   'renameQueueModal': () => pos.closeRenameQueueModal(),
   'mobileCartDrawer': () => pos.toggleMobileCartDrawer(false),
   'startShiftModal': () => shift.closeStartShiftModal(),
@@ -3034,6 +3035,10 @@ const KasirApp = {
   renderProductSkeletons: pos.renderProductSkeletons,
   addToCart: pos.addToCart,
   updateCartQty: pos.updateCartQty,
+  openQtyEditor: pos.openQtyEditor,
+  closeQtyEditor: pos.closeQtyEditor,
+  changeQtyEditorDelta: pos.changeQtyEditorDelta,
+  confirmQtyEditor: pos.confirmQtyEditor,
   removeCartLine: pos.removeCartLine,
   confirmClearCart: pos.confirmClearCart,
   renderCart: pos.renderCart,
@@ -3144,6 +3149,11 @@ const KasirApp = {
   sendSystemNotification: notification.sendSystemNotification,
   updateNotificationSetting: (key, val) => {
     saveNotificationConfig({ [key]: val });
+    // User eksplisit menyalakan ulang → hapus tunda agar tawaran izin bisa
+    // muncul lagi secara wajar (tetap 1x/sesi & hormat status browser).
+    if (key === 'enabled' && val === true) {
+      try { notification.clearNotificationPromptSnooze(); } catch (_) {}
+    }
     showToast('Pengaturan notifikasi diperbarui.', 'success', 2000);
   },
 

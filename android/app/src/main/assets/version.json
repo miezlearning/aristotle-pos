@@ -1,11 +1,12 @@
 {
-  "versionCode": 123,
-  "versionName": "1.2.74",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.74/Aristotle-POS.apk",
+  "versionCode": 124,
+  "versionName": "1.2.75",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.75/Aristotle-POS.apk",
   "changelog": [
-    "Drag antrian GPU-smooth: gerak floating via transform + pendaratan translate",
-    "Auto-scroll tepi proporsional via rAF (makin ke tepi makin cepat)",
-    "Pull-to-refresh yield saat susun-ulang: tidak ada lagi reload nyasar"
+    "Input jumlah manual: ketuk angka porsi di card/keranjang + tahan card untuk tambah cepat",
+    "Anti-tidak-sengaja: delay hold + slop geser, scroll tak lagi menambah pesanan",
+    "Drag antrian 1:1 tanpa delay: loop rAF terpadu, tanpa Anime.js",
+    "Notifikasi persisten: izin tak ditanya tiap buka tab (tunda 7/30 hari)"
   ],
-  "releaseDate": "2026-09-14"
+  "releaseDate": "2026-09-15"
 }
