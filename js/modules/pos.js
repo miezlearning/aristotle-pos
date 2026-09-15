@@ -11,6 +11,27 @@ export function renderOrderQueueTabs(autoScrollTab = false) {
   const container = document.getElementById('orderQueueTabs');
   if (!container) return;
 
+  // Self-heal sesi drag-reorder yatim (mis. multi-sentuh / tahan ulang saat
+  // drag masih aktif / pointerup hilang): placeholder nyangkut + tab hilang +
+  // layer melayang + flag macet tidak boleh meninggalkan gap di strip.
+  try {
+    if (queueTabReorderSession) {
+      const s = queueTabReorderSession;
+      if (!s.tab.isConnected || !s.placeholder.isConnected) {
+        try { if (typeof s.finish === 'function') s.finish(false); }
+        catch (_) { queueTabReorderSession = null; queueTabReorderActive = false; suppressQueueTabClick = false; }
+        return;
+      }
+    } else {
+      container.querySelectorAll('.queue-tab-placeholder').forEach(n => { try { n.remove(); } catch (_) {} });
+      document.querySelectorAll('.queue-tab-floating-layer').forEach(n => { try { n.remove(); } catch (_) {} });
+      queueTabReorderActive = false;
+      suppressQueueTabClick = false;
+      container.classList.remove('reordering');
+      if (container.style.touchAction === 'none') container.style.touchAction = '';
+    }
+  } catch (_) {}
+
   container.innerHTML = state.orderQueues.map((q) => {
     const isActive = q.id === state.activeQueueId;
     const itemCount = (Array.isArray(q.items) && q.items.length > 0)
@@ -57,6 +78,8 @@ export function renderOrderQueueTabs(autoScrollTab = false) {
 
   initQueueDragScroll();
   initQueueTabReorder();
+  initQueueScrollButtons();
+  updateQueueScrollButtons();
 
   // PENTING: Hanya geser kontainer horizontal slider orderQueueTabs itu sendiri jika diminta (misal: saat ganti antrian)
   // JANGAN PERNAH gunakan activeTab.scrollIntoView() karena browser akan menggulir seluruh halaman (window/body) ke atas!
@@ -215,6 +238,17 @@ function startQueueTabReorder(slider, tab, startX, startY) {
   // Abaikan timer basi (mis. render asing terjadi selama tahan): tab harus
   // masih menempel di strip saat mode susun dimulai.
   if (!tab.isConnected || !slider.contains(tab)) return;
+  // Jangan yatimkan sesi lama (multi-sentuh / tahan ulang): selesaikan dulu
+  // tanpa commit agar placeholder & layer-nya ikut dibersihkan.
+  if (queueTabReorderSession) {
+    const prev = queueTabReorderSession;
+    try { if (typeof prev.finish === 'function') prev.finish(false); } catch (_) {}
+    try { if (prev.floatingLayer && prev.floatingLayer.remove) prev.floatingLayer.remove(); } catch (_) {}
+    try { if (prev.placeholder && prev.placeholder.remove) prev.placeholder.remove(); } catch (_) {}
+    try { if (prev.tab) prev.tab.style.display = ''; } catch (_) {}
+    queueTabReorderActive = false;
+    suppressQueueTabClick = false;
+  }
   const rect = tab.getBoundingClientRect();
   const grabDX = startX - rect.left;
   const grabDY = startY - rect.top;
@@ -461,6 +495,7 @@ function startQueueTabReorder(slider, tab, startX, startY) {
   };
 
   const onUp = () => finish(true);
+  session.finish = finish;
   document.addEventListener('pointermove', onMove, { passive: false });
   document.addEventListener('pointerup', onUp);
   document.addEventListener('pointercancel', onUp);
@@ -480,6 +515,46 @@ export function handleQueueWheel(e) {
   if (e.deltaY !== 0) {
     e.preventDefault();
     container.scrollLeft += e.deltaY;
+  }
+}
+
+// Panah geser antrian hanya tampil saat strip benar-benar overflow (tidak
+// makan tempat saat semua tab muat), dengan redup di ujung strip.
+let queueScrollResizeInit = false;
+
+export function updateQueueScrollButtons() {
+  const slider = document.getElementById('orderQueueTabs');
+  if (!slider) return;
+  const leftBtn = document.getElementById('queueScrollLeftBtn');
+  const rightBtn = document.getElementById('queueScrollRightBtn');
+  const canScroll = slider.scrollWidth > slider.clientWidth + 2;
+  const max = Math.max(0, slider.scrollWidth - slider.clientWidth);
+  if (leftBtn) {
+    leftBtn.style.display = canScroll ? '' : 'none';
+    leftBtn.style.opacity = slider.scrollLeft > 4 ? '1' : '0.35';
+  }
+  if (rightBtn) {
+    rightBtn.style.display = canScroll ? '' : 'none';
+    rightBtn.style.opacity = slider.scrollLeft < max - 4 ? '1' : '0.35';
+  }
+}
+
+export function initQueueScrollButtons() {
+  const slider = document.getElementById('orderQueueTabs');
+  if (!slider || slider.dataset.scrollBtnInit) return;
+  slider.dataset.scrollBtnInit = 'true';
+  slider.addEventListener('scroll', () => { try { updateQueueScrollButtons(); } catch (_) {} }, { passive: true });
+  if (!queueScrollResizeInit) {
+    queueScrollResizeInit = true;
+    window.addEventListener('resize', () => { try { updateQueueScrollButtons(); } catch (_) {} });
+    // Pindah tab/aplikasi di tengah drag = batalkan sesi (tanpa commit)
+    // agar tidak ada layer/flag yang nyangkut.
+    window.addEventListener('blur', () => {
+      try {
+        const s = queueTabReorderSession;
+        if (s && typeof s.finish === 'function') s.finish(false);
+      } catch (_) {}
+    });
   }
 }
 
@@ -711,11 +786,11 @@ export function deleteOrderQueue(queueId, event) {
 export function syncCategoryPillsUI() {
   const current = state.currentCategory || 'all';
   document.querySelectorAll('.cat-pill').forEach(btn => {
-    btn.className = 'cat-pill py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-white hover:bg-stone-50 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/90 shadow-2xs shrink-0 whitespace-nowrap active:scale-95';
+    btn.className = 'cat-pill py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-white hover:bg-stone-50 text-stone-700 transition flex items-center justify-center lg:justify-start gap-1.5 touch-target-large border border-stone-200/90 shadow-2xs shrink-0 whitespace-nowrap active:scale-95 lg:w-full';
   });
   const activeBtn = document.getElementById(`cat-${current}`);
   if (activeBtn) {
-    activeBtn.className = 'cat-pill py-2 px-4 sm:px-4.5 rounded-xl font-black text-xs sm:text-sm text-center bg-stone-900 text-white shadow-md transition flex items-center justify-center gap-1.5 touch-target-large ring-2 ring-stone-900/20 border border-stone-900 shrink-0 whitespace-nowrap';
+    activeBtn.className = 'cat-pill py-2 px-4 sm:px-4.5 rounded-xl font-black text-xs sm:text-sm text-center bg-stone-900 text-white shadow-md transition flex items-center justify-center lg:justify-start gap-1.5 touch-target-large ring-2 ring-stone-900/20 border border-stone-900 shrink-0 whitespace-nowrap lg:w-full';
   }
 }
 
@@ -730,13 +805,13 @@ export function renderProductSkeletons(count = 8) {
   const grid = document.getElementById('productGrid');
   if (!grid) return;
   grid.innerHTML = Array(count).fill(0).map(() => `
-    <div class="bg-white border border-stone-200/80 rounded-2xl sm:rounded-3xl p-2.5 sm:p-3.5 flex flex-col justify-between h-56 animate-pulse shadow-sm">
-      <div class="w-full h-24 sm:h-28 rounded-xl sm:rounded-2xl skeleton-shimmer"></div>
-      <div class="space-y-2 mt-2.5">
+    <div class="bg-white border border-stone-200/80 rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 flex flex-col justify-between h-48 animate-pulse shadow-sm">
+      <div class="w-full h-20 sm:h-24 rounded-xl sm:rounded-2xl skeleton-shimmer"></div>
+      <div class="space-y-2 mt-2">
         <div class="w-3/4 h-4 rounded-lg skeleton-shimmer"></div>
         <div class="w-1/2 h-5 rounded-lg skeleton-shimmer"></div>
       </div>
-      <div class="w-full h-8 rounded-xl skeleton-shimmer mt-2.5"></div>
+      <div class="w-full h-7 rounded-xl skeleton-shimmer mt-2"></div>
     </div>
   `).join('');
 }
@@ -787,35 +862,30 @@ export function renderProductCardActionHTML(product, qty, isReady) {
   if (qty > 0) {
     return `
       <div class="flex items-center gap-1.5 pt-0.5" onclick="event.stopPropagation()">
-        <div class="flex-1 bg-stone-100/90 rounded-xl p-0.5 flex items-center justify-between border border-stone-200/70">
+        <div class="flex-1 bg-white rounded-xl p-1 flex items-center justify-between gap-1 border-2 border-emerald-300/80 shadow-sm">
           <button data-repeat-target="${product.id}" data-repeat-delta="-1" onclick="window.KasirApp.updateCartQty('${product.id}', -1)"
-            class="w-7 h-7 rounded-lg ${qty === 1 ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' : 'bg-white text-stone-700 hover:bg-stone-50'} shadow-2xs font-black text-sm flex items-center justify-center transition active:scale-90 cursor-pointer"
-            title="${qty === 1 ? 'Hapus dari pesanan' : 'Tahan untuk kurangi cepat, ketuk untuk kurangi 1'}">
-            ${qty === 1 ? '<span class="material-symbols-rounded text-sm">delete</span>' : '<span class="material-symbols-rounded text-sm">remove</span>'}
+            class="w-8 h-9 rounded-lg ${qty === 1 ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'} font-black flex items-center justify-center transition active:scale-90 cursor-pointer shrink-0"
+            title="${qty === 1 ? 'Hapus dari pesanan' : 'Kurangi 1 (tahan untuk kurangi cepat)'}">
+            ${qty === 1 ? '<span class="material-symbols-rounded text-base">delete</span>' : '<span class="material-symbols-rounded text-base">remove</span>'}
           </button>
           <button type="button" onclick="event.stopPropagation(); window.KasirApp.openQtyEditor('${product.id}')"
-            class="flex flex-col items-center leading-none px-2 py-0.5 rounded-lg hover:bg-white hover:shadow-2xs transition active:scale-95 cursor-pointer select-none"
+            class="flex-1 flex flex-col items-center justify-center leading-none px-1 py-0.5 rounded-lg hover:bg-emerald-50 transition active:scale-95 cursor-pointer select-none min-w-0"
             title="Ketuk untuk isi jumlah manual">
-            <span class="font-black text-stone-900 text-xs flex items-center gap-0.5">${qty} <span class="material-symbols-rounded text-[10px] text-stone-400">edit</span></span>
+            <span class="font-black text-stone-950 text-[15px] flex items-center gap-1">${qty} <span class="material-symbols-rounded text-sm text-emerald-600">edit</span></span>
             <span class="text-[8px] font-extrabold text-stone-500 uppercase tracking-tighter">porsi</span>
           </button>
           <button data-repeat-target="${product.id}" data-repeat-delta="1" onclick="window.KasirApp.updateCartQty('${product.id}', 1)"
-            class="w-7 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs font-black text-sm flex items-center justify-center transition active:scale-90 cursor-pointer"
+            class="w-8 h-9 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm font-black flex items-center justify-center transition active:scale-90 cursor-pointer shrink-0"
             title="Ketuk untuk tambah 1, tahan untuk tambah cepat">
-            <span class="material-symbols-rounded text-sm">add</span>
+            <span class="material-symbols-rounded text-lg">add</span>
           </button>
         </div>
-        <button type="button" onclick="window.KasirApp.openItemNoteModal('${product.id}')"
-          class="w-8 h-8 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 flex items-center justify-center transition active:scale-90 shadow-2xs shrink-0 cursor-pointer"
-          title="Catatan & Add-on">
-          <span class="material-symbols-rounded text-base text-amber-700">edit_note</span>
-        </button>
       </div>
     `;
   }
   return `
     <button type="button"
-      class="w-full py-1.5 px-2.5 rounded-xl bg-stone-100/80 hover:bg-emerald-50 text-stone-700 hover:text-emerald-800 border border-stone-200/80 hover:border-emerald-300 flex items-center justify-between text-xs font-bold transition active:scale-95 shadow-2xs">
+      class="w-full py-1 px-2.5 rounded-xl bg-stone-100/80 hover:bg-emerald-50 text-stone-700 hover:text-emerald-800 border border-stone-200/80 hover:border-emerald-300 flex items-center justify-between text-xs font-bold transition active:scale-95 shadow-2xs">
       <span>+ Tambah</span>
       <span class="material-symbols-rounded text-base text-emerald-600">add</span>
     </button>
@@ -826,11 +896,14 @@ export function renderSingleProductCardHTML(product, qty) {
   const hasQty = qty > 0;
   const isReady = product.isAvailable !== false && (!product.trackStock || (product.stock || 0) > 0);
   const vis = getCategoryVisualConfig(product.category, product.icon);
+  const activeQ = getActiveQueue();
+  const qLineItems = activeQ ? getQueueLineItems(activeQ) : [];
+  const hasNoteOrAddOn = qLineItems.some(it => it.productId === product.id && ((it.note && it.note.trim() !== '') || (Array.isArray(it.addOns) && it.addOns.length > 0)));
 
   return `
     <div id="posProductCard_${product.id}" data-product-card="${product.id}" onclick="window.KasirApp.addToCart('${product.id}')" 
       title="${isReady ? 'Ketuk untuk tambah 1 • tahan untuk tambah cepat • ketuk angka untuk isi manual' : 'Stok habis'}"
-      class="pos-product-card relative bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex flex-col justify-between border ${hasQty ? 'pos-product-card-active' : 'border-stone-200/80 hover:border-emerald-300'} ${!isReady ? 'opacity-65 bg-stone-50/90 cursor-not-allowed' : 'cursor-pointer'} touch-target-large select-none">
+      class="pos-product-card relative bg-white rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 flex flex-col justify-between border ${hasQty ? 'pos-product-card-active' : 'border-stone-200/80 hover:border-emerald-300'} ${!isReady ? 'opacity-65 bg-stone-50/90 cursor-not-allowed' : 'cursor-pointer'} touch-target-large select-none">
       
       <div id="posBadgeSlot_${product.id}">
         ${hasQty ? `
@@ -847,7 +920,7 @@ export function renderSingleProductCardHTML(product, qty) {
       ` : ''}
 
       ${product.image ? `
-        <div class="relative w-full h-24 sm:h-28 rounded-xl sm:rounded-2xl overflow-hidden mb-2 bg-stone-100 shrink-0 shadow-2xs">
+        <div class="relative w-full h-20 sm:h-24 rounded-xl sm:rounded-2xl overflow-hidden mb-1.5 bg-stone-100 shrink-0 shadow-2xs">
           <img src="${product.image}" alt="${escapeHtml(product.name)}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" onerror="this.parentElement.style.display='none'">
           <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none"></div>
           <div class="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start">
@@ -866,9 +939,16 @@ export function renderSingleProductCardHTML(product, qty) {
               </span>
             ` : ''}
           </div>
+          ${hasQty ? `
+            <button type="button" onclick="event.stopPropagation(); window.KasirApp.openItemNoteModal('${product.id}')"
+              title="Catatan & Add-on"
+              class="absolute bottom-1.5 left-1.5 z-10 h-7 min-w-[28px] px-1 rounded-full ${hasNoteOrAddOn ? 'bg-amber-400 text-white border-amber-500' : 'bg-white/95 text-amber-700 border-amber-200'} border shadow-md flex items-center justify-center transition active:scale-90 cursor-pointer">
+              <span class="material-symbols-rounded text-[15px]">edit_note</span>
+            </button>
+          ` : ''}
         </div>
       ` : `
-        <div class="relative w-full h-24 sm:h-28 rounded-xl sm:rounded-2xl overflow-hidden mb-2 shrink-0 ${vis.gradClass} border border-black/[0.04] flex items-center justify-center shadow-2xs">
+        <div class="relative w-full h-20 sm:h-24 rounded-xl sm:rounded-2xl overflow-hidden mb-1.5 shrink-0 ${vis.gradClass} border border-black/[0.04] flex items-center justify-center shadow-2xs">
           <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white shadow-xs flex items-center justify-center ${vis.accentColor} transition-transform group-hover:scale-110 border border-stone-200/60">
             <span class="material-symbols-rounded text-2xl sm:text-3xl">${vis.icon}</span>
           </div>
@@ -888,15 +968,22 @@ export function renderSingleProductCardHTML(product, qty) {
               </span>
             ` : ''}
           </div>
+          ${hasQty ? `
+            <button type="button" onclick="event.stopPropagation(); window.KasirApp.openItemNoteModal('${product.id}')"
+              title="Catatan & Add-on"
+              class="absolute bottom-1.5 left-1.5 z-10 h-7 min-w-[28px] px-1 rounded-full ${hasNoteOrAddOn ? 'bg-amber-400 text-white border-amber-500' : 'bg-white/95 text-amber-700 border-amber-200'} border shadow-md flex items-center justify-center transition active:scale-90 cursor-pointer">
+              <span class="material-symbols-rounded text-[15px]">edit_note</span>
+            </button>
+          ` : ''}
         </div>
       `}
 
       <div class="flex-1 flex flex-col justify-start">
         <h3 class="font-extrabold text-stone-900 text-xs sm:text-sm leading-snug line-clamp-2 ${!isReady ? 'text-stone-400 line-through' : ''}">${escapeHtml(product.name)}</h3>
-        <p class="font-black ${isReady ? 'text-emerald-700' : 'text-stone-400'} text-sm sm:text-base mt-1 tracking-tight">${formatRp(product.price)}</p>
+        <p class="font-black ${isReady ? 'text-emerald-700' : 'text-stone-400'} text-sm sm:text-base mt-0.5 tracking-tight">${formatRp(product.price)}</p>
       </div>
 
-      <div id="posActionSlot_${product.id}" class="mt-2.5 pt-2 border-t ${hasQty ? 'border-emerald-200/70' : 'border-stone-100'}">
+      <div id="posActionSlot_${product.id}" class="mt-2 pt-1.5 border-t ${hasQty ? 'border-emerald-200/70' : 'border-stone-100'}">
         ${renderProductCardActionHTML(product, qty, isReady)}
       </div>
     </div>
@@ -915,45 +1002,27 @@ export function updateProductCardDOM(productId) {
 
   const currentCart = getCurrentCart();
   const qty = currentCart[productId] || 0;
-  const hasQty = qty > 0;
-  const isReady = p.isAvailable !== false && (!p.trackStock || (p.stock || 0) > 0);
 
-  // 1. Perbarui visual aktif kartu tunggal
-  if (hasQty) {
-    cardEl.classList.add('pos-product-card-active');
-    cardEl.classList.remove('border-stone-200/80', 'hover:border-emerald-300');
-  } else {
-    cardEl.classList.remove('pos-product-card-active');
-    cardEl.classList.add('border-stone-200/80', 'hover:border-emerald-300');
+  // Render ulang SATU kartu penuh: badge, chip catatan, dan stepper
+  // semuanya turunan hasQty — update bedah per-slot rawan tidak sinkron.
+  // Listener gestur terdelegasi di container grid sehingga penggantian node
+  // aman (tanpa scroll jump).
+  try {
+    cardEl.outerHTML = renderSingleProductCardHTML(p, qty);
+  } catch (_) {
+    renderProducts();
+    return;
   }
 
-  // 2. Perbarui badge porsi dengan animasi fluid tunggal (hanya pada kartu ini)
-  const badgeSlot = document.getElementById(`posBadgeSlot_${productId}`);
-  if (badgeSlot) {
-    const existingBadge = badgeSlot.querySelector('span');
-    if (hasQty) {
-      if (existingBadge) {
-        existingBadge.innerText = `${qty}x`;
-        existingBadge.classList.remove('modern-badge-pulse', 'modern-badge-in');
-        void existingBadge.offsetWidth; // trigger reflow
-        existingBadge.classList.add('modern-badge-pulse');
-      } else {
-        badgeSlot.innerHTML = `
-          <span class="absolute -top-2 -right-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow-md z-20 border-2 border-white modern-badge-in">
-            ${qty}x
-          </span>
-        `;
-      }
-    } else {
-      badgeSlot.innerHTML = '';
+  // Feedback pulse ringan pada badge agar tiap tap/tahan terasa hidup
+  if (qty > 0) {
+    const badgeSlot = document.getElementById(`posBadgeSlot_${productId}`);
+    const badge = badgeSlot ? badgeSlot.querySelector('span') : null;
+    if (badge) {
+      badge.classList.remove('modern-badge-in');
+      void badge.offsetWidth; // trigger reflow
+      badge.classList.add('modern-badge-pulse');
     }
-  }
-
-  // 3. Perbarui baris aksi stepper
-  const actionSlot = document.getElementById(`posActionSlot_${productId}`);
-  if (actionSlot) {
-    actionSlot.className = `mt-2.5 pt-2 border-t ${hasQty ? 'border-emerald-200/70' : 'border-stone-100'}`;
-    actionSlot.innerHTML = renderProductCardActionHTML(p, qty, isReady);
   }
 }
 

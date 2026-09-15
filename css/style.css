@@ -870,6 +870,12 @@ div[id$="Modal"] > div {
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
+/* 12b. Transisi lembut kartu katalog saat qty 0 <-> >0 (border & shadow
+   beranimasi, tidak patah). */
+.pos-product-card {
+  transition: padding 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
 /* 12. Native View Transitions API Integration (Shared-Axis Cross-Dissolve) */
 #mainAppHeader {
   view-transition-name: main-app-header;

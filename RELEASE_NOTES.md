@@ -1,12 +1,11 @@
-# Aristotle POS v1.2.75 Release Notes
+# Aristotle POS v1.2.76 Release Notes
 
 **Tanggal Rilis:** 2026-09-15
 
 ### Catatan Pembaruan:
-- Input jumlah manual: ketuk angka porsi di card/keranjang + tahan card untuk tambah cepat
-- Anti-tidak-sengaja: delay hold + slop geser, scroll tak lagi menambah pesanan
-- Drag antrian 1:1 tanpa delay: loop rAF terpadu, tanpa Anime.js
-- Notifikasi persisten: izin tak ditanya tiap buka tab (tunda 7/30 hari)
+- Panel filter kategori menyamping sticky di tablet landscape dan desktop, grid 2/3/4 kolom menyesuaikan
+- Bar antrian: panah otomatis sembunyi saat muat + self-heal sesi drag yatim + strip anti lubang
+- Card menu lebih padat + tombol catatan pindah ke sudut foto + tombol bawah kembali [-] [qty] [+]
 
 ---
 *Pembaruan ini dapat diunduh dan dipasang langsung dari dalam aplikasi (In-App Auto-Updater).*

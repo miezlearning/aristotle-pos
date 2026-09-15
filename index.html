@@ -328,20 +328,20 @@
           class="bg-white p-1.5 sm:p-2 rounded-2xl shadow-xs border border-stone-200/80 flex items-center gap-1.5 overflow-hidden">
 
           <!-- Scroll Left Button (hidden on mobile, visible on desktop) -->
-          <button onclick="window.KasirApp.scrollQueueTabs('left')"
+          <button id="queueScrollLeftBtn" onclick="window.KasirApp.scrollQueueTabs('left')"
             class="hidden md:flex w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition shrink-0 items-center justify-center touch-target-large cursor-pointer"
             title="Geser antrian ke kiri">
             <span class="material-symbols-rounded text-lg">chevron_left</span>
           </button>
 
           <!-- Scrollable Antrian Tabs List -->
-          <div class="flex items-center gap-1.5 overflow-x-auto custom-scroll flex-1 py-0.5 scroll-smooth"
+          <div class="flex items-center gap-1.5 overflow-x-auto custom-scroll flex-1 min-w-0 py-0.5 scroll-smooth"
             id="orderQueueTabs" onwheel="window.KasirApp.handleQueueWheel(event)">
             <!-- Dynamic Antrian Tabs -->
           </div>
 
           <!-- Scroll Right Button (hidden on mobile, visible on desktop) -->
-          <button onclick="window.KasirApp.scrollQueueTabs('right')"
+          <button id="queueScrollRightBtn" onclick="window.KasirApp.scrollQueueTabs('right')"
             class="hidden md:flex w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition shrink-0 items-center justify-center touch-target-large cursor-pointer"
             title="Geser antrian ke kanan">
             <span class="material-symbols-rounded text-lg">chevron_right</span>
@@ -359,36 +359,16 @@
           </button>
         </div>
 
-        <!-- Category Tabs & Search Bar -->
-        <div class="bg-white p-2.5 sm:p-3 rounded-2xl shadow-xs border border-stone-200/80 flex flex-col gap-2.5">
-          <!-- Category Pills Row -->
-          <div class="flex items-center gap-1.5 overflow-x-auto custom-scroll w-full py-0.5 scroll-smooth">
-            <button onclick="setCategory('all')" id="cat-all"
-              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-black text-xs sm:text-sm text-center bg-stone-900 text-white shadow-xs transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-900 whitespace-nowrap active:scale-95 cursor-pointer">
-              <span class="material-symbols-rounded text-base">apps</span>
-              <span>Semua</span>
-            </button>
-            <button onclick="setCategory('makanan')" id="cat-makanan"
-              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap active:scale-95 cursor-pointer">
-              <span class="material-symbols-rounded text-base">lunch_dining</span>
-              <span>Makanan</span>
-            </button>
-            <button onclick="setCategory('minuman')" id="cat-minuman"
-              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap active:scale-95 cursor-pointer">
-              <span class="material-symbols-rounded text-base">local_cafe</span>
-              <span>Minuman</span>
-            </button>
-            <button onclick="setCategory('camilan')" id="cat-camilan"
-              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap active:scale-95 cursor-pointer">
-              <span class="material-symbols-rounded text-base">bakery_dining</span>
-              <span>Camilan</span>
-            </button>
-            <button onclick="setCategory('topping')" id="cat-topping"
-              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap active:scale-95 cursor-pointer">
-              <span class="material-symbols-rounded text-base">add_circle</span>
-              <span>Topping</span>
-            </button>
-          </div>
+        <!-- Katalog: panel filter samping (xl+) + grid produk -->
+        <div class="flex flex-col lg:flex-row gap-2.5 sm:gap-3 items-start">
+
+        <!-- Panel Filter Menu: menumpuk di HP, sticky menyamping di tablet lebar/desktop -->
+        <aside id="posFilterPanel"
+          class="w-full lg:w-56 xl:w-60 2xl:w-64 shrink-0 bg-white p-2.5 sm:p-3 rounded-2xl shadow-xs border border-stone-200/80 flex flex-col gap-2.5 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto custom-scroll">
+          <p class="hidden lg:flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-stone-400 px-1">
+            <span class="material-symbols-rounded text-sm">filter_list</span>
+            <span>Filter Menu</span>
+          </p>
 
           <!-- Search Input with Clear Button & Keyboard Shortcut -->
           <div class="relative w-full group">
@@ -414,12 +394,45 @@
               </button>
             </div>
           </div>
-        </div>
+
+          <!-- Category Pills: horizontal scroll di HP, vertikal penuh di samping (xl+) -->
+          <div class="flex lg:flex-col items-center lg:items-stretch gap-1.5 overflow-x-auto lg:overflow-visible custom-scroll w-full py-0.5 scroll-smooth">
+            <button onclick="setCategory('all')" id="cat-all"
+              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-black text-xs sm:text-sm text-center bg-stone-900 text-white shadow-xs transition flex items-center justify-center lg:justify-start gap-1.5 touch-target-large border border-stone-900 whitespace-nowrap active:scale-95 cursor-pointer lg:w-full">
+              <span class="material-symbols-rounded text-base">apps</span>
+              <span>Semua</span>
+            </button>
+            <button onclick="setCategory('makanan')" id="cat-makanan"
+              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center lg:justify-start gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap active:scale-95 cursor-pointer lg:w-full">
+              <span class="material-symbols-rounded text-base">lunch_dining</span>
+              <span>Makanan</span>
+            </button>
+            <button onclick="setCategory('minuman')" id="cat-minuman"
+              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center lg:justify-start gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap active:scale-95 cursor-pointer lg:w-full">
+              <span class="material-symbols-rounded text-base">local_cafe</span>
+              <span>Minuman</span>
+            </button>
+            <button onclick="setCategory('camilan')" id="cat-camilan"
+              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center lg:justify-start gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap active:scale-95 cursor-pointer lg:w-full">
+              <span class="material-symbols-rounded text-base">bakery_dining</span>
+              <span>Camilan</span>
+            </button>
+            <button onclick="setCategory('topping')" id="cat-topping"
+              class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center lg:justify-start gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap active:scale-95 cursor-pointer lg:w-full">
+              <span class="material-symbols-rounded text-base">add_circle</span>
+              <span>Topping</span>
+            </button>
+          </div>
+
+          <p id="posSearchResultCount" class="hidden lg:block text-[11px] text-stone-400 font-medium px-1"></p>
+        </aside>
 
         <!-- PRODUCT CATALOG GRID -->
         <div id="productGrid"
-          class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3">
+          class="flex-1 w-full min-w-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2.5 sm:gap-3">
           <!-- Dynamic Products List -->
+        </div>
+
         </div>
       </section>
 
@@ -5109,7 +5122,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.75</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.76</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -5269,7 +5282,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.75</span>
+    <span id="appVersionBadge" class="hidden">v1.2.76</span>
   </div>
 
   <!-- Main JavaScript App Module -->
