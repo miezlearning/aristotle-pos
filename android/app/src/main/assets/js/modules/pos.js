@@ -301,7 +301,7 @@ function startQueueTabReorder(slider, tab, startX, startY) {
   try { triggerHaptic('medium'); } catch (_) {}
 
   const perfNow = () => ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now());
-  const session = { slider, tab, placeholder, floatingLayer, grabDX, grabDY, prevTouchAction, hadSmooth, lastPX: startX, lastPY: startY, lastMoveX: startX, targetTX: 0, targetTY: 0, appliedTX: 0, appliedTY: 0, targetTilt: 1.2, edgeDir: 0, edgeRaf: 0, baseLeft: rect.left, baseTop: rect.top, needsPlace: false, dragStart: perfNow(), lastPlaceHaptic: 0 };
+  const session = { slider, tab, placeholder, floatingLayer, grabDX, grabDY, prevTouchAction, hadSmooth, lastPX: startX, lastPY: startY, lastMoveX: startX, targetTX: 0, targetTY: 0, appliedTX: 0, appliedTY: 0, targetTilt: 1.2, edgeDir: 0, edgeRaf: 0, baseLeft: rect.left, baseTop: rect.top, needsPlace: false, dragStart: perfNow(), lastActivity: perfNow(), settled: false, lastPlaceHaptic: 0 };
   queueTabReorderSession = session;
 
   // Selama drag berlangsung, matikan scroll natural di SELURUH dokumen untuk
@@ -357,6 +357,7 @@ function startQueueTabReorder(slider, tab, startX, startY) {
     session.lastPX = x;
     session.lastPY = y;
     session.needsPlace = true;
+    session.lastActivity = perfNow();
     if (e.cancelable) e.preventDefault();
   };
 
@@ -365,7 +366,14 @@ function startQueueTabReorder(slider, tab, startX, startY) {
   // menahan, makin cepat) sehingga strip panjang tetap terjangkau di HP kecil
   // dan berjalan meski jari diam.
   const renderLoop = (now) => {
-    if (queueTabReorderSession !== session) return;
+    if (queueTabReorderSession !== session || session.settled) return;
+    // Pengaman anti-macet: drag yang sunyi >30 detik (pointerup hilang tanpa
+    // blur/cancel) dianggap ditinggalkan → batalkan agar tidak ada layer
+    // hantu + RAF yang jalan selamanya (boros baterai + jank).
+    if (now - session.lastActivity > 30000) {
+      try { finish(false); } catch (_) {}
+      return;
+    }
     // 1) Tempelkan layer tepat di jari (kompositor GPU, tanpa layout)
     if (session.appliedTX !== session.targetTX || session.appliedTY !== session.targetTY) {
       session.appliedTX = session.targetTX;
@@ -397,7 +405,19 @@ function startQueueTabReorder(slider, tab, startX, startY) {
   };
   session.edgeRaf = requestAnimationFrame(renderLoop);
 
+  // Sentuhan baru di mana pun = pengguna beralih aktivitas → batalkan drag
+  // (tanpa commit) SEBELUM tap itu diproses. Ini menutup lubang terakhir
+  // sesi nyangkut (tab hantu melayang) yang lolos dari blur/cancel.
+  const onAbandon = () => {
+    if (queueTabReorderSession === session && !session.settled) {
+      try { finish(false); } catch (_) {}
+    }
+  };
+
   const finish = (commit) => {
+    if (session.settled) return;
+    session.settled = true;
+    document.removeEventListener('pointerdown', onAbandon, true);
     document.removeEventListener('pointermove', onMove);
     document.removeEventListener('pointerup', onUp);
     document.removeEventListener('pointercancel', onUp);
@@ -496,6 +516,7 @@ function startQueueTabReorder(slider, tab, startX, startY) {
 
   const onUp = () => finish(true);
   session.finish = finish;
+  document.addEventListener('pointerdown', onAbandon, true);
   document.addEventListener('pointermove', onMove, { passive: false });
   document.addEventListener('pointerup', onUp);
   document.addEventListener('pointercancel', onUp);
@@ -805,8 +826,8 @@ export function renderProductSkeletons(count = 8) {
   const grid = document.getElementById('productGrid');
   if (!grid) return;
   grid.innerHTML = Array(count).fill(0).map(() => `
-    <div class="bg-white border border-stone-200/80 rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 flex flex-col justify-between h-48 animate-pulse shadow-sm">
-      <div class="w-full h-20 sm:h-24 rounded-xl sm:rounded-2xl skeleton-shimmer"></div>
+    <div class="bg-white border border-stone-200/80 rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 flex flex-col justify-between h-48 lg:h-56 animate-pulse shadow-sm">
+      <div class="w-full h-20 sm:h-24 lg:h-28 rounded-xl sm:rounded-2xl skeleton-shimmer"></div>
       <div class="space-y-2 mt-2">
         <div class="w-3/4 h-4 rounded-lg skeleton-shimmer"></div>
         <div class="w-1/2 h-5 rounded-lg skeleton-shimmer"></div>
@@ -885,7 +906,7 @@ export function renderProductCardActionHTML(product, qty, isReady) {
   }
   return `
     <button type="button"
-      class="w-full py-1 px-2.5 rounded-xl bg-stone-100/80 hover:bg-emerald-50 text-stone-700 hover:text-emerald-800 border border-stone-200/80 hover:border-emerald-300 flex items-center justify-between text-xs font-bold transition active:scale-95 shadow-2xs">
+      class="w-full py-1 lg:py-2 px-2.5 rounded-xl bg-stone-100/80 hover:bg-emerald-50 text-stone-700 hover:text-emerald-800 border border-stone-200/80 hover:border-emerald-300 flex items-center justify-between text-xs lg:text-sm font-bold transition active:scale-95 shadow-2xs">
       <span>+ Tambah</span>
       <span class="material-symbols-rounded text-base text-emerald-600">add</span>
     </button>
@@ -903,7 +924,7 @@ export function renderSingleProductCardHTML(product, qty) {
   return `
     <div id="posProductCard_${product.id}" data-product-card="${product.id}" onclick="window.KasirApp.addToCart('${product.id}')" 
       title="${isReady ? 'Ketuk untuk tambah 1 • tahan untuk tambah cepat • ketuk angka untuk isi manual' : 'Stok habis'}"
-      class="pos-product-card relative bg-white rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 flex flex-col justify-between border ${hasQty ? 'pos-product-card-active' : 'border-stone-200/80 hover:border-emerald-300'} ${!isReady ? 'opacity-65 bg-stone-50/90 cursor-not-allowed' : 'cursor-pointer'} touch-target-large select-none">
+      class="pos-product-card relative bg-white rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 lg:p-3 flex flex-col justify-between border ${hasQty ? 'pos-product-card-active' : 'border-stone-200/80 hover:border-emerald-300'} ${!isReady ? 'opacity-65 bg-stone-50/90 cursor-not-allowed' : 'cursor-pointer'} touch-target-large select-none">
       
       <div id="posBadgeSlot_${product.id}">
         ${hasQty ? `
@@ -920,7 +941,7 @@ export function renderSingleProductCardHTML(product, qty) {
       ` : ''}
 
       ${product.image ? `
-        <div class="relative w-full h-20 sm:h-24 rounded-xl sm:rounded-2xl overflow-hidden mb-1.5 bg-stone-100 shrink-0 shadow-2xs">
+        <div class="relative w-full h-20 sm:h-24 lg:h-28 rounded-xl sm:rounded-2xl overflow-hidden mb-1.5 bg-stone-100 shrink-0 shadow-2xs">
           <img src="${product.image}" alt="${escapeHtml(product.name)}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" onerror="this.parentElement.style.display='none'">
           <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none"></div>
           <div class="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start">
@@ -948,9 +969,9 @@ export function renderSingleProductCardHTML(product, qty) {
           ` : ''}
         </div>
       ` : `
-        <div class="relative w-full h-20 sm:h-24 rounded-xl sm:rounded-2xl overflow-hidden mb-1.5 shrink-0 ${vis.gradClass} border border-black/[0.04] flex items-center justify-center shadow-2xs">
-          <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white shadow-xs flex items-center justify-center ${vis.accentColor} transition-transform group-hover:scale-110 border border-stone-200/60">
-            <span class="material-symbols-rounded text-2xl sm:text-3xl">${vis.icon}</span>
+        <div class="relative w-full h-20 sm:h-24 lg:h-28 rounded-xl sm:rounded-2xl overflow-hidden mb-1.5 shrink-0 ${vis.gradClass} border border-black/[0.04] flex items-center justify-center shadow-2xs">
+          <div class="w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-2xl bg-white shadow-xs flex items-center justify-center ${vis.accentColor} transition-transform group-hover:scale-110 border border-stone-200/60">
+            <span class="material-symbols-rounded text-2xl sm:text-3xl lg:text-4xl">${vis.icon}</span>
           </div>
           <div class="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start">
             <span class="text-[9px] sm:text-[10px] font-bold capitalize px-2 py-0.5 rounded-md bg-white text-stone-700 shadow-2xs border border-stone-200">${escapeHtml(product.category)}</span>
@@ -979,8 +1000,8 @@ export function renderSingleProductCardHTML(product, qty) {
       `}
 
       <div class="flex-1 flex flex-col justify-start">
-        <h3 class="font-extrabold text-stone-900 text-xs sm:text-sm leading-snug line-clamp-2 ${!isReady ? 'text-stone-400 line-through' : ''}">${escapeHtml(product.name)}</h3>
-        <p class="font-black ${isReady ? 'text-emerald-700' : 'text-stone-400'} text-sm sm:text-base mt-0.5 tracking-tight">${formatRp(product.price)}</p>
+        <h3 class="font-extrabold text-stone-900 text-xs sm:text-sm lg:text-[15px] leading-snug line-clamp-2 ${!isReady ? 'text-stone-400 line-through' : ''}">${escapeHtml(product.name)}</h3>
+        <p class="font-black ${isReady ? 'text-emerald-700' : 'text-stone-400'} text-sm sm:text-base lg:text-lg mt-0.5 tracking-tight">${formatRp(product.price)}</p>
       </div>
 
       <div id="posActionSlot_${product.id}" class="mt-2 pt-1.5 border-t ${hasQty ? 'border-emerald-200/70' : 'border-stone-100'}">
