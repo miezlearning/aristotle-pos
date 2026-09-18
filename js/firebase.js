@@ -34,6 +34,7 @@ import { DEFAULT_PRODUCTS, getStorageKeys, MASTER_DEV_HASH, DEFAULT_PRINTER_CONF
 import { state, currentStorageKeys, updateUIStoreBranding, getSavedStoresList, removeStoreFromDevice, registerStoreOnDevice, PIN_SECURITY_CONFIG } from './state.js';
 import { showToast, hashSha256 } from './utils.js';
 import { getStoreLicenseStatus, setStoreLicenseLocal, getOrCreateDeviceFingerprint } from './modules/license.js';
+import { putProductPhoto, getCachedPhoto } from './modules/photos.js';
 
 // Firebase Configuration (Google Firebase Web Public Project Identifier)
 export const firebaseConfig = {
@@ -230,7 +231,7 @@ export function setupRealtimeListeners() {
 
   // 1. PRODUCTS LISTENER
   const productsCol = collection(db, 'stores', currentStoreId, 'products');
-  const unsubProducts = onSnapshot(productsCol, (snapshot) => {
+  const unsubProducts = onSnapshot(productsCol, async (snapshot) => {
     if (snapshot.empty) {
       const savedProds = localStorage.getItem(currentStorageKeys.PRODUCTS);
       // Hanya lakukan seeding jika ini adalah inisialisasi awal toko pertama kali (belum pernah ada key products)
@@ -244,10 +245,17 @@ export function setupRealtimeListeners() {
       }
     } else {
       const cloudProducts = [];
+      const photoJobs = [];
       snapshot.forEach(docSnap => {
         const data = docSnap.data();
         if (data.isDeleted === true || data.name === '[DELETED]') {
           return; // Lewati menu yang ditandai terhapus
+        }
+        // Byte foto dari cloud dipindah ke IndexedDB (jaga localStorage tetap ramping).
+        let image = typeof data.image === 'string' ? data.image : '';
+        if (image.startsWith('data:')) {
+          photoJobs.push(putProductPhoto(docSnap.id, image));
+          image = '';
         }
         cloudProducts.push({ 
           id: docSnap.id, 
@@ -255,7 +263,7 @@ export function setupRealtimeListeners() {
           price: Number(data.price) || 0,
           category: data.category || 'makanan',
           icon: data.icon || 'lunch_dining',
-          image: typeof data.image === 'string' ? data.image : '',
+          image,
           isAvailable: data.isAvailable !== false,
           trackStock: !!data.trackStock,
           stock: data.trackStock ? (data.stock !== undefined && data.stock !== null ? Number(data.stock) : null) : null,
@@ -263,6 +271,9 @@ export function setupRealtimeListeners() {
           updatedAt: data.updatedAt || new Date().toISOString()
         });
       });
+      if (photoJobs.length > 0) {
+        try { await Promise.all(photoJobs); } catch (_) {}
+      }
 
       // Update state and localStorage
       state.products = cloudProducts;
@@ -929,12 +940,18 @@ export async function syncSaveProduct(product) {
   try {
     const currentStoreId = getStoreId();
     const docRef = doc(db, 'stores', currentStoreId, 'products', product.id);
+    // Foto lokal tinggal di IndexedDB (product.image kosong) — lampirkan byte
+    // dari cache agar sync stok/status TIDAK menghapus foto di cloud.
+    let imageOut = (typeof product.image === 'string' && product.image) ? product.image : '';
+    if (!imageOut) {
+      try { imageOut = getCachedPhoto(product.id) || ''; } catch (_) {}
+    }
     await setDoc(docRef, {
       name: product.name,
       price: product.price,
       category: product.category,
       icon: product.icon || 'lunch_dining',
-      image: typeof product.image === 'string' ? product.image : '',
+      image: imageOut,
       isAvailable: product.isAvailable !== false,
       trackStock: !!product.trackStock,
       stock: product.trackStock ? (product.stock !== undefined && product.stock !== null ? Number(product.stock) : null) : null,

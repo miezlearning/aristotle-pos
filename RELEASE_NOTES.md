@@ -1,12 +1,11 @@
-# Aristotle POS v1.2.79 Release Notes
+# Aristotle POS v1.2.80 Release Notes
 
 **Tanggal Rilis:** 2026-09-18
 
 ### Catatan Pembaruan:
-- Jurnal ringan: pagination 50 + Muat Lagi + bar penyimpanan + arsip data di atas 90 hari ke file (void tetap, impor arsip digabung)
-- Kasir ringan: 1 tap update bedah tanpa bangun ulang grid dan tab + tanpa blur fullscreen + search debounce
-- Tailwind precompiled: tanpa CDN runtime + CSS lokal + build otomatis CI dan rilis (offline makin kokoh)
-- Katalog tablet dan laptop 3 kolom per baris
+- Buang anime.js ganda: transisi view murni CSS 0.24s GPU
+- Fuse.js lokal: pencarian menu toleran typo di kasir dan admin (nasgor ketemu Nasi Goreng)
+- Dexie lokal: foto produk pindah ke IndexedDB + migrasi otomatis + cloud tetap bawa byte + backup dan sync aman foto
 
 ---
 *Pembaruan ini dapat diunduh dan dipasang langsung dari dalam aplikasi (In-App Auto-Updater).*

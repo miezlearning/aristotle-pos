@@ -18,7 +18,8 @@ import {
   addCashierToStore,
   updateCashierInStore,
   removeCashierFromStore,
-  verifyCashierPin
+  verifyCashierPin,
+  saveProducts
 } from './state.js';
 import { getStorageKeys, GLOBAL_STORAGE_KEYS, DEFAULT_PRODUCTS, DEFAULT_PRINTER_CONFIG } from './config.js';
 import { showToast, playClick, escapeHtml, showConfirmDialog, triggerHaptic, initM3RippleSystem } from './utils.js';
@@ -33,6 +34,7 @@ import * as updater from './modules/updater.js';
 import * as shift from './modules/shift.js';
 import * as notification from './modules/notification.js';
 import { saveNotificationConfig } from './state.js';
+import { preloadProductPhotos } from './modules/photos.js';
 import { initErrorTelemetry, sendTelemetryToDiscord } from './modules/telemetry.js';
 import { 
   initAllCustomSelects, 
@@ -113,23 +115,13 @@ export function switchView(viewName) {
     }
   });
 
-  // Activate target screen with Anime.js silky-smooth motion & fallback
+  // Activate target screen: murni CSS (GPU: opacity + translate, 0.24s).
+  // Anime.js disingkirkan — blok di bawah ini satu-satunya pemakainya.
   const activeView = views.find(v => v.name === viewName);
   if (activeView && activeView.el) {
     activeView.el.classList.remove('hidden');
-    if (typeof window.anime !== 'undefined') {
-      window.anime.remove(activeView.el);
-      window.anime({
-        targets: activeView.el,
-        opacity: [0, 1],
-        translateY: [24, 0],
-        duration: 280,
-        easing: 'easeOutCubic'
-      });
-    } else {
-      void activeView.el.offsetWidth;
-      activeView.el.classList.add('view-page-enter');
-    }
+    void activeView.el.offsetWidth; // paksa reflow agar animasi mengulang
+    activeView.el.classList.add('view-page-enter');
   }
 
   state.currentView = viewName;
@@ -2343,6 +2335,16 @@ export async function init() {
     updateLoadingProgress(20, 'Menyiapkan basis data & konfigurasi...');
     pos.renderProductSkeletons(8);
     initState();
+
+    // Foto produk: pindah ke IndexedDB (bebaskan localStorage) sebelum render.
+    // Dibatasi 1,5 detik agar boot tetap instan bila penyimpanan lambat.
+    try {
+      const moved = await Promise.race([
+        preloadProductPhotos(state.products),
+        new Promise(resolve => setTimeout(() => resolve(-1), 1500))
+      ]);
+      if (moved > 0) saveProducts();
+    } catch (_) {}
 
     // Baca parameter pairing (store, role, hostIp, auth) jika ada di URL (misal dibuka dari scan QR / link WA)
     // Keamanan tautan (Opsi A): param role/auth/token TIDAK PERNAH memberi

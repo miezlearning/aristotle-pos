@@ -5,6 +5,8 @@
 import { state, saveQueues, getCurrentCart, getActiveQueue, calculateCartTotal, getQueueLineItems, syncQueueCartFromItems } from '../state.js';
 import { formatRp, playBeep, playClick, escapeHtml, showToast, showConfirmDialog, triggerHaptic } from '../utils.js';
 import { syncSaveQueues } from '../firebase.js';
+import { fuzzyFilterProducts } from './fuzzy.js';
+import { resolveProductImage } from './photos.js';
 
 // ================= MULTI-ORDER QUEUE =================
 export function renderOrderQueueTabs(autoScrollTab = false) {
@@ -1025,6 +1027,7 @@ export function renderSingleProductCardHTML(product, qty) {
   const activeQ = getActiveQueue();
   const qLineItems = activeQ ? getQueueLineItems(activeQ) : [];
   const hasNoteOrAddOn = qLineItems.some(it => it.productId === product.id && ((it.note && it.note.trim() !== '') || (Array.isArray(it.addOns) && it.addOns.length > 0)));
+  const imgSrc = resolveProductImage(product);
 
   return `
     <div id="posProductCard_${product.id}" data-product-card="${product.id}" onclick="window.KasirApp.addToCart('${product.id}')" 
@@ -1045,9 +1048,9 @@ export function renderSingleProductCardHTML(product, qty) {
         </span>
       ` : ''}
 
-      ${product.image ? `
+      ${imgSrc ? `
         <div class="relative w-full h-20 sm:h-24 lg:h-28 rounded-xl sm:rounded-2xl overflow-hidden mb-1.5 bg-stone-100 shrink-0 shadow-2xs">
-          <img src="${product.image}" alt="${escapeHtml(product.name)}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" onerror="this.parentElement.style.display='none'">
+          <img src="${imgSrc}" alt="${escapeHtml(product.name)}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" onerror="this.parentElement.style.display='none'">
           <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none"></div>
           <div class="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start">
             <span class="text-[9px] sm:text-[10px] font-extrabold text-white capitalize px-2 py-0.5 rounded-md bg-stone-900/85 shadow-xs">${escapeHtml(product.category)}</span>
@@ -1161,7 +1164,6 @@ export function renderProducts() {
   const searchInput = document.getElementById('searchInput');
   const search = (searchInput ? searchInput.value : '').toLowerCase().trim();
   const currentCart = getCurrentCart();
-
   // Mode Belum Masuk Toko / Logout
   if (!state.storeId) {
     grid.innerHTML = `
@@ -1182,11 +1184,10 @@ export function renderProducts() {
     return;
   }
 
-  const filtered = state.products.filter(p => {
-    const matchesCat = (state.currentCategory === 'all') || (p.category === state.currentCategory);
-    const matchesSearch = p.name.toLowerCase().includes(search);
-    return matchesCat && matchesSearch;
-  });
+  // Cari toleran-typo (Fuse.js) lalu saring kategori — kosong = semua.
+  const filtered = fuzzyFilterProducts(state.products, search).filter(p =>
+    (state.currentCategory === 'all') || (p.category === state.currentCategory)
+  );
 
   // Perbarui indikator jumlah hasil pencarian & filter kategori
   const countBadge = document.getElementById('posSearchResultCount');

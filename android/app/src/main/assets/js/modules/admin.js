@@ -4,6 +4,8 @@ import { renderProducts, renderCart } from './pos.js';
 import { syncSaveProduct, syncDeleteProduct, syncBatchDeleteProducts, syncClearAllProducts, forceUploadAllToCloud, syncSaveQrisPayload } from '../firebase.js';
 import { decodeQRFromImage, renderQRToContainer, parseQRISMetadata } from '../qris.js';
 import { getStoreLicenseStatus, DEMO_MAX_PRODUCTS } from './license.js';
+import { fuzzyFilterProducts } from './fuzzy.js';
+import { resolveProductImage, putProductPhoto, deleteProductPhoto, migrateInlinePhotos, getCachedPhoto } from './photos.js';
 
 // State seleksi & filter internal tabel admin
 let selectedAdminProductIds = new Set();
@@ -35,14 +37,7 @@ export function getFilteredAdminProducts() {
   if (adminCategoryFilter && adminCategoryFilter !== 'all') {
     list = list.filter(p => (p.category || '').toLowerCase() === adminCategoryFilter.toLowerCase());
   }
-  if (adminSearchQuery.trim()) {
-    const q = adminSearchQuery.trim().toLowerCase();
-    list = list.filter(p => 
-      (p.name || '').toLowerCase().includes(q) || 
-      (p.category || '').toLowerCase().includes(q)
-    );
-  }
-  return list;
+  return fuzzyFilterProducts(list, adminSearchQuery);
 }
 
 export function handleAdminSearch(val) {
@@ -227,11 +222,11 @@ export function renderAdminTable() {
               class="w-5 h-5 rounded accent-emerald-700 focus:ring-emerald-500 border-stone-300 cursor-pointer">
           </label>
 
-          ${p.image ? `
-            <img src="${p.image}" alt="${escapeHtml(p.name)}" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover shrink-0 border border-stone-200 shadow-2xs" loading="lazy">
+          ${(() => { const _img = resolveProductImage(p); return _img ? `
+            <img src="${_img}" alt="${escapeHtml(p.name)}" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover shrink-0 border border-stone-200 shadow-2xs" loading="lazy">
           ` : `
             <span class="material-symbols-rounded text-xl sm:text-2xl p-2 sm:p-2.5 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center shrink-0 rounded-xl border ${isReady ? 'bg-emerald-100/80 text-stone-950 border-emerald-200' : 'bg-stone-200 text-stone-500 border-stone-200'}">${p.icon || 'lunch_dining'}</span>
-          `}
+          `; })()}
           
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-1.5 min-w-0">
@@ -471,7 +466,7 @@ export function openEditProductModal(id) {
     stockEl.value = (p.trackStock && p.stock !== null && p.stock !== undefined) ? p.stock : '';
   }
   
-  currentProductImage = p.image || '';
+  currentProductImage = resolveProductImage(p);
   updateProductImagePreviewUI(currentProductImage);
   renderProductAddOns(p.addOns || []);
   if (modal) {
@@ -490,7 +485,7 @@ export function closeProductModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-export function saveProduct(e) {
+export async function saveProduct(e) {
   if (e) e.preventDefault();
 
   if (state.userRole === 'cashier') {
@@ -531,6 +526,8 @@ export function saveProduct(e) {
   const finalAvailable = trackStock ? (stock > 0 && isAvailable) : isAvailable;
 
   let productObj = null;
+  const imageBytes = currentProductImage || '';
+  const imageIsData = imageBytes.startsWith('data:');
 
   if (id) {
     const index = state.products.findIndex(p => p.id === id);
@@ -541,7 +538,7 @@ export function saveProduct(e) {
         price, 
         category, 
         icon,
-        image: currentProductImage || '',
+        image: '',
         isAvailable: finalAvailable,
         trackStock,
         stock,
@@ -556,7 +553,7 @@ export function saveProduct(e) {
       price,
       category,
       icon,
-      image: currentProductImage || '',
+      image: '',
       isAvailable: finalAvailable,
       trackStock,
       stock,
@@ -565,9 +562,28 @@ export function saveProduct(e) {
     state.products.unshift(productObj);
   }
 
+  // Byte foto ke IndexedDB (bukan localStorage); cloud tetap terima byte
+  // agar perangkat lain ikut dapat foto. Bila IndexedDB gagal, jatuh ke
+  // inline lama agar foto tidak hilang.
+  if (productObj) {
+    let stored = false;
+    try {
+      stored = imageIsData
+        ? await putProductPhoto(productObj.id, imageBytes)
+        : await deleteProductPhoto(productObj.id);
+      if (!imageIsData) stored = true; // tidak ada foto = tidak ada yang disimpan
+    } catch (_) { stored = false; }
+    if (!stored && imageIsData) {
+      productObj.image = imageBytes;
+      const idx = state.products.findIndex(p => p.id === productObj.id);
+      if (idx !== -1) state.products[idx] = productObj;
+    }
+  }
+
   saveProducts();
   if (productObj) {
-    syncSaveProduct(productObj);
+    // Cloud selalu menerima byte (atau string kosong bila tanpa foto).
+    syncSaveProduct({ ...productObj, image: imageIsData ? imageBytes : '' });
   }
 
   closeProductModal();
@@ -593,6 +609,7 @@ export async function deleteProduct(id) {
   if (ok) {
     selectedAdminProductIds.delete(id);
     state.products = state.products.filter(item => item.id !== id);
+    try { await deleteProductPhoto(id); } catch (_) {}
     state.orderQueues.forEach(q => {
       if (q.cart) delete q.cart[id];
     });
@@ -646,6 +663,9 @@ export async function deleteSelectedProducts() {
     saveProducts();
     saveQueues();
     syncBatchDeleteProducts(idsToDelete);
+    try {
+      await Promise.all(idsToDelete.map(pid => deleteProductPhoto(pid)));
+    } catch (_) {}
 
     selectedAdminProductIds.clear();
     renderAdminTable();
@@ -825,10 +845,15 @@ export function saveQrisSettings(e) {
 
 // ================= BACKUP & RESTORE DATA (JSON) =================
 export function exportDataBackup() {
+  // Foto diambil dari cache IndexedDB (product.image lokal sudah kosong).
+  const productsWithPhotos = (state.products || []).map(p => {
+    const bytes = getCachedPhoto(p.id);
+    return (bytes && !p.image) ? { ...p, image: bytes } : p;
+  });
   const backupData = {
     version: 1,
     exportedAt: new Date().toISOString(),
-    products: state.products,
+    products: productsWithPhotos,
     transactions: state.transactions,
     expenses: state.expenses,
     orderQueues: state.orderQueues,
@@ -853,7 +878,7 @@ export function importDataBackup(event) {
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     try {
       const data = JSON.parse(e.target.result);
       let archiveInfo = null;
@@ -866,6 +891,11 @@ export function importDataBackup(event) {
           return;
         }
         state.products = clean;
+        // Foto dari file dipindah ke IndexedDB (bukan localStorage).
+        try {
+          const moved = await migrateInlinePhotos(state.products);
+          void moved;
+        } catch (_) {}
         saveProducts();
       }
       if (data.transactions && Array.isArray(data.transactions)) {

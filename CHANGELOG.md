@@ -2,6 +2,16 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.80] - 2026-09-19
+
+### Buang Anime Ganda + Fuse.js + Dexie Foto
+- **Anime.js disingkirkan:** satu-satunya pemakaian (transisi pindah view) diganti kelas CSS `view-page-enter` yang setara; `anime.min.js`, script tag, precache, dan dep npm dihapus.
+- **Fuse.js lokal (toleran typo):** `js/modules/fuzzy.js` dipakai pencarian kasir + tabel admin — "nasgor" ketemu Nasi Goreng; fallback substring bila lib gagal.
+- **Dexie lokal (foto ke IndexedDB):** byte foto keluar dari localStorage; cache memori sinkron untuk render; migrasi otomatis saat boot, impor backup, dan sync cloud masuk; cloud tetap bawa byte (kompatibel lintas perangkat); backup menempel byte; sync stok/status dilindungi dari penghapusan foto; hapus menu ikut hapus foto; fallback inline bila IndexedDB gagal.
+- Semua library baru dibundel lokal + precache sw (tanpa CDN runtime).
+
+---
+
 ## [v1.2.79] - 2026-09-18
 
 ### Jurnal Ringan + Kasir Ringan + Tailwind Precompiled
