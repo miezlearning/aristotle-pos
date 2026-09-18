@@ -9,6 +9,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
 
 const versionJsonPath = path.resolve('version.json');
 const gradlePath = path.resolve('android/app/build.gradle');
@@ -106,7 +107,16 @@ notes += `\n---\n*Pembaruan ini dapat diunduh dan dipasang langsung dari dalam a
 fs.writeFileSync(releaseNotesPath, notes);
 console.log('Updated RELEASE_NOTES.md');
 
-// 6. Sync to Android Assets
+// 6. Build Tailwind statis DULU agar android assets & Pages dapat CSS terbaru
+try {
+  console.log('Building Tailwind CSS...');
+  execSync('npm run build:css', { stdio: 'inherit' });
+} catch (e) {
+  console.error('GAGAL build Tailwind CSS. Jalankan `npm install` lalu coba lagi.');
+  process.exit(1);
+}
+
+// 7. Sync to Android Assets
 const assetsDir = path.resolve('android/app/src/main/assets');
 if (fs.existsSync(assetsDir)) {
   ['index.html', 'version.json', 'sw.js', 'manifest.json', 'icon.svg', 'favicon.png', 'icon.png', 'icon-192.png', 'icon-512.png'].forEach(f => {

@@ -1154,6 +1154,31 @@ export async function syncClearTodayData() {
 }
 
 /**
+ * Hapus dokumen arsip (transaksi & pengeluaran lama) di cloud.
+ * Dipakai setelah file arsip terunduh — disebar ke semua perangkat toko.
+ * Batch Firestore dibatasi 500 operasi, jadi dipecah bila banyak.
+ */
+export async function syncArchiveDelete(txIds = [], expIds = []) {
+  if (!db) return;
+  try {
+    const currentStoreId = getStoreId();
+    const ops = [
+      ...txIds.map(id => ({ col: 'transactions', id })),
+      ...expIds.map(id => ({ col: 'expenses', id }))
+    ];
+    for (let i = 0; i < ops.length; i += 500) {
+      const batch = writeBatch(db);
+      ops.slice(i, i + 500).forEach(op => {
+        batch.delete(doc(db, 'stores', currentStoreId, op.col, op.id));
+      });
+      await batch.commit();
+    }
+  } catch (e) {
+    console.error('Failed to archive-delete in cloud:', e);
+  }
+}
+
+/**
  * Add new expense record in cloud
  */
 export async function syncAddExpense(expense) {

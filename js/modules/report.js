@@ -2,16 +2,18 @@
  * Kasir Mami - Financial Report & Bookkeeping Module
  */
 
-import { state, saveExpenses, saveHistory, saveProducts, isLiveTx } from '../state.js';
+import { state, currentStorageKeys, saveExpenses, saveHistory, saveProducts, isLiveTx } from '../state.js';
 import { formatRp, formatDateShort, formatDateFull, escapeHtml, showToast, showConfirmDialog, playClick } from '../utils.js';
 import { showReceipt } from './payment.js';
+import { updateProductCardDOM } from './pos.js';
 import { 
   syncAddExpense, 
   syncAddTransaction,
   syncDeleteExpense, 
   syncClearTodayData, 
   syncClearAllHistory,
-  syncSaveProduct
+  syncSaveProduct,
+  syncArchiveDelete
 } from '../firebase.js';
 
 export const VOID_REASONS = {
@@ -23,6 +25,55 @@ export const VOID_REASONS = {
 
 let voidTxId = null;
 let voidReason = null;
+
+// ================= PAGINATION JURNAL + ARSIP (anti-lemot & anti-penuh) =================
+// Jurnal di-render bertahap (50 terbaru + tombol Muat Lagi) agar ribuan struk
+// tidak membekukan HP kentang. Batas otomatis direset tiap ganti periode.
+const JOURNAL_PAGE = 50;
+const ARCHIVE_AFTER_DAYS = 90;
+const STORAGE_WARN_BYTES = 3 * 1024 * 1024;
+const STORAGE_DANGER_BYTES = 4 * 1024 * 1024;
+let journalLimit = JOURNAL_PAGE;
+let lastJournalSig = '';
+
+export function loadMoreJournal() {
+  playClick('tap');
+  journalLimit += JOURNAL_PAGE;
+  renderFinancialReport();
+  // Jaga posisi scroll daftar (render ulang me-reset scroll container ke atas).
+  requestAnimationFrame(() => {
+    const el = document.getElementById('txHistoryCardList');
+    if (el) el.scrollTop = el.scrollHeight;
+  });
+}
+
+function archiveCutoff() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ARCHIVE_AFTER_DAYS);
+  return d;
+}
+
+// Perkiraan pemakaian localStorage oleh data toko ini (UTF-16 ≈ 2 byte/karakter).
+function localDataBytes() {
+  try {
+    if (!currentStorageKeys) return 0;
+    const keys = [currentStorageKeys.HISTORY, currentStorageKeys.EXPENSES, currentStorageKeys.PRODUCTS, currentStorageKeys.QUEUES];
+    return keys.reduce((s, k) => {
+      if (!k) return s;
+      const v = localStorage.getItem(k);
+      return s + (v ? v.length * 2 : 0);
+    }, 0);
+  } catch (_) { return 0; }
+}
+
+function countArchivable() {
+  const cut = archiveCutoff().getTime();
+  const oldTx = (state.transactions || []).filter(t => t && !t.voided && t.date && new Date(t.date).getTime() < cut);
+  const oldVoid = (state.transactions || []).filter(t => t && t.voided && t.date && new Date(t.date).getTime() < cut).length;
+  const oldExp = (state.expenses || []).filter(e => e && e.date && new Date(e.date).getTime() < cut);
+  return { oldTx, oldVoid, oldExp };
+}
 
 export function setReportPeriod(period) {
   if (period === 'range' && !state.reportRange) {
@@ -241,6 +292,44 @@ export function renderFinancialReport() {
   // 3. Render Riwayat Penjualan (jurnal: termasuk void ber-badge) + Ringkasan Diskon
   const txContainer = document.getElementById('txHistoryCardList');
   if (txContainer) {
+    // Ganti periode = mulai lagi dari 50 terbaru.
+    const journalSig = `${state.currentPeriod}|${state.reportRange ? state.reportRange.from + '~' + state.reportRange.to : ''}|${state.reportMonth ? state.reportMonth.y + '-' + state.reportMonth.m : ''}`;
+    if (journalSig !== lastJournalSig) { lastJournalSig = journalSig; journalLimit = JOURNAL_PAGE; }
+    const visibleJournal = journalTx.slice(0, journalLimit);
+    const hiddenCount = journalTx.length - visibleJournal.length;
+    const dataBytes = localDataBytes();
+    const arch = countArchivable();
+    const canManage = state.userRole !== 'cashier';
+
+    const storageWarn = dataBytes >= STORAGE_WARN_BYTES ? `
+      <div class="mb-2 p-2.5 rounded-xl ${dataBytes >= STORAGE_DANGER_BYTES ? 'bg-red-50 border border-red-300' : 'bg-amber-50/80 border border-amber-300'} flex flex-col gap-1.5">
+        <div class="flex items-center gap-1.5 text-[11px] font-black ${dataBytes >= STORAGE_DANGER_BYTES ? 'text-red-800' : 'text-amber-900'}">
+          <span class="material-symbols-rounded text-base">storage</span>
+          <span>Penyimpanan lokal ${(dataBytes / 1048576).toFixed(1)} MB — ${dataBytes >= STORAGE_DANGER_BYTES ? 'hampir penuh, segera arsipkan!' : 'mulai penuh, arsipkan data lama.'}</span>
+        </div>
+        ${canManage && (arch.oldTx.length + arch.oldExp.length) > 0 ? `
+        <button onclick="window.KasirApp.archiveOldTransactions()"
+          class="py-2 px-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-black text-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+          <span class="material-symbols-rounded text-base">archive</span>
+          <span>Arsipkan ${arch.oldTx.length + arch.oldExp.length} data &gt; ${ARCHIVE_AFTER_DAYS} hari</span>
+        </button>` : ''}
+      </div>` : '';
+
+    const journalFoot = `
+      <div class="pt-2 flex flex-col gap-1.5">
+        ${hiddenCount > 0 ? `
+        <button onclick="window.KasirApp.loadMoreJournal()"
+          class="w-full py-2.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-black text-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+          <span class="material-symbols-rounded text-base">expand_more</span>
+          <span>Muat ${Math.min(JOURNAL_PAGE, hiddenCount)} lagi (sisa ${hiddenCount} dari ${journalTx.length})</span>
+        </button>` : (journalTx.length > JOURNAL_PAGE ? `
+        <p class="text-center text-[10px] text-stone-400 font-bold">Semua ${journalTx.length} transaksi periode ini tampil</p>` : '')}
+        <div class="flex items-center justify-between text-[10px] text-stone-400 font-bold px-0.5">
+          <span>Menampilkan ${visibleJournal.length}/${journalTx.length} • Lokal ${(dataBytes / 1048576).toFixed(1)} MB</span>
+          ${canManage && (arch.oldTx.length + arch.oldExp.length) > 0 ? `
+          <button onclick="window.KasirApp.archiveOldTransactions()" class="text-stone-500 hover:text-stone-800 underline underline-offset-2 cursor-pointer">Arsipkan data lama (${arch.oldTx.length + arch.oldExp.length})</button>` : ''}
+        </div>
+      </div>`;
     const discRows = Object.entries(discountByActor)
       .sort((a, b) => b[1] - a[1])
       .map(([actor, amt]) => `<div class="flex justify-between text-[11px] font-bold text-stone-600"><span class="truncate">${escapeHtml(actor)}</span><span class="shrink-0">-${formatRp(amt)}</span></div>`)
@@ -255,9 +344,9 @@ export function renderFinancialReport() {
         ${voidedTx.length > 0 ? `<div class="flex items-center justify-between text-[11px] font-bold text-stone-500 border-t border-amber-200/60 pt-1"><span>Void: ${voidedTx.length}x dibatalkan (tidak masuk omzet)</span><span class="tabular-nums">${formatRp(voidNominal)}</span></div>` : ''}
       </div>` : '';
     if (journalTx.length === 0) {
-      txContainer.innerHTML = `${discCard}<div class="py-6 text-center text-stone-400 font-bold text-xs">Belum ada transaksi penjualan di periode ini</div>`;
+      txContainer.innerHTML = `${storageWarn}${discCard}<div class="py-6 text-center text-stone-400 font-bold text-xs">Belum ada transaksi penjualan di periode ini</div>`;
     } else {
-      txContainer.innerHTML = discCard + journalTx.map(tx => {
+      txContainer.innerHTML = storageWarn + discCard + visibleJournal.map(tx => {
         const dateStr = formatDateShort(tx.date);
         const summaryItems = tx.items.map(i => `${i.qty}x ${escapeHtml(i.name)}`).join(', ');
         const voidBadge = tx.voided
@@ -291,7 +380,7 @@ export function renderFinancialReport() {
             </div>
           </div>
         `;
-      }).join('');
+      }).join('') + journalFoot;
     }
   }
 
@@ -495,12 +584,14 @@ export async function submitVoid() {
   // Kembalikan stok yang terpakai (penjualan dianggap tidak pernah terjadi),
   // termasuk mengaktifkan kembali menu yang sempat HABIS.
   let stockTouched = false;
+  const restoredPids = [];
   (tx.items || []).forEach(it => {
     const prod = state.products.find(p => p.id === it.id);
     if (prod && prod.trackStock && typeof prod.stock === 'number') {
       prod.stock = Math.max(0, (prod.stock || 0) + (Number(it.qty) || 0));
       if (prod.stock > 0 && prod.isAvailable === false) prod.isAvailable = true;
       stockTouched = true;
+      restoredPids.push(prod.id);
       try { syncSaveProduct(prod); } catch (_) {}
     }
   });
@@ -510,6 +601,8 @@ export async function submitVoid() {
   try { await syncAddTransaction(tx); } catch (_) {}
   closeVoidModal();
   renderFinancialReport();
+  // Status HABIS di katalog bisa berubah → segarkan kartu terdampak saja.
+  restoredPids.forEach(pid => { try { updateProductCardDOM(pid); } catch (_) {} });
   showToast(`Void tersimpan: ${formatRp(tx.total)} dikeluarkan dari omzet (${tx.voidReasonLabel}).`, 'info', 4000);
 }
 
@@ -687,6 +780,70 @@ export async function clearAllHistory() {
   syncClearAllHistory();
   renderFinancialReport();
   showToast('Seluruh riwayat penjualan & pengeluaran telah dikosongkan.', 'success');
+}
+
+/**
+ * ARSIPKAN DATA LAMA (> 90 hari) KE FILE — standar retensi POS.
+ * File arsip = cadangan lengkap (bisa dibuka manual / diimpor ulang).
+ * Jejak VOID tidak pernah ikut terhapus dari aplikasi (audit permanen).
+ */
+export async function archiveOldTransactions() {
+  if (state.userRole === 'cashier') {
+    showToast('Akses dibatasi. Arsip data hanya untuk Mode Owner.', 'warning');
+    return;
+  }
+  const cut = archiveCutoff();
+  const { oldTx, oldVoid, oldExp } = countArchivable();
+  if (oldTx.length === 0 && oldExp.length === 0) {
+    showToast(oldVoid > 0
+      ? `Hanya tersisa ${oldVoid}x jejak void lama (audit permanen, tidak diarsipkan keluar).`
+      : `Belum ada data lebih lama dari ${ARCHIVE_AFTER_DAYS} hari untuk diarsipkan.`, 'info');
+    return;
+  }
+
+  const ok = await showConfirmDialog({
+    title: 'Arsipkan Data Lama?',
+    message: `Unduh ${oldTx.length} transaksi & ${oldExp.length} pengeluaran sebelum ${formatDateShort(cut.toISOString())} ke file arsip, lalu keluarkan dari aplikasi agar ringan?${oldVoid > 0 ? ` ${oldVoid}x jejak void TETAP di aplikasi (audit permanen).` : ''} File arsip bisa diimpor ulang kapan pun.`,
+    confirmText: 'Unduh & Arsipkan',
+    confirmType: 'success',
+    icon: 'archive'
+  });
+  if (!ok) return;
+
+  // 1. File arsip (format selaras backup agar bisa diimpor ulang).
+  const storeSlug = (state.storeProfile?.name || 'Toko').replace(/[^a-zA-Z0-9]/g, '_');
+  const archive = {
+    app: 'aristotle-pos',
+    kind: 'archive',
+    version: 1,
+    storeId: state.storeId || '',
+    exportedAt: new Date().toISOString(),
+    cutoffDate: cut.toISOString(),
+    transactions: oldTx,
+    expenses: oldExp
+  };
+  try {
+    const blob = new Blob([JSON.stringify(archive, null, 2)], { type: 'application/json;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Arsip_Kasir_${storeSlug}_${cut.toISOString().slice(0, 10)}.json`;
+    link.click();
+    setTimeout(() => { try { URL.revokeObjectURL(link.href); } catch (_) {} link.remove(); }, 4000);
+  } catch (_) {
+    showToast('Gagal membuat file arsip. Coba lagi.', 'error');
+    return;
+  }
+
+  // 2. Keluarkan dari aplikasi + cloud (sinkron ke semua perangkat toko).
+  const txIds = new Set(oldTx.map(t => t.id));
+  const expIds = new Set(oldExp.map(e => e.id));
+  state.transactions = (state.transactions || []).filter(t => !txIds.has(t.id));
+  state.expenses = (state.expenses || []).filter(e => !expIds.has(e.id));
+  saveHistory();
+  saveExpenses();
+  try { await syncArchiveDelete([...txIds], [...expIds]); } catch (_) {}
+  renderFinancialReport();
+  showToast(`Arsip tersimpan: ${oldTx.length} transaksi & ${oldExp.length} pengeluaran dikeluarkan dari aplikasi.${oldVoid > 0 ? ` ${oldVoid}x void dipertahankan.` : ''}`, 'success', 4500);
 }
 
 // ================= GRAFIK USAHA (VISUALISASI KEPUTUSAN BISNIS, TANPA LIB) =================

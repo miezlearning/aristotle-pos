@@ -1,11 +1,12 @@
-# Aristotle POS v1.2.78 Release Notes
+# Aristotle POS v1.2.79 Release Notes
 
 **Tanggal Rilis:** 2026-09-18
 
 ### Catatan Pembaruan:
-- Antrian tetangga: hapus/bayar pindah ke tab sebelah bukan Pesanan 1 + scroll strip diam + Urungkan ke posisi semula
-- Void standar POS: grafik dan rekap bulanan steril dari void + ringkasan nominal void + pelaku dan waktu per baris + stempel VOID di struk + info void di Laporan Z
-- Audit permanen: Hapus Hari Ini tidak menghapus jejak void + Hapus Total konfirmasi ganda + konfirmasi void QRIS dan transaksi lama + stok balik aktif tersinkron cloud
+- Jurnal ringan: pagination 50 + Muat Lagi + bar penyimpanan + arsip data di atas 90 hari ke file (void tetap, impor arsip digabung)
+- Kasir ringan: 1 tap update bedah tanpa bangun ulang grid dan tab + tanpa blur fullscreen + search debounce
+- Tailwind precompiled: tanpa CDN runtime + CSS lokal + build otomatis CI dan rilis (offline makin kokoh)
+- Katalog tablet dan laptop 3 kolom per baris
 
 ---
 *Pembaruan ini dapat diunduh dan dipasang langsung dari dalam aplikasi (In-App Auto-Updater).*

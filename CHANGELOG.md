@@ -2,6 +2,17 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.79] - 2026-09-18
+
+### Jurnal Ringan + Kasir Ringan + Tailwind Precompiled
+- **Jurnal pagination:** riwayat hanya render 50 terbaru + tombol Muat Lagi (reset otomatis tiap ganti periode); footer selalu tampilkan `X/Y • Lokal N MB`.
+- **Arsip data > 90 hari:** unduh file arsip dulu lalu keluarkan dari aplikasi + cloud (tersinkron semua perangkat); jejak void tidak ikut keluar; impor file arsip digabungkan per ID (bukan ditimpa); kartu peringatan penyimpanan di 3/4 MB.
+- **Kasir bedah per-tap:** `renderCart` tidak lagi membangun ulang grid (kartu terdampak via `updateProductCardDOM`, termasuk dari catatan & void); badge tab antrian via `updateQueueTabBadges` dengan fallback render penuh; search debounce 120ms; blur fullscreen dicabut dari 5 overlay.
+- **Tailwind precompiled (ganti Play CDN):** `tailwind.config.js` + `npm run build:css` → `css/tailwind.css` 66KB; tanpa pengamat DOM + generator CSS di HP; precache lokal (offline kokoh); build otomatis di CI Pages/APK dan `release.js`; aturan: kelas harus tertulis utuh di source.
+- **Katalog 3 kolom** di tablet landscape & laptop (HP tetap 2 demi target sentuh lansia).
+
+---
+
 ## [v1.2.78] - 2026-09-18
 
 ### Antrian Tetangga + Void Standar POS Penuh

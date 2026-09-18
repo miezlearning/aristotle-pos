@@ -1,0 +1,8 @@
+/**
+ * Aristotle POS - Tailwind CSS Entry Point
+ * File ini di-build menjadi css/tailwind.css via: npm run build:css
+ * JANGAN edit tailwind.css langsung — edit file ini / tailwind.config.js lalu rebuild.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

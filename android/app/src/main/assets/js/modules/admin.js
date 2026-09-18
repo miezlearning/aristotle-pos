@@ -856,6 +856,7 @@ export function importDataBackup(event) {
   reader.onload = function(e) {
     try {
       const data = JSON.parse(e.target.result);
+      let archiveInfo = null;
       if (data.products && Array.isArray(data.products)) {
         // Validasi + hormati kuota demo (mencegah bypass 10 produk via file).
         const clean = data.products.filter(p => p && typeof p.name === 'string' && Number(p.price) > 0);
@@ -868,8 +869,26 @@ export function importDataBackup(event) {
         saveProducts();
       }
       if (data.transactions && Array.isArray(data.transactions)) {
-        state.transactions = data.transactions;
-        saveHistory();
+        if (data.kind === 'archive') {
+          // File arsip: GABUNGKAN (bukan timpa) agar data berjalan tidak hilang.
+          const haveTx = new Set((state.transactions || []).map(t => t.id));
+          const freshTx = data.transactions.filter(t => t && t.id && !haveTx.has(t.id));
+          if (freshTx.length > 0) {
+            state.transactions = [...(state.transactions || []), ...freshTx];
+            state.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            saveHistory();
+          }
+          const haveEx = new Set((state.expenses || []).map(e => e.id));
+          const freshEx = Array.isArray(data.expenses) ? data.expenses.filter(e => e && e.id && !haveEx.has(e.id)) : [];
+          if (freshEx.length > 0) {
+            state.expenses = [...(state.expenses || []), ...freshEx];
+            saveExpenses();
+          }
+          archiveInfo = { tx: freshTx.length, ex: freshEx.length };
+        } else {
+          state.transactions = data.transactions;
+          saveHistory();
+        }
       }
       if (data.expenses && Array.isArray(data.expenses)) {
         state.expenses = data.expenses;
@@ -884,7 +903,9 @@ export function importDataBackup(event) {
         saveQrisPayload(data.qrisPayload);
         syncSaveQrisPayload(data.qrisPayload);
       }
-      showToast('Data Kasir Mami berhasil dipulihkan dari backup!', 'success');
+      showToast(archiveInfo
+        ? `Arsip digabungkan: ${archiveInfo.tx} transaksi & ${archiveInfo.ex} pengeluaran kembali masuk (duplikat dilewati).`
+        : 'Data Kasir Mami berhasil dipulihkan dari backup!', 'success', 4500);
       forceUploadAllToCloud();
       renderProducts();
       renderCart();

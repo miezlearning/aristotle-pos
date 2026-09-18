@@ -191,6 +191,8 @@ export function switchView(viewName) {
   updateM3NavRailUI(viewName);
 }
 
+let searchRenderTimer = null;
+
 export function handleSearchInput(e) {
   const clearBtn = document.getElementById('clearSearchBtn');
   const kbdHint = document.getElementById('searchKbdHint');
@@ -204,7 +206,13 @@ export function handleSearchInput(e) {
       if (kbdHint) kbdHint.classList.remove('hidden');
     }
   }
-  pos.renderProducts();
+  // PERF: grid dibangun ulang per ketikan — tunda 120ms agar mengetik cepat
+  // hanya me-render sekali. Indikator tombol di atas tetap instan.
+  if (searchRenderTimer) clearTimeout(searchRenderTimer);
+  searchRenderTimer = setTimeout(() => {
+    searchRenderTimer = null;
+    pos.renderProducts();
+  }, 120);
 }
 
 export function clearSearch() {
@@ -3230,6 +3238,8 @@ const KasirApp = {
   clearTodayData: report.clearTodayData,
   clearAllHistory: report.clearAllHistory,
   clearTransactionHistory: report.clearTransactionHistory,
+  loadMoreJournal: report.loadMoreJournal,
+  archiveOldTransactions: report.archiveOldTransactions,
   shareReportWhatsApp: report.shareReportWhatsApp,
   exportReportCSV: report.exportReportCSV,
   exportMonthlyCSV: report.exportMonthlyCSV,

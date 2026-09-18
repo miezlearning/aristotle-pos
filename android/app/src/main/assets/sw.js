@@ -1,10 +1,11 @@
-const CACHE_NAME = 'aristotle-pos-v127';
+const CACHE_NAME = 'aristotle-pos-v128';
 const PRECACHE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icon.svg',
   './css/style.css',
+  './css/tailwind.css',
   './fonts/material-symbols-rounded-core.woff2',
   './js/lib/anime.min.js',
   './js/app.js',
@@ -22,7 +23,6 @@ const PRECACHE_ASSETS = [
   './js/modules/superadmin.js',
   './js/modules/printer.js',
   './js/modules/notification.js',
-  'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap',
   'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24..48,400..700,0..1,-50..200&display=block',
   'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js',

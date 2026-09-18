@@ -62,7 +62,7 @@ export function renderOrderQueueTabs(autoScrollTab = false) {
         <button onclick="window.KasirApp.switchOrderQueue('${q.id}')"
           class="px-3 py-2 text-xs sm:text-sm flex items-center gap-1.5 touch-target-large">
           <span>${escapeHtml(q.name)}</span>
-          ${itemCount > 0 ? `<span class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs ${badgeStyle}">${itemCount}</span>` : ''}
+          ${itemCount > 0 ? `<span data-queue-count class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs ${badgeStyle}">${itemCount}</span>` : ''}
         </button>
         ${isActive ? `
           <button type="button" data-no-reorder onclick="event.stopPropagation(); window.KasirApp.promptRenameQueue()"
@@ -111,6 +111,78 @@ export function renderOrderQueueTabs(autoScrollTab = false) {
         container.scrollTo({ left: tabLeft + tabWidth - visibleWidth + 12, behavior: 'smooth' });
       }
     }
+  }
+}
+
+// ============ UPDATE BADGE TAB ANTRIAN TANPA BANGUN ULANG (PERF) ============
+// Dipakai tiap tap tambah/kurang (yang berubah hanya angka & warna).
+// Jauh lebih murah daripada renderOrderQueueTabs (innerHTML semua tab +
+// inisialisasi ulang). Struktur berubah (tambah/hapus/ganti/rename) tetap
+// lewat renderOrderQueueTabs penuh. Kelas disalin persis dari template di atas.
+const QUEUE_TAB_WRAPPER_BASE = 'active-queue-tab-wrapper flex items-center rounded-xl transition shrink-0 ';
+const QUEUE_TAB_BADGE_BASE = 'px-2 py-0.5 rounded-full text-[10px] sm:text-xs ';
+
+function queueTabStyles(q, isActive, itemCount) {
+  if (isActive) {
+    return {
+      tab: 'bg-emerald-700 text-white font-black shadow-xs ring-1 ring-emerald-400 active-queue-tab',
+      badge: 'bg-white text-emerald-950 font-black shadow-2xs'
+    };
+  } else if (itemCount > 0) {
+    return {
+      tab: 'bg-emerald-50 text-emerald-950 hover:bg-emerald-100 font-extrabold border border-emerald-300 shadow-2xs',
+      badge: 'bg-emerald-700 text-white font-black'
+    };
+  }
+  return {
+    tab: 'bg-stone-100 text-stone-800 hover:bg-stone-200 font-extrabold border border-stone-200',
+    badge: 'bg-stone-200 text-stone-800 font-bold'
+  };
+}
+
+export function updateQueueTabBadges() {
+  const container = document.getElementById('orderQueueTabs');
+  if (!container) return;
+  // Jangan ganggu gestur susun-ulang yang sedang berjalan.
+  if (queueTabReorderSession) return;
+  const wrappers = container.querySelectorAll('.active-queue-tab-wrapper');
+  if (wrappers.length !== state.orderQueues.length) {
+    renderOrderQueueTabs(false);
+    return;
+  }
+  let mismatch = false;
+  state.orderQueues.forEach((q) => {
+    const wrapper = container.querySelector(`.active-queue-tab-wrapper[data-qid="${q.id}"]`);
+    if (!wrapper) { mismatch = true; return; }
+    const isActive = q.id === state.activeQueueId;
+    const itemCount = (Array.isArray(q.items) && q.items.length > 0)
+      ? q.items.reduce((a, b) => a + (b.qty || 0), 0)
+      : Object.values(q.cart || {}).reduce((a, b) => a + b, 0);
+    const st = queueTabStyles(q, isActive, itemCount);
+    const wantWrapperCls = QUEUE_TAB_WRAPPER_BASE + st.tab;
+    if (wrapper.className !== wantWrapperCls) wrapper.className = wantWrapperCls;
+
+    let badge = wrapper.querySelector('[data-queue-count]');
+    if (itemCount > 0) {
+      if (!badge) {
+        const btn = wrapper.querySelector('button');
+        if (!btn) { mismatch = true; return; }
+        badge = document.createElement('span');
+        badge.setAttribute('data-queue-count', '');
+        btn.appendChild(badge);
+      }
+      const wantBadgeCls = QUEUE_TAB_BADGE_BASE + st.badge;
+      if (badge.className !== wantBadgeCls) badge.className = wantBadgeCls;
+      const wantText = String(itemCount);
+      if (badge.textContent !== wantText) badge.textContent = wantText;
+    } else if (badge) {
+      badge.remove();
+    }
+  });
+  if (mismatch) {
+    renderOrderQueueTabs(false);
+  } else {
+    try { updateQueueScrollButtons(); } catch (_) {}
   }
 }
 
@@ -1200,7 +1272,7 @@ export function addToCart(productId) {
     syncQueueCartFromItems(q);
     saveQueues();
     syncSaveQueues(state.orderQueues);
-    renderOrderQueueTabs(false);
+    updateQueueTabBadges();
     renderCart();
     updateProductCardDOM(productId);
   }
@@ -1255,7 +1327,7 @@ export function updateCartQty(targetId, delta) {
   syncQueueCartFromItems(q);
   saveQueues();
   syncSaveQueues(state.orderQueues);
-  renderOrderQueueTabs(false);
+  updateQueueTabBadges();
   renderCart();
   if (p && p.id) {
     updateProductCardDOM(p.id);
@@ -1429,7 +1501,7 @@ export function confirmQtyEditor(e) {
   const targetModal = document.getElementById('qtyEditModal');
   if (targetModal) targetModal.classList.add('hidden');
   qtyEditorTarget = null;
-  renderOrderQueueTabs(false);
+  updateQueueTabBadges();
   renderCart();
   updateProductCardDOM(p.id);
 }
@@ -1455,7 +1527,7 @@ export function removeCartLine(lineId) {
   syncQueueCartFromItems(q);
   saveQueues();
   syncSaveQueues(state.orderQueues);
-  renderOrderQueueTabs(false);
+  updateQueueTabBadges();
   renderCart();
   if (p) updateProductCardDOM(p.id);
   const label = p ? p.name : 'Item';
@@ -1480,7 +1552,7 @@ function restoreCartLine(snapshot) {
   syncQueueCartFromItems(q);
   saveQueues();
   syncSaveQueues(state.orderQueues);
-  renderOrderQueueTabs(false);
+  updateQueueTabBadges();
   renderCart();
   if (p) updateProductCardDOM(p.id); else renderProducts();
   showToast(`"${p ? p.name : 'Item'}" dikembalikan ke pesanan`, 'success');
@@ -1902,14 +1974,16 @@ export function renderCart() {
   }).join('');
 
   if (desktopList) desktopList.innerHTML = itemsHtml;
-  
+
   const drawerList = document.getElementById('mobileDrawerCartItems');
   const drawerTotal = document.getElementById('mobileDrawerTotalDisplay');
   if (drawerList) drawerList.innerHTML = itemsHtml;
   if (drawerTotal) drawerTotal.innerText = formatRp(total);
 
-  // ponytail: single source of truth - card badges must always mirror cart
-  renderProducts();
+  // PERF: renderCart TIDAK me-render ulang grid katalog. Setiap alur yang
+  // mengubah isi keranjang wajib menyegarkan kartu yang terdampak via
+  // updateProductCardDOM(productId) — jauh lebih murah daripada membangun
+  // ulang puluhan kartu + foto tiap satu tap.
 }
 
 export function toggleMobileCartDrawer(forcedState) {
@@ -2133,4 +2207,7 @@ export function saveItemNote(e) {
   syncSaveQueues(state.orderQueues);
   closeItemNoteModal();
   renderCart();
+  // Indikator catatan di kartu katalog ikut berubah → segarkan 1 kartu saja
+  // (renderCart tidak lagi membangun ulang grid demi performa).
+  updateProductCardDOM(item.productId);
 }
