@@ -11,6 +11,11 @@ export function renderOrderQueueTabs(autoScrollTab = false) {
   const container = document.getElementById('orderQueueTabs');
   if (!container) return;
 
+  // Ingat posisi scroll strip SEBELUM innerHTML diganti — penggantian DOM
+  // me-reset scrollLeft ke 0 (inilah yang membuat tampilan loncat ke
+  // Pesanan #1 setiap hapus/tambah item). Dipulihkan di bawah.
+  const prevScrollLeft = container.scrollLeft || 0;
+
   // Self-heal sesi drag-reorder yatim (mis. multi-sentuh / tahan ulang saat
   // drag masih aktif / pointerup hilang): placeholder nyangkut + tab hilang +
   // layer melayang + flag macet tidak boleh meninggalkan gap di strip.
@@ -81,8 +86,17 @@ export function renderOrderQueueTabs(autoScrollTab = false) {
   initQueueScrollButtons();
   updateQueueScrollButtons();
 
+  // Kembalikan posisi scroll semula (dijepit ke batas maksimal baru karena
+  // lebar strip bisa menyusut setelah hapus tab di ujung).
+  try {
+    const maxScroll = Math.max(0, container.scrollWidth - container.clientWidth);
+    container.scrollLeft = Math.min(prevScrollLeft, maxScroll);
+  } catch (_) {}
+
   // PENTING: Hanya geser kontainer horizontal slider orderQueueTabs itu sendiri jika diminta (misal: saat ganti antrian)
   // JANGAN PERNAH gunakan activeTab.scrollIntoView() karena browser akan menggulir seluruh halaman (window/body) ke atas!
+  // Mode autoScroll hanya menggeser MINIMAL bila tab aktif di luar pandangan,
+  // sehingga posisi strip tidak pernah loncat jauh.
   if (autoScrollTab) {
     const activeTab = container.querySelector('.active-queue-tab');
     if (activeTab) {
@@ -677,12 +691,21 @@ export async function deleteCurrentActiveQueue() {
 
   const { total, count } = calculateCartTotal();
   const itemCount = count;
+  const deletedIndex = Math.max(0, state.orderQueues.findIndex(q => q.id === cur.id));
   const backedUpQueue = { 
     id: cur.id,
     name: cur.name,
     cart: { ...(cur.cart || {}) },
     notes: { ...(cur.notes || {}) },
     items: JSON.parse(JSON.stringify(cur.items || []))
+  };
+  const restoreBackedUpQueue = () => {
+    // Kembalikan ke posisi semula (bukan didorong ke ujung) agar strip diam.
+    if (state.orderQueues.some(q => q.id === backedUpQueue.id)) return false;
+    const at = Math.min(deletedIndex, state.orderQueues.length);
+    state.orderQueues.splice(at, 0, backedUpQueue);
+    state.activeQueueId = backedUpQueue.id;
+    return true;
   };
 
   if (state.orderQueues.length <= 1) {
@@ -739,11 +762,10 @@ export async function deleteCurrentActiveQueue() {
       showToast(`Antrian "${cur.name}" dan seluruh isinya telah dihapus.`, 'info', 5000, {
         label: 'URUNGKAN',
         onClick: () => {
-          state.orderQueues.push(backedUpQueue);
-          state.activeQueueId = backedUpQueue.id;
+          restoreBackedUpQueue();
           saveQueues();
           syncSaveQueues(state.orderQueues);
-          renderOrderQueueTabs();
+          renderOrderQueueTabs(true);
           renderCart();
           renderProducts();
           showToast(`Antrian "${backedUpQueue.name}" berhasil dipulihkan!`, 'success');
@@ -755,11 +777,10 @@ export async function deleteCurrentActiveQueue() {
     showToast(`Antrian "${cur.name}" ditutup.`, 'info', 4000, {
       label: 'URUNGKAN',
       onClick: () => {
-        state.orderQueues.push(backedUpQueue);
-        state.activeQueueId = backedUpQueue.id;
+        restoreBackedUpQueue();
         saveQueues();
         syncSaveQueues(state.orderQueues);
-        renderOrderQueueTabs();
+        renderOrderQueueTabs(true);
         renderCart();
         renderProducts();
         showToast(`Antrian "${backedUpQueue.name}" dipulihkan.`, 'success');
@@ -770,9 +791,11 @@ export async function deleteCurrentActiveQueue() {
 
 export function deleteOrderQueue(queueId, event) {
   if (event) event.stopPropagation();
-  const qToDelete = state.orderQueues.find(q => q.id === queueId);
-  if (!qToDelete) return;
-  
+  const delIdx = state.orderQueues.findIndex(q => q.id === queueId);
+  if (delIdx === -1) return;
+  const qToDelete = state.orderQueues[delIdx];
+  const wasActive = state.activeQueueId === queueId;
+
   // Bersihkan data pesanan di antrian yang akan dihapus
   qToDelete.items = [];
   qToDelete.cart = {};
@@ -792,12 +815,22 @@ export function deleteOrderQueue(queueId, event) {
   }
 
   if (!state.orderQueues.some(q => q.id === state.activeQueueId)) {
-    state.activeQueueId = state.orderQueues[0].id;
+    // Pindah ke tetangga terdekat, BUKAN selalu ke index 0:
+    // - hapus di tengah/awal -> tab kanan yang bergeser ke posisi ini (index sama)
+    // - hapus di ujung -> tab terakhir yang baru (index-1)
+    // Sehingga posisi strip terasa diam di sekitar titik hapus.
+    if (wasActive && delIdx !== -1) {
+      const nextIdx = Math.min(delIdx, state.orderQueues.length - 1);
+      state.activeQueueId = state.orderQueues[Math.max(0, nextIdx)].id;
+    } else {
+      state.activeQueueId = state.orderQueues[0].id;
+    }
   }
 
   saveQueues();
   syncSaveQueues(state.orderQueues);
-  renderOrderQueueTabs();
+  // true = pastikan tab tetangga terlihat, tapi hanya geser minimal bila perlu
+  renderOrderQueueTabs(true);
   renderCart();
   renderProducts();
 }

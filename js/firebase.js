@@ -1127,12 +1127,12 @@ export async function syncClearTodayData() {
     const nowStr = new Date().toDateString();
     const batch = writeBatch(db);
 
-    // Filter tx
+    // Filter tx (jejak void TIDAK pernah ikut terhapus — audit permanen)
     const txCol = collection(db, 'stores', currentStoreId, 'transactions');
     const txSnap = await getDocs(txCol);
     txSnap.forEach(d => {
       const data = d.data();
-      if (data.date && new Date(data.date).toDateString() === nowStr) {
+      if (data.date && new Date(data.date).toDateString() === nowStr && !data.voided) {
         batch.delete(d.ref);
       }
     });

@@ -2,7 +2,7 @@
  * Kasir Mami - Financial Report & Bookkeeping Module
  */
 
-import { state, saveExpenses, saveHistory, saveProducts } from '../state.js';
+import { state, saveExpenses, saveHistory, saveProducts, isLiveTx } from '../state.js';
 import { formatRp, formatDateShort, formatDateFull, escapeHtml, showToast, showConfirmDialog, playClick } from '../utils.js';
 import { showReceipt } from './payment.js';
 import { 
@@ -10,7 +10,8 @@ import {
   syncAddTransaction,
   syncDeleteExpense, 
   syncClearTodayData, 
-  syncClearAllHistory 
+  syncClearAllHistory,
+  syncSaveProduct
 } from '../firebase.js';
 
 export const VOID_REASONS = {
@@ -118,7 +119,8 @@ export function getPeriodLabel() {
 export function filterByPeriod(items, includeVoid = false) {
   const now = new Date();
   return items.filter(item => {
-    if (!includeVoid && item.voided) return false; // void tidak masuk omzet, tapi tetap ada di jurnal
+    // SATU ATURAN: void tidak pernah masuk omzet/agregat, tapi tetap ada di jurnal/audit.
+    if (!includeVoid && !isLiveTx(item)) return false;
     const itemDate = new Date(item.date);
     if (state.currentPeriod === 'today') {
       return itemDate.toDateString() === now.toDateString();
@@ -155,6 +157,7 @@ export function renderFinancialReport() {
   const filteredExp = filterByPeriod(state.expenses);
   const journalTx = filterByPeriod(state.transactions, true); // jurnal termasuk void (badge)
   const voidedTx = journalTx.filter(t => t.voided);
+  const voidNominal = voidedTx.reduce((s, t) => s + (Number(t.total) || 0), 0);
 
   let totalRevenue = 0;
   let totalCash = 0;
@@ -249,7 +252,7 @@ export function renderFinancialReport() {
           <span>-${formatRp(totalDiscount)} (${discountCount}x)</span>
         </div>
         ${discRows}
-        ${voidedTx.length > 0 ? `<div class="flex items-center justify-between text-[11px] font-bold text-stone-500 border-t border-amber-200/60 pt-1"><span>Transaksi dibatalkan (void)</span><span>${voidedTx.length}x (tidak masuk omzet)</span></div>` : ''}
+        ${voidedTx.length > 0 ? `<div class="flex items-center justify-between text-[11px] font-bold text-stone-500 border-t border-amber-200/60 pt-1"><span>Void: ${voidedTx.length}x dibatalkan (tidak masuk omzet)</span><span class="tabular-nums">${formatRp(voidNominal)}</span></div>` : ''}
       </div>` : '';
     if (journalTx.length === 0) {
       txContainer.innerHTML = `${discCard}<div class="py-6 text-center text-stone-400 font-bold text-xs">Belum ada transaksi penjualan di periode ini</div>`;
@@ -260,6 +263,11 @@ export function renderFinancialReport() {
         const voidBadge = tx.voided
           ? `<span class="text-[9px] bg-stone-800 text-white font-black px-1.5 py-0.2 rounded">VOID • ${escapeHtml(tx.voidReasonLabel || 'Batal')}</span>`
           : '';
+        // Jejak audit per baris: siapa, kapan, kenapa — standar POS.
+        const voidMeta = tx.voided
+          ? `<p class="text-[10px] text-stone-500 truncate mt-0.5">Dibatalkan oleh ${escapeHtml(tx.voidBy || 'Owner')}${tx.voidAt ? ` • ${formatDateShort(tx.voidAt)}` : ''}</p>`
+          : '';
+        const canVoid = state.userRole !== 'cashier';
 
         return `
           <div class="py-2.5 flex items-center justify-between gap-1.5 hover:bg-stone-50 transition border-b border-stone-100 last:border-0 ${tx.voided ? 'opacity-70' : ''}">
@@ -271,14 +279,15 @@ export function renderFinancialReport() {
                 ${voidBadge}
               </div>
               <p class="text-[11px] text-stone-600 truncate mt-0.5">${summaryItems}</p>
+              ${voidMeta}
             </div>
             <div class="flex items-center gap-1 shrink-0">
-              <button onclick='window.KasirApp.reprintTx("${tx.id}")' class="p-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold transition touch-target-large" title="Lihat / Cetak Struk">
+              <button onclick='window.KasirApp.reprintTx("${tx.id}")' class="p-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold transition touch-target-large" title="${tx.voided ? 'Lihat salinan berstempel VOID' : 'Lihat / Cetak Struk'}">
                 <span class="material-symbols-rounded text-base">receipt</span>
               </button>
-              ${tx.voided ? '' : `<button onclick='window.KasirApp.deleteTransaction("${tx.id}")' class="p-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold transition touch-target-large" title="Batalkan transaksi (void berjejak)">
+              ${(!tx.voided && canVoid) ? `<button onclick='window.KasirApp.deleteTransaction("${tx.id}")' class="p-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold transition touch-target-large" title="Batalkan transaksi (void berjejak)">
                 <span class="material-symbols-rounded text-base">do_not_disturb_on</span>
-              </button>`}
+              </button>` : ''}
             </div>
           </div>
         `;
@@ -324,12 +333,15 @@ export function renderFinancialReport() {
 export function reprintTx(txId) {
   const tx = state.transactions.find(t => t.id === txId);
   if (tx) {
+    // Salinan struk void tetap bisa dibuka, tapi berstempel VOID (bukan struk berlaku).
+    if (tx.voided) showToast('Menampilkan salinan berstempel VOID — bukan struk berlaku.', 'info', 2500);
     showReceipt(tx);
   }
 }
 
 /**
- * HAPUS DATA HARI INI (Transaksi Penjualan & Pengeluaran Hari Ini Saja)
+ * HAPUS DATA HARI INI (Transaksi Penjualan & Pengeluaran Hari Ini Saja).
+ * Standar POS: jejak VOID tidak pernah ikut terhapus (audit permanen).
  */
 export async function clearTodayData() {
   if (state.userRole === 'cashier') {
@@ -339,30 +351,37 @@ export async function clearTodayData() {
   const now = new Date();
   const todayStr = now.toDateString();
 
-  const todayTxCount = state.transactions.filter(t => new Date(t.date).toDateString() === todayStr).length;
+  const todayTx = state.transactions.filter(t => new Date(t.date).toDateString() === todayStr);
+  const todayLiveCount = todayTx.filter(isLiveTx).length;
+  const todayVoidCount = todayTx.length - todayLiveCount;
   const todayExpCount = state.expenses.filter(e => new Date(e.date).toDateString() === todayStr).length;
 
-  if (todayTxCount === 0 && todayExpCount === 0) {
-    showToast('Tidak ada catatan transaksi penjualan atau pengeluaran pada hari ini.', 'info');
+  if (todayLiveCount === 0 && todayExpCount === 0) {
+    showToast(todayVoidCount > 0
+      ? `Hanya tersisa ${todayVoidCount}x jejak void hari ini (audit permanen, tidak bisa dihapus dari sini).`
+      : 'Tidak ada catatan transaksi penjualan atau pengeluaran pada hari ini.', 'info');
     return;
   }
 
   const ok = await showConfirmDialog({
     title: 'Hapus Data Hari Ini?',
-    message: `Hapus ${todayTxCount} transaksi penjualan & ${todayExpCount} pengeluaran hari ini? (Data hari kemarin tetap aman tersimpan).`,
+    message: `Hapus ${todayLiveCount} transaksi penjualan & ${todayExpCount} pengeluaran hari ini? (Data hari kemarin tetap aman.${todayVoidCount > 0 ? ` ${todayVoidCount}x jejak void TIDAK ikut terhapus — audit permanen.` : ''})`,
     confirmText: 'Hapus Data Hari Ini',
     confirmType: 'danger',
     icon: 'delete_sweep'
   });
 
   if (ok) {
-    state.transactions = state.transactions.filter(t => new Date(t.date).toDateString() !== todayStr);
+    // Void dipertahankan walau tanggalnya hari ini — audit tidak boleh hilang.
+    state.transactions = state.transactions.filter(t => new Date(t.date).toDateString() !== todayStr || t.voided);
     state.expenses = state.expenses.filter(e => new Date(e.date).toDateString() !== todayStr);
     saveHistory();
     saveExpenses();
     syncClearTodayData();
     renderFinancialReport();
-    showToast('Data penjualan dan pengeluaran hari ini berhasil dihapus.', 'success');
+    showToast(todayVoidCount > 0
+      ? `Data hari ini dihapus. ${todayVoidCount}x jejak void dipertahankan untuk audit.`
+      : 'Data penjualan dan pengeluaran hari ini berhasil dihapus.', 'success');
   }
 }
 
@@ -435,20 +454,54 @@ export async function submitVoid() {
     showToast('Pilih alasan pembatalan dulu (wajib untuk audit).', 'warning');
     return;
   }
-  const actor = state.auth?.ownerName || state.storeProfile?.name || 'Owner';
+
+  // Standar POS 1: dana QRIS sudah masuk — void tidak memutarbalikkan transfer.
+  if ((tx.method || '').toUpperCase() === 'QRIS') {
+    const okQris = await showConfirmDialog({
+      title: 'Void Transaksi QRIS?',
+      message: `Dana QRIS ${formatRp(tx.total)} SUDAH masuk rekening dan TIDAK otomatis kembali. Void hanya membatalkan catatan & mengembalikan stok — kembalikan dana pelanggan manual (tunai/transfer). Lanjut void?`,
+      confirmText: 'Ya, Void & Refund Manual',
+      confirmType: 'danger',
+      icon: 'qr_code_2'
+    });
+    if (!okQris) return;
+  }
+
+  // Standar POS 2: void atas pembukuan lama / shift yang sudah tutup wajib sadar.
+  const txTime = new Date(tx.date).getTime();
+  const shiftStart = state.activeShift?.startTime ? new Date(state.activeShift.startTime).getTime() : null;
+  const isOldBook = new Date(tx.date).toDateString() !== new Date().toDateString()
+    || (shiftStart && txTime < shiftStart);
+  if (isOldBook) {
+    const okOld = await showConfirmDialog({
+      title: 'Void Transaksi Lama?',
+      message: `Transaksi ${formatRp(tx.total)} ini dari ${formatDateShort(tx.date)} — di luar shift/pembukuan berjalan. Void tetap tercatat di audit, tapi mengubah arsip yang mungkin sudah tutup. Lanjut?`,
+      confirmText: 'Ya, Void Transaksi Lama',
+      confirmType: 'danger',
+      icon: 'history'
+    });
+    if (!okOld) return;
+  }
+
+  // Pelaku dicatat lengkap (nama + peran) untuk audit.
+  const who = state.activeCashier?.name || state.auth?.ownerName || 'Owner';
+  const actor = state.userRole === 'owner' ? `${who} (Owner)` : `${who} (${state.userRole || 'kasir'})`;
   tx.voided = true;
   tx.voidReason = voidReason;
   tx.voidReasonLabel = VOID_REASONS[voidReason] || voidReason;
   tx.voidBy = actor;
   tx.voidAt = new Date().toISOString();
 
-  // Kembalikan stok yang terpakai (penjualan dianggap tidak pernah terjadi).
+  // Kembalikan stok yang terpakai (penjualan dianggap tidak pernah terjadi),
+  // termasuk mengaktifkan kembali menu yang sempat HABIS.
   let stockTouched = false;
   (tx.items || []).forEach(it => {
     const prod = state.products.find(p => p.id === it.id);
     if (prod && prod.trackStock && typeof prod.stock === 'number') {
       prod.stock = Math.max(0, (prod.stock || 0) + (Number(it.qty) || 0));
+      if (prod.stock > 0 && prod.isAvailable === false) prod.isAvailable = true;
       stockTouched = true;
+      try { syncSaveProduct(prod); } catch (_) {}
     }
   });
   if (stockTouched) saveProducts();
@@ -457,7 +510,7 @@ export async function submitVoid() {
   try { await syncAddTransaction(tx); } catch (_) {}
   closeVoidModal();
   renderFinancialReport();
-  showToast(`Transaksi dibatalkan (${tx.voidReasonLabel}). Jejak tersimpan di audit.`, 'info', 4000);
+  showToast(`Void tersimpan: ${formatRp(tx.total)} dikeluarkan dari omzet (${tx.voidReasonLabel}).`, 'info', 4000);
 }
 
 // ================= EXPENSE FORM MODAL =================
@@ -547,7 +600,8 @@ export function shareReportWhatsApp() {
   const netProfit = totalRevenue - totalExpenses;
   const periodLabel = getPeriodLabel();
   const storeName = state.storeProfile?.name || 'Kasir UMKM';
-  const voidCount = filterByPeriod(state.transactions, true).filter(t => t.voided).length;
+  const voidedWa = filterByPeriod(state.transactions, true).filter(t => t.voided);
+  const voidWaNominal = voidedWa.reduce((s, t) => s + (Number(t.total) || 0), 0);
 
   const message = `*REKAP LAPORAN PENJUALAN - ${storeName.toUpperCase()}*
 Periode: ${periodLabel} (${formatDateFull(new Date())})
@@ -555,7 +609,7 @@ Periode: ${periodLabel} (${formatDateFull(new Date())})
 *Pemasukan (Omset)*: ${formatRp(totalRevenue)} (${filteredTx.length} Transaksi)
    • Tunai di Laci: ${formatRp(totalCash)}
    • QRIS / Transfer: ${formatRp(totalQris)}
-${voidCount > 0 ? `   • Dibatalkan (void, tidak masuk omzet): ${voidCount}x\n` : ''}
+${voidedWa.length > 0 ? `   • Void ${voidedWa.length}x (${formatRp(voidWaNominal)}, tidak masuk omzet)\n` : ''}
 *Total Pengeluaran*: ${formatRp(totalExpenses)}
 *LABA BERSIH (UNTUNG)*: ${formatRp(netProfit)}
 
@@ -606,22 +660,33 @@ export async function clearAllHistory() {
     showToast('Riwayat transaksi dan pengeluaran sudah kosong.', 'info');
     return;
   }
+  const voidCountAll = (state.transactions || []).filter(t => t && t.voided).length;
   const ok = await showConfirmDialog({
     title: 'Hapus Seluruh Riwayat',
-    message: 'PERINGATAN: Hapus SELURUH riwayat transaksi penjualan & pengeluaran untuk semua periode? Data tidak dapat dipulihkan kembali.',
+    message: `PERINGATAN: Hapus SELURUH riwayat transaksi penjualan & pengeluaran untuk semua periode? Data tidak dapat dipulihkan kembali.${voidCountAll > 0 ? ` Termasuk ${voidCountAll}x JEJAK AUDIT VOID yang seharusnya permanen.` : ''}`,
     confirmText: 'Hapus Seluruh Data',
     confirmType: 'danger',
     icon: 'warning'
   });
-  if (ok) {
-    state.transactions = [];
-    state.expenses = [];
-    saveHistory();
-    saveExpenses();
-    syncClearAllHistory();
-    renderFinancialReport();
-    showToast('Seluruh riwayat penjualan & pengeluaran telah dikosongkan.', 'success');
+  if (!ok) return;
+  // Factory-reset boleh menghapus audit, tapi wajib konfirmasi kedua bila ada void.
+  if (voidCountAll > 0) {
+    const ok2 = await showConfirmDialog({
+      title: 'Termasuk Hapus Jejak Audit?',
+      message: `Ada ${voidCountAll}x jejak void (siapa membatalkan apa, kapan, kenapa). Menghapusnya menghilangkan bukti audit selamanya dan tidak sesuai standar pembukuan. Tetap hapus semuanya?`,
+      confirmText: 'Ya, Hapus Termasuk Audit',
+      confirmType: 'danger',
+      icon: 'gavel'
+    });
+    if (!ok2) return;
   }
+  state.transactions = [];
+  state.expenses = [];
+  saveHistory();
+  saveExpenses();
+  syncClearAllHistory();
+  renderFinancialReport();
+  showToast('Seluruh riwayat penjualan & pengeluaran telah dikosongkan.', 'success');
 }
 
 // ================= GRAFIK USAHA (VISUALISASI KEPUTUSAN BISNIS, TANPA LIB) =================
@@ -1141,6 +1206,7 @@ function renderM3Cal() {
 }
 
 // Agregat 12 bulan terakhir: omzet, biaya, jumlah struk per bulan
+// (void selalu dikecualikan — pembatalan bukan penjualan)
 function monthlyAgg() {
   const arr = [];
   const now = new Date();
@@ -1153,6 +1219,7 @@ function monthlyAgg() {
     });
   }
   (state.transactions || []).forEach(t => {
+    if (!isLiveTx(t)) return;
     const dt = new Date(t.date);
     const f = arr.find(a => a.y === dt.getFullYear() && a.m === dt.getMonth());
     if (f) { f.rev += t.total || 0; f.n += 1; }
@@ -1186,13 +1253,17 @@ export function exportMonthlyCSV() {
 }
 
 export function renderInsights() {
-  const txs = state.transactions || [];
+  // Standar POS: SEMUA visual/grafik dihitung dari transaksi HIDUP saja.
+  // Void = pembatalan berjejak (ada di jurnal), bukan penjualan.
+  const txs = (state.transactions || []).filter(isLiveTx);
+  const voidTxs = (state.transactions || []).filter(t => t && t.voided);
   const exps = state.expenses || [];
 
   const labelEl = document.getElementById('insightPeriodLabel');
   if (labelEl) {
     const n = txs.length;
-    labelEl.innerText = n === 0 ? 'Belum ada data penjualan' : `${n} transaksi dihitung • ${getPeriodLabel()} untuk kartu, grafik pakai semua data`;
+    const voidInfo = voidTxs.length > 0 ? ` • ${voidTxs.length}x void dikecualikan` : '';
+    labelEl.innerText = n === 0 ? 'Belum ada data penjualan' : `${n} transaksi dihitung${voidInfo} • ${getPeriodLabel()} untuk kartu, grafik pakai semua data`;
   }
 
   // Ringkasan angka
@@ -1549,7 +1620,7 @@ export function renderInsights() {
 // Saran ringkas + inisialisasi panel AI. Mandiri (hitung sendiri) sehingga
 // bisa dipanggil dari renderFinancialReport maupun renderInsights.
 export function renderSaran() {
-  const txs = state.transactions || [];
+  const txs = (state.transactions || []).filter(isLiveTx);
   const exps = state.expenses || [];
   let rev = 0, qris = 0;
   const revByMenu = {}, qtyByMenu = {};
@@ -1606,7 +1677,7 @@ function aiCacheName() {
 }
 
 function aiDataSignature() {
-  const txs = state.transactions || [];
+  const txs = (state.transactions || []).filter(isLiveTx);
   const exps = state.expenses || [];
   let rev = 0;
   txs.forEach(t => { rev += t.total || 0; });
@@ -1643,7 +1714,7 @@ function initInsightAI() {
 }
 
 function buildAiPrompt() {
-  const txs = state.transactions || [];
+  const txs = (state.transactions || []).filter(isLiveTx);
   const exps = state.expenses || [];
   let rev = 0, cash = 0, qris = 0;
   const qtyByMenu = {}, revByMenu = {}, hourCount = {};
@@ -1731,7 +1802,7 @@ function showAiResult(box, text, cached) {
 }
 
 export async function requestAiInsight() {
-  if ((state.transactions || []).length === 0) {
+  if ((state.transactions || []).filter(isLiveTx).length === 0) {
     showToast('Belum ada data penjualan', 'info');
     return;
   }

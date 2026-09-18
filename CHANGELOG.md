@@ -2,6 +2,17 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.78] - 2026-09-18
+
+### Antrian Tetangga + Void Standar POS Penuh
+- **Hapus/bayar pindah ke tetangga:** antrian aktif yang dihapus/dibayar kini fokus ke tab sebelah (tengah → kanan yang bergeser masuk; ujung → terakhir baru), bukan loncat ke Pesanan #1. Berlaku juga setelah pembayaran sukses.
+- **Strip diam:** posisi scroll strip antrian dipertahankan tiap render ulang (sebelumnya ke-reset ke 0); auto-scroll hanya geser minimal bila tab aktif di luar pandangan. Urungkan hapus mengembalikan antrian ke posisi semula, bukan ke ujung.
+- **Grafik steril dari void:** visual insights, rekap 12 bulan, saran, dan analisis AI kini dihitung dari transaksi hidup saja (`isLiveTx`) — void tidak lagi menggelembungkan omzet.
+- **Void jelas datanya:** ringkasan nominal Rp void per periode (laporan + WA), jejak pelaku + waktu per baris jurnal, tombol void disembunyikan untuk kasir, salinan struk berstempel VOID, baris audit void di modal + struk Laporan Z (HTML & ESC/POS).
+- **Audit permanen & pengaman:** Hapus Hari Ini tidak menghapus jejak void (lokal + cloud); Hapus Total wajib konfirmasi ganda bila ada audit; konfirmasi khusus void QRIS (refund manual) & transaksi lama/luar shift; stok void balik aktif + tersinkron cloud; pelaku tercatat nama + peran.
+
+---
+
 ## [v1.2.74] - 2026-09-14
 
 ### Drag Antrian GPU-Smooth + Arbitrasi Pull-to-Refresh

@@ -187,12 +187,22 @@ export function calculateShiftSummary(shift = null) {
   const startTime = new Date(targetShift.startTime);
   const endTime = targetShift.endTime ? new Date(targetShift.endTime) : new Date();
 
-  // Filter transaksi kasir selama shift (void tidak dihitung)
+  // Filter transaksi kasir selama shift (void tidak dihitung ke omzet,
+  // tapi diringkas terpisah untuk audit Laporan Z)
   const txs = (state.transactions || []).filter(t => {
     if (!t || t.voided || !t.date) return false;
     const d = new Date(t.date);
     return d >= startTime && d <= endTime;
   });
+
+  // Jejak void dalam rentang shift yang sama (audit, bukan omzet)
+  const voidTxs = (state.transactions || []).filter(t => {
+    if (!t || !t.voided || !t.date) return false;
+    const d = new Date(t.date);
+    return d >= startTime && d <= endTime;
+  });
+  const voidCount = voidTxs.length;
+  const voidNominal = voidTxs.reduce((s, t) => s + (Number(t.total) || 0), 0);
 
   const cashSales = txs.filter(t => (t.method || '').toUpperCase() === 'TUNAI').reduce((sum, t) => sum + (t.total || 0), 0);
   const qrisSales = txs.filter(t => (t.method || '').toUpperCase() === 'QRIS').reduce((sum, t) => sum + (t.total || 0), 0);
@@ -227,6 +237,8 @@ export function calculateShiftSummary(shift = null) {
     qrisSales,
     totalSales,
     txCount,
+    voidCount,
+    voidNominal,
     totalExpenses,
     expectedCash,
     actualCash,
@@ -270,7 +282,9 @@ export function openCloseShiftModal() {
   if (expensesEl) expensesEl.innerText = '-' + formatRp(summary.totalExpenses);
   if (expectedCashEl) expectedCashEl.innerText = formatRp(summary.expectedCash);
   if (totalOmsetEl) totalOmsetEl.innerText = formatRp(summary.totalSales);
-  if (txCountEl) txCountEl.innerText = `${summary.txCount} Struk Transaksi`;
+  if (txCountEl) txCountEl.innerText = summary.voidCount > 0
+    ? `${summary.txCount} Struk • Void ${summary.voidCount}x (${formatRp(summary.voidNominal)})`
+    : `${summary.txCount} Struk Transaksi`;
 
   if (actualCashInput) {
     // Default isi dengan expected cash agar kasir mudah mencocokkan jika uangnya pas

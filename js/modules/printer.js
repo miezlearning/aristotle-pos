@@ -2912,6 +2912,20 @@ export function renderPrintableReceiptArea(tx, cfg = null) {
       queueTextEl.innerText = `NO ANTRIAN ${tx.orderName ? tx.orderName.toUpperCase() : '01'}`;
     }
   }
+
+  // Stempel VOID standar POS: salinan jelas BUKAN struk berlaku + jejak audit
+  // (ditempatkan di akhir agar menimpa nilai normal di atas).
+  if (tx && tx.voided) {
+    if (taglineEl) {
+      taglineEl.innerText = '*** VOID — TIDAK BERLAKU ***';
+      taglineEl.style.display = 'block';
+    }
+    if (footerNoteEl) {
+      const when = tx.voidAt ? (() => { try { return new Date(tx.voidAt).toLocaleString('id-ID'); } catch (_) { return ''; } })() : '';
+      footerNoteEl.innerText = `Dibatalkan (${tx.voidReasonLabel || tx.voidReason || 'Batal'}) oleh ${tx.voidBy || 'Owner'}${when ? ' • ' + when : ''}.`;
+    }
+    if (queueTextEl) queueTextEl.innerText = 'VOID';
+  }
 }
 
 /**
@@ -4182,6 +4196,9 @@ export async function buildShiftZReportEscPosBytes(shiftSummary) {
   addText(padBetween('TOTAL OMSET', formatRp(shiftSummary.totalSales || 0)) + '\n');
   addText(padBetween('Total Transaksi', `${shiftSummary.txCount || 0} Struk`) + '\n');
   addBytes(0x1B, 0x45, 0x00); // Bold OFF
+  if ((shiftSummary.voidCount || 0) > 0) {
+    addText(padBetween('Void (audit, non-omzet)', `${shiftSummary.voidCount}x / ${formatRp(shiftSummary.voidNominal || 0)}`) + '\n');
+  }
   addText(divider);
 
   // Audit Uang Fisik Laci
@@ -4260,6 +4277,7 @@ export function renderPrintableShiftZReport(shiftSummary) {
       <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
       <div style="display: flex; justify-content: space-between; font-weight: 900;"><span>TOTAL OMSET:</span><span>${formatRp(shiftSummary.totalSales || 0)}</span></div>
       <div style="display: flex; justify-content: space-between;"><span>Total Struk:</span><span>${shiftSummary.txCount || 0} Transaksi</span></div>
+      ${(shiftSummary.voidCount || 0) > 0 ? `<div style="display: flex; justify-content: space-between;"><span>Void (audit):</span><span>${shiftSummary.voidCount}x / ${formatRp(shiftSummary.voidNominal || 0)}</span></div>` : ''}
       <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
       <div style="display: flex; justify-content: space-between;"><span>Kas Seharusnya:</span><span>${formatRp(shiftSummary.expectedCash || 0)}</span></div>
       <div style="display: flex; justify-content: space-between; font-weight: bold;"><span>Kas Fisik di Laci:</span><span>${formatRp(shiftSummary.actualCash !== null ? shiftSummary.actualCash : shiftSummary.expectedCash)}</span></div>

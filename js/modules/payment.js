@@ -851,8 +851,12 @@ export async function completeTransaction() {
     }
 
     if (state.orderQueues.length > 1) {
+      // Setelah bayar, pindah ke tetangga terdekat (bukan selalu index 0)
+      // agar posisi strip diam di sekitar titik transaksi.
+      const paidIdx = Math.max(0, state.orderQueues.findIndex(q => q.id === state.activeQueueId));
       state.orderQueues = state.orderQueues.filter(q => q.id !== state.activeQueueId);
-      state.activeQueueId = state.orderQueues[0].id;
+      const nextIdx = Math.min(paidIdx, state.orderQueues.length - 1);
+      state.activeQueueId = state.orderQueues[Math.max(0, nextIdx)].id;
     } else {
       // Jika hanya 1 antrian, kosongkan keranjang dan kembalikan namanya menjadi 'Pesanan #1'
       state.orderQueues[0].items = [];
@@ -865,7 +869,7 @@ export async function completeTransaction() {
     syncSaveQueues(state.orderQueues, true);
     closePaymentModal();
     toggleMobileCartDrawer(false);
-    renderOrderQueueTabs();
+    renderOrderQueueTabs(true);
     renderCart();
     renderProducts();
 
