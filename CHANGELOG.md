@@ -2,6 +2,15 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.81] - 2026-09-19
+
+### Perbaiki Void Hilang (Akar: Rules Blokir Update)
+- **Rules Firestore:** `update` transaksi dibuka khusus transisi void (nominal & item asli wajib identik + audit void lengkap); `delete` dibuka untuk reset/arsip owner. Sebelumnya `update/delete: false` membuat void ditolak cloud, error ditelan, lalu data kembali — toast sukses palsu. **Wajib `firebase deploy --only firestore:rules`.**
+- **Void gagal sync = rollback total** (flag + stok kembali seperti semula) + toast error jujur; pembayaran yang gagal sync keluar peringatan tanpa mengganggu jualan.
+- **Tameng listener:** snapshot basi tidak bisa menghapus flag void lokal (void satu arah).
+
+---
+
 ## [v1.2.80] - 2026-09-19
 
 ### Buang Anime Ganda + Fuse.js + Dexie Foto

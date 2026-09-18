@@ -585,9 +585,11 @@ export async function submitVoid() {
   // termasuk mengaktifkan kembali menu yang sempat HABIS.
   let stockTouched = false;
   const restoredPids = [];
+  const restoredStock = [];
   (tx.items || []).forEach(it => {
     const prod = state.products.find(p => p.id === it.id);
     if (prod && prod.trackStock && typeof prod.stock === 'number') {
+      restoredStock.push({ prod, qty: Number(it.qty) || 0, prevAvailable: prod.isAvailable });
       prod.stock = Math.max(0, (prod.stock || 0) + (Number(it.qty) || 0));
       if (prod.stock > 0 && prod.isAvailable === false) prod.isAvailable = true;
       stockTouched = true;
@@ -598,7 +600,31 @@ export async function submitVoid() {
   if (stockTouched) saveProducts();
 
   saveHistory();
-  try { await syncAddTransaction(tx); } catch (_) {}
+  let synced = false;
+  try { synced = await syncAddTransaction(tx); } catch (_) { synced = false; }
+  if (!synced) {
+    // GAGAL sync (izin cloud / koneksi): batalkan void total agar uang & stok
+    // konsisten — tanpa ini user dapat toast sukses palsu lalu data kembali.
+    delete tx.voided;
+    delete tx.voidReason;
+    delete tx.voidReasonLabel;
+    delete tx.voidBy;
+    delete tx.voidAt;
+    restoredStock.forEach(({ prod, qty, prevAvailable }) => {
+      if (prod && prod.trackStock && typeof prod.stock === 'number') {
+        prod.stock = Math.max(0, (prod.stock || 0) - qty);
+        prod.isAvailable = prevAvailable;
+        try { syncSaveProduct(prod); } catch (_) {}
+      }
+    });
+    saveProducts();
+    saveHistory();
+    closeVoidModal();
+    renderFinancialReport();
+    restoredPids.forEach(pid => { try { updateProductCardDOM(pid); } catch (_) {} });
+    showToast('Void GAGAL tersimpan ke cloud (izin/koneksi). Tidak ada yang berubah — coba lagi.', 'error', 5000);
+    return;
+  }
   closeVoidModal();
   renderFinancialReport();
   // Status HABIS di katalog bisa berubah → segarkan kartu terdampak saja.

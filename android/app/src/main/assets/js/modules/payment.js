@@ -773,7 +773,14 @@ export async function completeTransaction() {
 
     state.transactions.unshift(newTx);
     saveHistory();
-    syncAddTransaction(newTx);
+    // Jualan tetap jalan walau cloud gagal — tapi user wajib tahu (jujur).
+    try {
+      Promise.resolve(syncAddTransaction(newTx)).then(ok => {
+        if (!ok) showToast('Tersimpan di HP ini, GAGAL sync ke cloud — cek koneksi agar tidak hilang.', 'warning', 5000);
+      }).catch(() => {
+        showToast('Tersimpan di HP ini, GAGAL sync ke cloud — cek koneksi agar tidak hilang.', 'warning', 5000);
+      });
+    } catch (_) {}
 
     // Auto decrement stock for tracked items
     let hasStockUpdate = false;

@@ -46,12 +46,33 @@ service cloud.firestore {
       }
       
       // Riwayat Transaksi Penjualan
+      // - create: struk baru masuk (validasi total & items).
+      // - update: HANYA transisi void (hidup → batal). Seluruh nominal & item
+      //   asli wajib sama persis (anti-utak-atik uang), hanya field audit void
+      //   yang boleh ditambah. Tanpa ini, void gagal dengan permission-denied
+      //   yang ditelan sync → toast sukses palsu + data kembali seperti semula.
+      // - delete: reset/arsip milik owner. Jejak void dilindungi di level
+      //   aplikasi (tidak pernah ikut terhapus) — bukan di rules.
       match /transactions/{txId} {
         allow read: if true;
         allow create: if request.resource.data.total is number
                       && request.resource.data.total >= 0
                       && request.resource.data.items is list;
-        allow update, delete: if false; // Transaksi finansial tidak boleh diubah/dihapus sembarangan
+        allow update: if !(resource.data.keys().hasAny(['voided']))
+                      && request.resource.data.voided == true
+                      && request.resource.data.total == resource.data.total
+                      && request.resource.data.items == resource.data.items
+                      && request.resource.data.date == resource.data.date
+                      && request.resource.data.method == resource.data.method
+                      && request.resource.data.orderName == resource.data.orderName
+                      && request.resource.data.subtotal == resource.data.subtotal
+                      && request.resource.data.cashGiven == resource.data.cashGiven
+                      && request.resource.data.change == resource.data.change
+                      && request.resource.data.voidReason is string
+                      && request.resource.data.voidReasonLabel is string
+                      && request.resource.data.voidBy is string
+                      && request.resource.data.voidAt is string;
+        allow delete: if true;
       }
       
       // Pengeluaran Operasional Toko

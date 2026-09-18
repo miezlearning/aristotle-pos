@@ -297,6 +297,30 @@ export function setupRealtimeListeners() {
     // Sort newest first
     cloudTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+    // Tameng anti-clobber: void itu satu arah (hidup → batal, tak bisa kembali).
+    // Bila snapshot cloud datang tanpa flag void padahal perangkat ini sudah
+    // mem-void (lomba penulisan / offline), pertahankan flag lokal — jangan
+    // pernah menghapus jejak audit karena data basi.
+    try {
+      const localVoid = {};
+      (state.transactions || []).forEach(t => {
+        if (t && t.voided) localVoid[t.id] = t;
+      });
+      const ids = Object.keys(localVoid);
+      if (ids.length > 0) {
+        cloudTransactions.forEach(ct => {
+          const lv = localVoid[ct.id];
+          if (lv && !ct.voided) {
+            ct.voided = true;
+            ct.voidReason = lv.voidReason;
+            ct.voidReasonLabel = lv.voidReasonLabel;
+            ct.voidBy = lv.voidBy;
+            ct.voidAt = lv.voidAt;
+          }
+        });
+      }
+    } catch (_) {}
+
     // Update state and localStorage
     state.transactions = cloudTransactions;
     localStorage.setItem(currentStorageKeys.HISTORY, JSON.stringify(cloudTransactions));
@@ -1090,7 +1114,7 @@ export async function syncClearAllProducts() {
  * Add new completed transaction to cloud
  */
 export async function syncAddTransaction(transaction) {
-  if (!db) return;
+  if (!db) return false;
   try {
     const currentStoreId = getStoreId();
     const docRef = doc(db, 'stores', currentStoreId, 'transactions', transaction.id);
@@ -1098,8 +1122,10 @@ export async function syncAddTransaction(transaction) {
       ...transaction,
       syncedAt: new Date().toISOString()
     });
+    return true;
   } catch (e) {
     console.error('Failed to sync transaction to cloud:', e);
+    return false;
   }
 }
 
