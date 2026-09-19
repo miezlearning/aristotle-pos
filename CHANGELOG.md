@@ -2,6 +2,16 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.82] - 2026-09-19
+
+### Perbaiki Laci Kasir Diam
+- **Mode pulsa laci** (Otomatis/Pin 2/Pin 5/Pulsa Panjang 100ms) berlaku di semua jalur (APK native, Bluetooth, USB, RawBT, struk, dapur); varian ASCII di luar spek ESC/POS dibuang.
+- **Tombol Tes Laci** di Pengaturan Printer: kirim 3 pulsa berurutan + panduan pilih mode + checklist fisik (port DRAWER, daya, kunci).
+- **Antre bukan drop:** perintah laci saat printer sibuk menunggu maks 3,5 detik; host relay menandai job gagal secara jujur (sebelumnya selalu sukses).
+- **Kick native satu pintu** via jalur cetak umum + fallback cara lama.
+
+---
+
 ## [v1.2.81] - 2026-09-19
 
 ### Perbaiki Void Hilang (Akar: Rules Blokir Update)

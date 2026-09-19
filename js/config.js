@@ -29,6 +29,7 @@ export const DEFAULT_PRINTER_CONFIG = {
   autoPrint: false, // Otomatis cetak begitu bayar selesai
   autoPrintKitchen: false, // Otomatis cetak tiket dapur saat bayar selesai
   autoKickDrawer: true, // Otomatis buka laci kasir saat bayar tunai
+  drawerPulseMode: 'auto', // Pulsa laci: 'auto', 'pin2', 'pin5', 'panjang' (laci berat)
   logoBase64: '', // Base64 data logo toko
   showLogo: false, // Tampilkan logo gambar di struk jika diupload
   cashierName: 'Kasir', // Nama kasir yang tampil di struk
