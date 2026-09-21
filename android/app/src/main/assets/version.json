@@ -1,10 +1,10 @@
 {
-  "versionCode": 135,
-  "versionName": "1.2.86",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.86/Aristotle-POS.apk",
+  "versionCode": 136,
+  "versionName": "1.2.87",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.87/Aristotle-POS.apk",
   "changelog": [
-    "Status laci jujur: koneksi printer realtime + hasil tes fisik + tombol Periksa Ulang",
-    "Tes laci ditutup konfirmasi Ya-Tidak + rekam hasil + bahasa polos semua teks laci"
+    "Ingat halaman terakhir per tab: refresh kembali ke kasir-admin-laporan, buka baru tetap ke utama",
+    "Tarik-refresh tidak sensitif: abaikan swipe dari dalam daftar scroll + ambang 65 ke 80"
   ],
   "releaseDate": "2026-09-21"
 }

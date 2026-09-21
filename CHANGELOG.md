@@ -2,6 +2,14 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.87] - 2026-09-19
+
+### Ingat Halaman + Tarik-Refresh Jinak
+- **Ingat halaman per tab:** refresh kembali ke kasir/admin/laporan terakhir; buka baru, tutup tab, dan superadmin (via URL) tetap ke utama. Dilewati bila peran/PIN tidak mengizinkan.
+- **Tarik-refresh tidak nyasar:** swipe dari dalam daftar scroll (riwayat, keranjang, drawer) tidak lagi memicu reload; ambang 65 → 80.
+
+---
+
 ## [v1.2.86] - 2026-09-19
 
 ### Status Laci Jujur + Bahasa Polos

@@ -1,10 +1,10 @@
-# Aristotle POS v1.2.86 Release Notes
+# Aristotle POS v1.2.87 Release Notes
 
 **Tanggal Rilis:** 2026-09-21
 
 ### Catatan Pembaruan:
-- Status laci jujur: koneksi printer realtime + hasil tes fisik + tombol Periksa Ulang
-- Tes laci ditutup konfirmasi Ya-Tidak + rekam hasil + bahasa polos semua teks laci
+- Ingat halaman terakhir per tab: refresh kembali ke kasir-admin-laporan, buka baru tetap ke utama
+- Tarik-refresh tidak sensitif: abaikan swipe dari dalam daftar scroll + ambang 65 ke 80
 
 ---
 *Pembaruan ini dapat diunduh dan dipasang langsung dari dalam aplikasi (In-App Auto-Updater).*

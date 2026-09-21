@@ -127,6 +127,17 @@ export function switchView(viewName) {
   state.currentView = viewName;
   window.scrollTo({ top: 0, behavior: 'instant' });
 
+  // Ingat halaman terakhir di tab ini — refresh kembali ke sini, sedangkan
+  // buka baru / tutup tab kembali ke halaman utama. Superadmin via URL
+  // sehingga tidak disimpan.
+  try {
+    if (viewName === 'pos' || viewName === 'admin' || viewName === 'report') {
+      sessionStorage.setItem('aristotle_last_view', viewName);
+    } else {
+      sessionStorage.removeItem('aristotle_last_view');
+    }
+  } catch (_) {}
+
   // Reset Mobile Navigation Buttons
   const navInactiveClass = 'flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-xl text-stone-500 hover:text-stone-800 font-bold text-xs touch-target-large transition active:scale-95';
   const navActiveClass = 'flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-xl text-emerald-800 bg-emerald-50 font-black text-xs touch-target-large transition active:scale-95 shadow-2xs';
@@ -2566,6 +2577,18 @@ export async function init() {
       }
     }, 400);
   } else {
+    // Kembali ke halaman terakhir di tab ini (bukan utama).
+    // Dilewati bila peran/PIN tidak mengizinkan — agar boot tidak
+    // memicu modal PIN atau halaman terlarang.
+    try {
+      const lastView = sessionStorage.getItem('aristotle_last_view');
+      const restorable = lastView === 'admin' || lastView === 'report';
+      const allowed = state.userRole !== 'cashier'
+        && !(state.auth?.requirePinForAdmin && !state.isUnlockedOwner);
+      if (restorable && allowed) {
+        setTimeout(() => { try { switchView(lastView); } catch (_) {} }, 450);
+      }
+    } catch (_) {}
     // Welcome Toast Notification
     setTimeout(() => {
       showToast(`Kasir [${state.storeProfile?.name || 'Toko'}] siap melayani`, 'success', 2500);
@@ -2598,7 +2621,24 @@ function initPullToRefresh() {
   let startY = 0;
   let isPulling = false;
   let pullDistance = 0;
-  const THRESHOLD = 65;
+  const THRESHOLD = 80;
+
+  // Geseran yang dimulai di dalam daftar yang bisa scroll sendiri (riwayat,
+  // keranjang, drawer) BUKAN permintaan refresh — window.scrollY tetap 0 saat
+  // list itu digeser, sehingga dulu selalu salah dikira tarik-refresh.
+  function startedInsideScroller(target) {
+    let el = (target instanceof Element) ? target : null;
+    for (let i = 0; el && i < 6; i++) {
+      try {
+        if (el.scrollHeight > el.clientHeight + 8) {
+          const oy = getComputedStyle(el).overflowY;
+          if (oy === 'auto' || oy === 'scroll') return true;
+        }
+      } catch (_) {}
+      el = el.parentElement;
+    }
+    return false;
+  }
 
   window.addEventListener('touchstart', (e) => {
     // Arbitrasi gestur standar POS: susun-ulang tab antrian yang sedang
@@ -2606,7 +2646,7 @@ function initPullToRefresh() {
     if (pos.isQueueTabReordering()) return;
     if (window.scrollY <= 0 && e.touches.length === 1) {
       const hasOpenModal = document.querySelector('div[id$="Modal"]:not(.hidden)');
-      if (!hasOpenModal) {
+      if (!hasOpenModal && !startedInsideScroller(e.target)) {
         startY = e.touches[0].clientY;
         isPulling = true;
         pullDistance = 0;
@@ -2627,7 +2667,7 @@ function initPullToRefresh() {
     const diff = e.touches[0].clientY - startY;
 
     if (diff > 0 && window.scrollY <= 0) {
-      pullDistance = Math.min(85, diff * 0.45);
+      pullDistance = Math.min(100, diff * 0.45);
       indicator.style.transform = `translate(-50%, ${pullDistance}px) scale(${Math.min(1, 0.8 + pullDistance / 150)})`;
       indicator.style.opacity = String(Math.min(1, pullDistance / 35));
       icon.style.transform = `rotate(${diff * 3}deg)`;
@@ -2652,7 +2692,7 @@ function initPullToRefresh() {
     }
 
     if (pullDistance >= THRESHOLD) {
-      indicator.style.transform = 'translate(-50%, 65px) scale(1)';
+      indicator.style.transform = 'translate(-50%, 80px) scale(1)';
       indicator.style.opacity = '1';
       icon.classList.add('animate-spin');
       if (navigator.vibrate) navigator.vibrate(25);
