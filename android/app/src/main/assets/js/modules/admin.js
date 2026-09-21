@@ -973,7 +973,7 @@ function getAuditEntries() {
         out.push({
           at: t.date,
           kind: 'discount',
-          actor: t.discount.by || t.discount.approvedBy || '—',
+          actor: t.discount.by || t.discount.approvedBy || '-',
           label: t.discount.reason || t.discount.type || 'Diskon',
           amount: Number(t.discount.amount) || 0,
           order: t.orderName || ''
@@ -1034,7 +1034,7 @@ export function renderAuditTrail() {
   }
 
   if (entries.length === 0) {
-    listEl.innerHTML = `<div class="py-6 text-center text-stone-400 font-bold text-xs">Bersih — tidak ada void, diskon, atau selisih pada periode ini.</div>`;
+    listEl.innerHTML = `<div class="py-6 text-center text-stone-400 font-bold text-xs">Bersih. Tidak ada void, diskon, atau selisih di periode ini.</div>`;
     return;
   }
 
@@ -1059,7 +1059,7 @@ export function renderAuditTrail() {
           <span class="material-symbols-rounded text-lg shrink-0 px-1.5 py-1 rounded-lg ${meta.chip}">${meta.icon}</span>
           <div class="min-w-0">
             <p class="text-xs font-extrabold text-stone-900 truncate">${title}</p>
-            <p class="text-[10.5px] text-stone-500 truncate">${escapeHtml(e.actor || '—')} • ${when}</p>
+            <p class="text-[10.5px] text-stone-500 truncate">${escapeHtml(e.actor || '-')} • ${when}</p>
           </div>
         </div>
         <div class="shrink-0">${nominal}</div>

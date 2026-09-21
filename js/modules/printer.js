@@ -3095,7 +3095,7 @@ export function renderPrintableReceiptArea(tx, cfg = null) {
   // (ditempatkan di akhir agar menimpa nilai normal di atas).
   if (tx && tx.voided) {
     if (taglineEl) {
-      taglineEl.innerText = '*** VOID — TIDAK BERLAKU ***';
+      taglineEl.innerText = '*** VOID - TIDAK BERLAKU ***';
       taglineEl.style.display = 'block';
     }
     if (footerNoteEl) {

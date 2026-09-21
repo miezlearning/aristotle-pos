@@ -216,7 +216,7 @@ export function applyDiscount(type, value) {
     const desc = type === 'percent' ? `Diskon ${clampedPct}%` : `Diskon ${formatRp(amount)}`;
     showConfirmDialog({
       title: 'Butuh Persetujuan Owner',
-      message: `${desc} melebihi wewenang kasir (maks ${CASHIER_DISCOUNT_MAX_PCT}%). Minta Owner verifikasi — buka ganti peran sekarang?`,
+      message: `${desc} melebihi wewenang kasir (maks ${CASHIER_DISCOUNT_MAX_PCT}%). Minta Owner verifikasi. Buka ganti peran sekarang?`,
       confirmText: 'Minta Owner',
       confirmType: 'success',
       icon: 'shield_person'
@@ -339,7 +339,7 @@ export function renderDynamicQrisCode() {
           <span class="material-symbols-rounded text-4xl text-amber-500 mb-2">qr_code_scanner</span>
           <p class="text-xs font-bold text-stone-800">QRIS Toko Belum Dipasang</p>
           <p class="text-[11px] text-stone-500 mt-1 mb-3 max-w-[200px] leading-snug">
-            Pasang kode QRIS toko Anda agar pembeli bisa scan pembayaran secara otomatis.
+            Pasang kode QRIS toko agar pembeli bisa bayar lewat scan.
           </p>
           <button type="button" onclick="KasirApp.openQrisModal()" class="px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition shadow-xs">
             + Pasang QRIS Toko
@@ -776,9 +776,9 @@ export async function completeTransaction() {
     // Jualan tetap jalan walau cloud gagal — tapi user wajib tahu (jujur).
     try {
       Promise.resolve(syncAddTransaction(newTx)).then(ok => {
-        if (!ok) showToast('Tersimpan di HP ini, GAGAL sync ke cloud — cek koneksi agar tidak hilang.', 'warning', 5000);
+        if (!ok) showToast('Tersimpan di HP ini, GAGAL sync ke cloud. Cek koneksi agar tidak hilang.', 'warning', 5000);
       }).catch(() => {
-        showToast('Tersimpan di HP ini, GAGAL sync ke cloud — cek koneksi agar tidak hilang.', 'warning', 5000);
+        showToast('Tersimpan di HP ini, GAGAL sync ke cloud. Cek koneksi agar tidak hilang.', 'warning', 5000);
       });
     } catch (_) {}
 

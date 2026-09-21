@@ -420,7 +420,7 @@ export async function finalizeCloseShift() {
   // Selisih ≠ 0 wajib dikonfirmasi eksplisit (standar rekonsiliasi kas).
   if (summary.difference !== 0) {
     const ok = await showConfirmDialog({
-      title: summary.difference > 0 ? 'Laci Lebih — Tetap Tutup?' : 'Laci Kurang — Tetap Tutup?',
+      title: summary.difference > 0 ? 'Laci Lebih, Tetap Tutup?' : 'Laci Kurang, Tetap Tutup?',
       message: `Selisih ${formatRp(summary.difference)} (fisik ${formatRp(summary.actualCash)} vs sistem ${formatRp(summary.expectedCash)}). Selisih tercatat permanen di Laporan Z. Lanjut tutup shift?`,
       confirmText: 'Ya, Tutup Shift',
       confirmType: summary.difference > 0 ? 'success' : 'danger',

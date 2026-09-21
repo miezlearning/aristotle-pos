@@ -162,8 +162,21 @@ export function setReportPeriod(period) {
   if (currentReportViewMode === 'visual') renderInsights();
 }
 
+// Rentang berupa sebulan penuh (mis. 2026-08-01 s/d 2026-08-31) → '2026-08', else ''.
+function fullMonthOfRange(range) {
+  if (!range || !range.from || !range.to) return '';
+  const fp = range.from.split('-').map(Number);
+  const tp = range.to.split('-').map(Number);
+  if (fp.length < 3 || tp.length < 3) return '';
+  if (fp[0] !== tp[0] || fp[1] !== tp[1]) return '';
+  if (fp[2] !== 1) return '';
+  if (tp[2] !== new Date(fp[0], fp[1], 0).getDate()) return '';
+  return `${fp[0]}-${String(fp[1]).padStart(2, '0')}`;
+}
+
 export function setReportMonth(ymValue) {
   if (!ymValue || !ymValue.includes('-')) return;
+  playClick('switch');
   const [y, m] = ymValue.split('-').map(Number);
   if (!y || !m) return;
   const lastDay = new Date(y, m, 0).getDate();
@@ -192,7 +205,7 @@ export function updateReportPeriodUI() {
   const activeCls = 'period-btn pl-2.5 pr-3 py-1.5 rounded-full font-black text-xs sm:text-sm bg-stone-900 text-white shadow-sm transition whitespace-nowrap flex items-center gap-1 cursor-pointer';
   const idleCls = 'period-btn pl-2.5 pr-3 py-1.5 rounded-full font-bold text-xs sm:text-sm text-stone-600 hover:text-stone-900 transition whitespace-nowrap flex items-center gap-1 cursor-pointer';
 
-  [['today', 'period-today'], ['month', 'period-month'], ['all', 'period-all']].forEach(([p, id]) => {
+  [['today', 'period-today'], ['yesterday', 'period-yesterday'], ['7days', 'period-7days'], ['month', 'period-month'], ['lastmonth', 'period-lastmonth'], ['all', 'period-all']].forEach(([p, id]) => {
     const btn = document.getElementById(id);
     if (!btn) return;
     const on = (p === state.currentPeriod);
@@ -200,6 +213,20 @@ export function updateReportPeriodUI() {
     const check = btn.querySelector('.seg-check');
     if (check) check.classList.toggle('hidden', !on);
   });
+
+  // Dropdown bulan tertentu: isi 12 bulan terakhir, tandai bila rentang = sebulan penuh.
+  const monthSel = document.getElementById('reportMonthSelect');
+  if (monthSel) {
+    const nowM = new Date();
+    let html = '<option value="">Bulan...</option>';
+    for (let k = 0; k < 12; k++) {
+      const d = new Date(nowM.getFullYear(), nowM.getMonth() - k, 1);
+      const v = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      html += `<option value="${v}">${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}</option>`;
+    }
+    monthSel.innerHTML = html;
+    monthSel.value = (state.currentPeriod === 'range') ? fullMonthOfRange(state.reportRange) : '';
+  }
 
   const rangeBtn = document.getElementById('btnReportDateRange');
   const rangeLabel = document.getElementById('reportRangeBtnLabel');
@@ -225,6 +252,12 @@ const MONTH_FULL = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Jul
 export function getPeriodLabel() {
   if (state.currentPeriod === 'today') return 'Hari Ini';
   if (state.currentPeriod === 'month') return 'Bulan Ini';
+  if (state.currentPeriod === 'yesterday') return 'Kemarin';
+  if (state.currentPeriod === '7days') return '7 Hari Terakhir';
+  if (state.currentPeriod === 'lastmonth') {
+    const lm = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
+    return `Bulan Lalu (${MONTH_FULL[lm.getMonth()]} ${lm.getFullYear()})`;
+  }
   if (state.currentPeriod === 'custom' && state.reportMonth) {
     return `${MONTH_FULL[state.reportMonth.m - 1]} ${state.reportMonth.y}`;
   }
@@ -249,6 +282,18 @@ export function filterByPeriod(items, includeVoid = false) {
       return itemDate.toDateString() === now.toDateString();
     } else if (state.currentPeriod === 'month') {
       return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
+    } else if (state.currentPeriod === 'yesterday') {
+      const y = new Date(now);
+      y.setDate(now.getDate() - 1);
+      return itemDate.toDateString() === y.toDateString();
+    } else if (state.currentPeriod === '7days') {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - 6);
+      return itemDate >= start && itemDate <= now;
+    } else if (state.currentPeriod === 'lastmonth') {
+      const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      return itemDate.getMonth() === lm.getMonth() && itemDate.getFullYear() === lm.getFullYear();
     } else if (state.currentPeriod === 'custom' && state.reportMonth) {
       return (itemDate.getMonth() + 1) === state.reportMonth.m && itemDate.getFullYear() === state.reportMonth.y;
     } else if (state.currentPeriod === 'range' && state.reportRange) {
@@ -287,6 +332,9 @@ export function renderFinancialReport() {
   let totalQris = 0;
   let totalDiscount = 0;
   let discountCount = 0;
+  let totalItems = 0;
+  let totalTaxAmt = 0;
+  let totalServiceAmt = 0;
   const discountByActor = {};
   const itemSalesCounter = {};
 
@@ -305,8 +353,13 @@ export function renderFinancialReport() {
       discountByActor[actor] = (discountByActor[actor] || 0) + tx.discount.amount;
     }
 
+    const txTax = tx.tax || {};
+    totalTaxAmt += Number(txTax.taxAmt) || 0;
+    totalServiceAmt += Number(txTax.serviceAmt) || 0;
+
     tx.items.forEach(i => {
       itemSalesCounter[i.name] = (itemSalesCounter[i.name] || 0) + i.qty;
+      totalItems += Number(i.qty) || 0;
     });
   });
 
@@ -327,7 +380,10 @@ export function renderFinancialReport() {
   const qrisEl = document.getElementById('statQrisTotal');
 
   if (revEl) revEl.innerText = formatRp(totalRevenue);
-  if (revSubEl) revSubEl.innerText = `${filteredTx.length} Transaksi Selesai`;
+  if (revSubEl) {
+    const avgTicket = filteredTx.length ? Math.round(totalRevenue / filteredTx.length) : 0;
+    revSubEl.innerText = `${filteredTx.length} struk • ${totalItems} porsi • Rata-rata ${formatRp(avgTicket)}`;
+  }
 
   if (expEl) expEl.innerText = formatRp(totalExpenses);
   if (expSubEl) expSubEl.innerText = `${filteredExp.length} Catatan Biaya`;
@@ -341,6 +397,12 @@ export function renderFinancialReport() {
 
   if (cashEl) cashEl.innerText = formatRp(totalCash);
   if (qrisEl) qrisEl.innerText = formatRp(totalQris);
+
+  const taxBoxEl = document.getElementById('statTaxBox');
+  const taxTotalEl = document.getElementById('statTaxTotal');
+  const totalTaxService = (totalTaxAmt || 0) + (totalServiceAmt || 0);
+  if (taxTotalEl) taxTotalEl.innerText = formatRp(totalTaxService);
+  if (taxBoxEl) taxBoxEl.classList.toggle('hidden', totalTaxService <= 0);
 
   // 2. Render Widget Menu Terlaris
   const topList = document.getElementById('topSellingList');
@@ -377,7 +439,7 @@ export function renderFinancialReport() {
       <div class="mb-2 p-2.5 rounded-xl ${dataBytes >= STORAGE_DANGER_BYTES ? 'bg-red-50 border border-red-300' : 'bg-amber-50/80 border border-amber-300'} flex flex-col gap-1.5">
         <div class="flex items-center gap-1.5 text-[11px] font-black ${dataBytes >= STORAGE_DANGER_BYTES ? 'text-red-800' : 'text-amber-900'}">
           <span class="material-symbols-rounded text-base">storage</span>
-          <span>Penyimpanan lokal ${(dataBytes / 1048576).toFixed(1)} MB — ${dataBytes >= STORAGE_DANGER_BYTES ? 'hampir penuh, segera arsipkan!' : 'mulai penuh, arsipkan data lama.'}</span>
+          <span>Penyimpanan lokal ${(dataBytes / 1048576).toFixed(1)} MB. ${dataBytes >= STORAGE_DANGER_BYTES ? 'Hampir penuh, segera arsipkan.' : 'Mulai penuh, arsipkan data lama.'}</span>
         </div>
         ${canManage && (arch.oldTx.length + arch.oldExp.length) > 0 ? `
         <button onclick="window.KasirApp.archiveOldTransactions()"
@@ -495,7 +557,7 @@ export function reprintTx(txId) {
   const tx = state.transactions.find(t => t.id === txId);
   if (tx) {
     // Salinan struk void tetap bisa dibuka, tapi berstempel VOID (bukan struk berlaku).
-    if (tx.voided) showToast('Menampilkan salinan berstempel VOID — bukan struk berlaku.', 'info', 2500);
+    if (tx.voided) showToast('Menampilkan salinan VOID. Bukan struk berlaku.', 'info', 2500);
     showReceipt(tx);
   }
 }
@@ -526,7 +588,7 @@ export async function clearTodayData() {
 
   const ok = await showConfirmDialog({
     title: 'Hapus Data Hari Ini?',
-    message: `Hapus ${todayLiveCount} transaksi penjualan & ${todayExpCount} pengeluaran hari ini? (Data hari kemarin tetap aman.${todayVoidCount > 0 ? ` ${todayVoidCount}x jejak void TIDAK ikut terhapus — audit permanen.` : ''})`,
+    message: `Hapus ${todayLiveCount} transaksi penjualan & ${todayExpCount} pengeluaran hari ini? (Data hari kemarin tetap aman.${todayVoidCount > 0 ? ` ${todayVoidCount}x jejak void tetap disimpan (audit permanen).` : ''})`,
     confirmText: 'Hapus Data Hari Ini',
     confirmType: 'danger',
     icon: 'delete_sweep'
@@ -579,7 +641,7 @@ export function openVoidModal(txId) {
   } catch (_) {}
   const tx = state.transactions.find(t => t.id === txId);
   const sub = document.getElementById('voidTxModalSub');
-  if (sub && tx) sub.innerText = `${tx.orderName || 'Pesanan'} • ${formatRp(tx.total)} — tercatat, tidak masuk omzet`;
+  if (sub && tx) sub.innerText = `${tx.orderName || 'Pesanan'} • ${formatRp(tx.total)} (tercatat, tidak masuk omzet)`;
   const modal = document.getElementById('voidTxModal');
   if (modal) modal.classList.remove('hidden');
 }
@@ -624,7 +686,7 @@ export async function submitVoid() {
   if ((tx.method || '').toUpperCase() === 'QRIS') {
     const okQris = await showConfirmDialog({
       title: 'Void Transaksi QRIS?',
-      message: `Dana QRIS ${formatRp(tx.total)} SUDAH masuk rekening dan TIDAK otomatis kembali. Void hanya membatalkan catatan & mengembalikan stok — kembalikan dana pelanggan manual (tunai/transfer). Lanjut void?`,
+      message: `Dana QRIS ${formatRp(tx.total)} SUDAH masuk rekening dan TIDAK otomatis kembali. Void hanya membatalkan catatan dan mengembalikan stok. Kembalikan dana pelanggan manual (tunai/transfer). Lanjut void?`,
       confirmText: 'Ya, Void & Refund Manual',
       confirmType: 'danger',
       icon: 'qr_code_2'
@@ -640,7 +702,7 @@ export async function submitVoid() {
   if (isOldBook) {
     const okOld = await showConfirmDialog({
       title: 'Void Transaksi Lama?',
-      message: `Transaksi ${formatRp(tx.total)} ini dari ${formatDateShort(tx.date)} — di luar shift/pembukuan berjalan. Void tetap tercatat di audit, tapi mengubah arsip yang mungkin sudah tutup. Lanjut?`,
+      message: `Transaksi ${formatRp(tx.total)} ini dari ${formatDateShort(tx.date)}, di luar shift/pembukuan berjalan. Void tetap tercatat di audit, tapi mengubah arsip yang mungkin sudah tutup. Lanjut?`,
       confirmText: 'Ya, Void Transaksi Lama',
       confirmType: 'danger',
       icon: 'history'
@@ -698,7 +760,7 @@ export async function submitVoid() {
     closeVoidModal();
     renderFinancialReport();
     restoredPids.forEach(pid => { try { updateProductCardDOM(pid); } catch (_) {} });
-    showToast('Void GAGAL tersimpan ke cloud (izin/koneksi). Tidak ada yang berubah — coba lagi.', 'error', 5000);
+    showToast('Void GAGAL tersimpan ke cloud (izin/koneksi). Tidak ada yang berubah. Coba lagi.', 'error', 5000);
     return;
   }
   closeVoidModal();
@@ -1152,6 +1214,7 @@ function ensureM3Cal() {
         <button type="button" data-preset="7days" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 shadow-2xs whitespace-nowrap cursor-pointer">7 Hari</button>
         <button type="button" data-preset="30days" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 shadow-2xs whitespace-nowrap cursor-pointer">30 Hari</button>
         <button type="button" data-preset="thisMonth" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 shadow-2xs whitespace-nowrap cursor-pointer">Bulan Ini</button>
+        <button type="button" data-preset="lastMonth" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 shadow-2xs whitespace-nowrap cursor-pointer">Bulan Lalu</button>
       </div>
 
       <!-- Month Navigation -->
@@ -1307,6 +1370,11 @@ export function applyRangePreset(preset) {
   } else if (preset === 'thisMonth') {
     const d = new Date(now.getFullYear(), now.getMonth(), 1);
     fromStr = fmt(d);
+  } else if (preset === 'lastMonth') {
+    const first = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const last = new Date(now.getFullYear(), now.getMonth(), 0);
+    fromStr = fmt(first);
+    toStr = fmt(last);
   }
 
   if (m3Cal) {
@@ -1678,7 +1746,7 @@ export function renderInsights() {
       formatRp(a.total),
       a.total / max * 100,
       'bg-emerald-600',
-      `${MONTH_FULL[a.m]} ${a.y} — ${formatRp(a.total)} • ${a.count} struk (${Math.round(a.total / tot12 * 100)}% dari 12 bulan)`
+      `${MONTH_FULL[a.m]} ${a.y}: ${formatRp(a.total)} • ${a.count} struk (${Math.round(a.total / tot12 * 100)}% dari 12 bulan)`
     )).join('');
   }
 
@@ -1703,7 +1771,7 @@ export function renderInsights() {
         `${b.n} struk`,
         b.n / max * 100,
         'bg-amber-500',
-        `Pukul ${String(b.h).padStart(2, '0')}.00–${String(b.h).padStart(2, '0')}.59 — ${b.n} struk • ${formatRp(b.rp)}`
+        `Pukul ${String(b.h).padStart(2, '0')}.00–${String(b.h).padStart(2, '0')}.59: ${b.n} struk • ${formatRp(b.rp)}`
       )).join('');
   }
 
@@ -1717,16 +1785,16 @@ export function renderInsights() {
     const nQris = txs.length - nCash;
     payEl.innerHTML = `
       <div class="flex rounded-full overflow-hidden bg-stone-100 h-4">
-        <div class="group relative bg-stone-800 hover:bg-stone-700 transition cursor-default" style="width:${pc}%" title="Tunai — ${formatRp(cash)} • ${nCash} struk (${pc}%)">
+        <div class="group relative bg-stone-800 hover:bg-stone-700 transition cursor-default" style="width:${pc}%" title="Tunai: ${formatRp(cash)} • ${nCash} struk (${pc}%)">
           <span class="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap rounded-lg bg-stone-900 px-2 py-1 text-[10px] font-bold text-white shadow-xl z-10">Tunai • ${pc}%</span>
         </div>
-        <div class="group relative bg-emerald-500 hover:bg-emerald-600 transition cursor-default" style="width:${pq}%" title="QRIS — ${formatRp(qris)} • ${nQris} struk (${pq}%)">
+        <div class="group relative bg-emerald-500 hover:bg-emerald-600 transition cursor-default" style="width:${pq}%" title="QRIS: ${formatRp(qris)} • ${nQris} struk (${pq}%)">
           <span class="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap rounded-lg bg-stone-900 px-2 py-1 text-[10px] font-bold text-white shadow-xl z-10">QRIS • ${pq}%</span>
         </div>
       </div>
       <div class="mt-2.5 flex flex-col gap-1.5 text-xs font-bold text-stone-700">
-        <div class="flex items-center justify-between rounded-lg px-1.5 py-1 hover:bg-stone-50 transition" title="Tunai — ${formatRp(cash)} • ${nCash} struk dari ${txs.length} transaksi"><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-stone-800"></span>Tunai (${nCash} struk)</span><span class="tabular-nums">${formatRp(cash)} • ${pc}%</span></div>
-        <div class="flex items-center justify-between rounded-lg px-1.5 py-1 hover:bg-stone-50 transition" title="QRIS — ${formatRp(qris)} • ${nQris} struk dari ${txs.length} transaksi"><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>QRIS (${nQris} struk)</span><span class="tabular-nums">${formatRp(qris)} • ${pq}%</span></div>
+        <div class="flex items-center justify-between rounded-lg px-1.5 py-1 hover:bg-stone-50 transition" title="Tunai: ${formatRp(cash)} • ${nCash} struk dari ${txs.length} transaksi"><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-stone-800"></span>Tunai (${nCash} struk)</span><span class="tabular-nums">${formatRp(cash)} • ${pc}%</span></div>
+        <div class="flex items-center justify-between rounded-lg px-1.5 py-1 hover:bg-stone-50 transition" title="QRIS: ${formatRp(qris)} • ${nQris} struk dari ${txs.length} transaksi"><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>QRIS (${nQris} struk)</span><span class="tabular-nums">${formatRp(qris)} • ${pq}%</span></div>
       </div>`;
   }
 
@@ -1744,7 +1812,7 @@ export function renderInsights() {
     const totE = arr.reduce((s, a) => s + a[1], 0) || 1;
     expEl.innerHTML = arr.length === 0
       ? '<p class="text-xs text-stone-400 font-bold">Belum ada biaya tercatat.</p>'
-      : arr.map(([c, v]) => barRow(c, formatRp(v), v / max * 100, 'bg-red-400', `${c} — ${formatRp(v)} • ${nCat[c]} catatan (${Math.round(v / totE * 100)}% dari biaya)`)).join('');
+      : arr.map(([c, v]) => barRow(c, formatRp(v), v / max * 100, 'bg-red-400', `${c}: ${formatRp(v)} • ${nCat[c]} catatan (${Math.round(v / totE * 100)}% dari biaya)`)).join('');
   }
 
   // 6. Menu paling cuan (rupiah)
@@ -1765,7 +1833,7 @@ export function renderInsights() {
     bestMenu = arr[0] || null;
     menuEl.innerHTML = arr.length === 0
       ? '<p class="text-xs text-stone-400 font-bold">Belum ada penjualan menu.</p>'
-      : arr.map(([n, v]) => barRow(`${n} (${qtyByMenu[n]}x)`, formatRp(v), v / max * 100, 'bg-stone-800', `${n} — ${qtyByMenu[n]} porsi • ${formatRp(v)} (${Math.round(v / totM * 100)}% dari 6 besar)`)).join('');
+      : arr.map(([n, v]) => barRow(`${n} (${qtyByMenu[n]}x)`, formatRp(v), v / max * 100, 'bg-stone-800', `${n}: ${qtyByMenu[n]} porsi • ${formatRp(v)} (${Math.round(v / totM * 100)}% dari 6 besar)`)).join('');
   }
 
   // 7. Laba, rata-rata, pola hari, sebaran, tabel (butuh agregat bulanan)
@@ -1779,7 +1847,7 @@ export function renderInsights() {
       : mAgg.map(a => {
         const laba = a.rev - a.exp;
         const mx = Math.max(1, a.rev, a.exp);
-        return `<div class="flex items-center gap-2 text-xs" title="${MONTH_FULL[a.m]} ${a.y} — Omzet ${formatRp(a.rev)} • Biaya ${formatRp(a.exp)} • Laba ${formatRp(laba)}">
+        return `<div class="flex items-center gap-2 text-xs" title="${MONTH_FULL[a.m]} ${a.y}: Omzet ${formatRp(a.rev)} • Biaya ${formatRp(a.exp)} • Laba ${formatRp(laba)}">
           <span class="w-14 shrink-0 truncate font-bold text-stone-600">${escapeHtml(a.label)}</span>
           <div class="flex-1 flex flex-col gap-0.5">
             <div class="h-2 rounded-full bg-stone-100 overflow-hidden"><div class="h-full rounded-full bg-emerald-600" style="width:${Math.max(2, Math.round(a.rev / mx * 100))}%"></div></div>
@@ -1798,7 +1866,7 @@ export function renderInsights() {
       ? '<p class="text-xs text-stone-400 font-bold">Belum ada data.</p>'
       : rows.map(a => barRow(
         a.label, formatRp(a.avg), a.avg / max * 100, 'bg-teal-700',
-        `${MONTH_FULL[a.m]} ${a.y} — rata-rata ${formatRp(a.avg)} dari ${a.n} struk`
+        `${MONTH_FULL[a.m]} ${a.y}: rata-rata ${formatRp(a.avg)} dari ${a.n} struk`
       )).join('');
   }
 
@@ -1815,7 +1883,7 @@ export function renderInsights() {
     const totW = buckets.reduce((s, b) => s + b.rev, 0) || 1;
     weekEl.innerHTML = buckets.map(b => barRow(
       b.label, `${formatRp(b.rev)} • ${b.n}`, b.rev / max * 100, 'bg-amber-500',
-      `Hari ${b.label} — ${formatRp(b.rev)} • ${b.n} struk (${Math.round(b.rev / totW * 100)}% omzet)`
+      `Hari ${b.label}: ${formatRp(b.rev)} • ${b.n} struk (${Math.round(b.rev / totW * 100)}% omzet)`
     )).join('');
   }
 
@@ -1838,7 +1906,7 @@ export function renderInsights() {
       ? '<p class="text-xs text-stone-400 font-bold">Belum ada data.</p>'
       : rows.map(r => barRow(
         r.label, `${r.n} struk`, r.n / max * 100, 'bg-sky-600',
-        `${r.label} — ${r.n} struk (${Math.round(r.n / tot * 100)}% transaksi)`
+        `${r.label}: ${r.n} struk (${Math.round(r.n / tot * 100)}% transaksi)`
       )).join('');
   }
 

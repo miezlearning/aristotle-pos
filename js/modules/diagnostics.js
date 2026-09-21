@@ -194,7 +194,7 @@ export async function copyDiagnosticsText() {
   }
   try {
     await navigator.clipboard.writeText(text);
-    showToast('Ringkasan disalin — tempel ke WA support.', 'success');
+    showToast('Ringkasan disalin. Tempel ke WA support.', 'success');
   } catch (_) {
     const ta = document.createElement('textarea');
     ta.value = text;

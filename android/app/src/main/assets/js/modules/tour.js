@@ -12,7 +12,7 @@ const TOUR_STEPS = [
     icon: 'storefront',
     iconColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
     title: 'Info Toko & Hubungkan HP',
-    desc: 'Lihat profil toko, ganti cabang, amankan kasir dengan PIN 6-digit, atau bagikan kode QR / tautan untuk menghubungkan HP staf secara realtime.',
+    desc: 'Lihat profil toko, ganti cabang, atur PIN, atau bagikan kode QR/tautan untuk menghubungkan HP staf.',
     view: 'pos'
   },
   {
@@ -21,7 +21,7 @@ const TOUR_STEPS = [
     icon: 'schedule',
     iconColor: 'bg-teal-100 text-teal-800 border-teal-300',
     title: 'Shift Kasir & Laporan Z (Opsional)',
-    desc: 'Buka shift untuk mencatat modal kas awal di laci (opsional, tidak memblokir kasir!). Saat tutup toko, hitung uang fisik dan cetak struk audit Laporan Z.',
+    desc: 'Catat modal awal laci saat buka shift (opsional, kasir tetap jalan). Saat tutup toko, hitung uang fisik lalu cetak Laporan Z.',
     view: 'pos'
   },
   {
@@ -39,7 +39,7 @@ const TOUR_STEPS = [
     icon: 'category',
     iconColor: 'bg-amber-100 text-amber-800 border-amber-300',
     title: 'Pilih Kategori & Cari Menu',
-    desc: 'Pilih kategori (Makanan, Minuman, Camilan) atau gunakan kolom pencarian untuk menemukan menu dengan cepat saat toko sedang ramai pembeli.',
+    desc: 'Pilih kategori (Makanan, Minuman, Camilan) atau cari menu lewat kolom pencarian.',
     view: 'pos'
   },
   {
@@ -48,7 +48,7 @@ const TOUR_STEPS = [
     icon: 'touch_app',
     iconColor: 'bg-blue-100 text-blue-800 border-blue-300',
     title: 'Sentuh Menu untuk Memesan',
-    desc: 'Cukup sentuh gambar menu untuk memasukkannya ke struk pesanan. Gunakan tombol plus (+) atau minus (-) pada kartu menu untuk mengatur jumlah porsi.',
+    desc: 'Sentuh gambar menu untuk tambah ke pesanan. Atur jumlah lewat tombol + / - di kartu.',
     view: 'pos'
   },
   {
@@ -57,7 +57,7 @@ const TOUR_STEPS = [
     icon: 'table_restaurant',
     iconColor: 'bg-indigo-100 text-indigo-800 border-indigo-300',
     title: 'Buka Antrian / Meja Baru',
-    desc: 'Jika ada pelanggan baru datang saat pesanan sebelumnya belum selesai bayar, klik tombol "+ Antrian Baru" agar pesanan lama tersimpan aman.',
+    desc: 'Klik "+ Antrian Baru" saat pelanggan baru datang dan pesanan lama belum dibayar. Pesanan lama tersimpan aman.',
     view: 'pos'
   },
   {
@@ -66,7 +66,7 @@ const TOUR_STEPS = [
     icon: 'payments',
     iconColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
     title: 'Bayar, Diskon & QRIS Dinamis',
-    desc: 'Klik tombol BAYAR untuk memilih Tunai atau QRIS Dinamis otomatis. Anda juga dapat memberikan diskon persentase (%) atau potongan nominal (Rp) pada tagihan.',
+    desc: 'Klik BAYAR lalu pilih Tunai atau QRIS. Diskon bisa persen (%) atau nominal (Rp).',
     view: 'pos'
   },
   {
@@ -75,7 +75,7 @@ const TOUR_STEPS = [
     icon: 'account_balance_wallet',
     iconColor: 'bg-purple-100 text-purple-800 border-purple-300',
     title: 'Laporan Omset & Rekap Shift',
-    desc: 'Buka menu Laporan setiap saat untuk melihat total uang masuk, riwayat tutup shift (Laporan Z), mencatat biaya belanja operasional, dan melihat laba bersih riil toko.',
+    desc: 'Lihat uang masuk, riwayat tutup shift (Laporan Z), catat biaya belanja, dan cek laba bersih toko.',
     view: 'report'
   },
   {
@@ -84,7 +84,7 @@ const TOUR_STEPS = [
     icon: 'inventory_2',
     iconColor: 'bg-rose-100 text-rose-800 border-rose-300',
     title: 'Kelola Menu & Pasang QRIS',
-    desc: 'Buka menu Kelola untuk menambah makanan/minuman baru, mengganti harga jual, mengatur stok porsi harian, dan mengunggah barcode QRIS toko Anda sendiri.',
+    desc: 'Tambah menu baru, ganti harga, atur stok harian, dan pasang QRIS toko.',
     view: 'admin'
   }
 ];

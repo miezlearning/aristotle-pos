@@ -1399,7 +1399,7 @@ export function openQtyEditor(targetId) {
   if (noteEl) {
     if (st.mode === 'product' && st.specialQty > 0) {
       noteEl.classList.remove('hidden');
-      noteEl.innerText = `${st.specialQty} porsi punya catatan/add-on khusus — jumlah manual tidak boleh di bawah angka itu.`;
+      noteEl.innerText = `${st.specialQty} porsi punya catatan/add-on. Jumlah tidak boleh kurang dari ${st.specialQty}.`;
     } else {
       noteEl.classList.add('hidden');
       noteEl.innerText = '';
@@ -1530,7 +1530,7 @@ export function confirmQtyEditor(e) {
   } else {
     const specialQty = st.specialQty || 0;
     if (next < specialQty) {
-      showToast(`Minimal ${specialQty} (porsi ber-catatan khusus tidak bisa dikurangi dari sini — ubah lewat keranjang).`, 'warning', 3500);
+      showToast(`Minimal ${specialQty}. Porsi ber-catatan hanya bisa diubah lewat keranjang.`, 'warning', 3500);
       if (inputEl) inputEl.value = String(st.currentQty || 0);
       return;
     }
