@@ -43,6 +43,11 @@ import {
   syncCustomSelect, 
   closeAllCustomSelects 
 } from './customSelect.js';
+import {
+  initCustomTooltip,
+  showTooltip,
+  hideTooltip
+} from './customTooltip.js';
 
 // Activate Enterprise Crash Telemetry Watchdog
 initErrorTelemetry();
@@ -2605,6 +2610,9 @@ export async function init() {
   // Inisialisasi Material Design 3 Radial Ink Ripple & State Layer Touch System
   initM3RippleSystem();
 
+  // Inisialisasi Aristotle POS Modern Custom Floating Tooltip
+  initCustomTooltip();
+
   // Inisialisasi gestur Swipe Down to Refresh (Pull-to-Refresh)
   initPullToRefresh();
 
@@ -3362,7 +3370,11 @@ const KasirApp = {
   initAllCustomSelects: initAllCustomSelects,
   enhanceSelectElement: enhanceSelectElement,
   syncCustomSelect: syncCustomSelect,
-  closeAllCustomSelects: closeAllCustomSelects
+  closeAllCustomSelects: closeAllCustomSelects,
+
+  // Modern Custom Floating Tooltip
+  showTooltip: showTooltip,
+  hideTooltip: hideTooltip
 };
 
 // Expose to window for inline onclick HTML handlers

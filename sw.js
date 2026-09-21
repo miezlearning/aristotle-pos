@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aristotle-pos-v141';
+const CACHE_NAME = 'aristotle-pos-v142';
 const PRECACHE_ASSETS = [
   './',
   './index.html',
@@ -13,6 +13,8 @@ const PRECACHE_ASSETS = [
   './js/config.js',
   './js/state.js',
   './js/utils.js',
+  './js/customSelect.js',
+  './js/customTooltip.js',
   './js/qris.js',
   './js/firebase.js',
   './js/modules/license.js',

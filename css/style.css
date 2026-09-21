@@ -943,5 +943,98 @@ div[id$="Modal"] > div {
   }
 }
 
+/* ==================== ARISTOTLE POS: MODERN CUSTOM FLOATING TOOLTIP ==================== */
+.aristotle-custom-tooltip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 99999;
+  visibility: hidden;
+  opacity: 0;
+  scale: 0.94;
+  transition: opacity 0.12s ease-out, scale 0.12s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.12s;
+  will-change: transform, opacity;
+}
+
+.aristotle-custom-tooltip.tooltip-visible {
+  visibility: visible;
+  opacity: 1;
+  scale: 1;
+}
+
+.custom-tooltip-bubble {
+  position: relative;
+  background-color: rgba(28, 25, 23, 0.95);
+  color: #f5f5f4;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  padding: 5px 9px;
+  border-radius: 8px;
+  border: 1px solid rgba(120, 113, 108, 0.35);
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.45), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  white-space: nowrap;
+  max-width: 280px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.custom-tooltip-content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-tooltip-arrow {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background-color: rgba(28, 25, 23, 0.95);
+  transform: rotate(45deg);
+  pointer-events: none;
+  border: 1px solid rgba(120, 113, 108, 0.35);
+}
+
+.aristotle-custom-tooltip[data-placement="top"] .custom-tooltip-arrow {
+  border-top: none;
+  border-left: none;
+}
+
+.aristotle-custom-tooltip[data-placement="bottom"] .custom-tooltip-arrow {
+  border-bottom: none;
+  border-right: none;
+}
+
+.aristotle-custom-tooltip[data-placement="right"] .custom-tooltip-arrow {
+  border-top: none;
+  border-right: none;
+}
+
+.aristotle-custom-tooltip[data-placement="left"] .custom-tooltip-arrow {
+  border-bottom: none;
+  border-left: none;
+}
+
+.custom-tooltip-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 4px;
+  font-size: 9.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  color: #d6d3d1;
+  background-color: rgba(68, 64, 60, 0.7);
+  border: 1px solid rgba(120, 113, 108, 0.4);
+  border-radius: 4px;
+  margin-left: 3px;
+  line-height: 1;
+}
+
+
 
 
