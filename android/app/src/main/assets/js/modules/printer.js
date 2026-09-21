@@ -5,7 +5,7 @@
 
 import { state, savePrinterConfig } from '../state.js';
 import { GLOBAL_STORAGE_KEYS } from '../config.js';
-import { formatRp, formatDateShort, showToast, playClick, escapeHtml } from '../utils.js';
+import { formatRp, formatDateShort, showToast, playClick, escapeHtml, showConfirmDialog } from '../utils.js';
 import { renderQRToContainer } from '../qris.js';
 import { getStoreLicenseStatus } from './license.js';
 import { 
@@ -795,10 +795,10 @@ export async function buildEscPosBytes(tx, kickDrawer = false) {
 }
 
 /**
- * Mode pulsa laci kasir (disimpan di printerConfig.drawerPulseMode).
+ * Mode sinyal pembuka laci (disimpan di printerConfig.drawerPulseMode).
  * - auto: semua varian valid berurutan (bawaan, cocok untuk kebanyakan laci)
  * - pin2 / pin5: hanya pin tersebut (laci yang hanya merespons satu pin)
- * - panjang: pulsa 100ms untuk solenoid laci logam berat yang tidak mempan 60ms
+ * - panjang: sinyal 100ms untuk laci logam berat yang tidak mempan 60ms
  * Nilai dibaca dari select modal bila terbuka, kalau tidak dari config.
  */
 export function getDrawerPulseMode() {
@@ -831,6 +831,58 @@ export function buildOpenDrawerBytes(mode = null) {
   if (m === 'pin5') return new Uint8Array([...PIN5, ...DLE5, ...BEL]);
   if (m === 'panjang') return new Uint8Array([...PIN2_LONG, ...PIN5_LONG, ...DLE2, ...DLE5, ...BEL]);
   return new Uint8Array([...PIN2, ...PIN5, ...PIN2_LONG, ...PIN5_LONG, ...DLE2, ...DLE5, ...BEL]);
+}
+
+/**
+ * Status laci yang jujur (ditulis polos, tanpa bunga):
+ * - Printer: hasil cek koneksi saat ini + jam periksa.
+ * - Laci: kabel laci tidak punya sensor, jadi yang dilaporkan adalah HASIL
+ *   TES FISIK terakhir (jawaban pengguna), bukan tebakan aplikasi.
+ */
+function fmtDrawerTime(iso) {
+  try {
+    const d = iso ? new Date(iso) : new Date();
+    const p = (n) => String(n).padStart(2, '0');
+    return `${p(d.getDate())}/${p(d.getMonth() + 1)} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  } catch (_) {
+    return '-';
+  }
+}
+
+export function renderDrawerStatus() {
+  try {
+    const printerEl = document.getElementById('drawerPrinterState');
+    if (printerEl) {
+      const ok = isLocalPrinterReady();
+      printerEl.innerText = ok ? `Terhubung (${fmtDrawerTime()})` : `Tidak terhubung (${fmtDrawerTime()})`;
+      printerEl.className = ok ? 'text-emerald-700' : 'text-red-600';
+    }
+    const drawerEl = document.getElementById('drawerLastTestState');
+    if (drawerEl) {
+      const rec = state.printerConfig?.drawerLastTest;
+      if (!rec || !rec.at) {
+        drawerEl.innerText = 'Belum pernah dites';
+        drawerEl.className = 'text-stone-500';
+      } else if (rec.opened) {
+        drawerEl.innerText = `Tes terakhir: terbuka (${fmtDrawerTime(rec.at)})`;
+        drawerEl.className = 'text-emerald-700';
+      } else {
+        drawerEl.innerText = `Tes terakhir: tidak terbuka (${fmtDrawerTime(rec.at)})`;
+        drawerEl.className = 'text-red-600';
+      }
+    }
+  } catch (_) {}
+}
+
+export function checkDrawerLinkStatus() {
+  playClick('tap');
+  renderDrawerStatus();
+  const ok = isLocalPrinterReady();
+  showToast(
+    ok ? 'Printer terhubung.' : 'Printer tidak terhubung. Cek Bluetooth/USB dan daya printer.',
+    ok ? 'success' : 'warning',
+    2500
+  );
 }
 
 /**
@@ -1733,11 +1785,11 @@ export async function executeDirectLocalKickDrawer() {
       if (hasPrintPath) {
         const ok = await sendNativeBluetoothDataAsync(buildOpenDrawerBytes());
         if (ok) {
-          showToast('Sinyal buka laci terkirim — pastikan laci terbuka fisik.', 'success');
+          showToast('Sinyal terkirim. Cek laci.', 'success');
           return true;
         }
         const errMsg = lastNativeBluetoothError || 'Printer Bluetooth tidak merespons.';
-        showToast('Gagal membuka laci: ' + errMsg + ' Bila berulang, jalankan Tes Laci di Pengaturan Printer.', 'warning', 4000);
+        showToast('Gagal membuka laci: ' + errMsg + ' Coba Tes Buka Laci di Pengaturan Printer.', 'warning', 4000);
         return false;
       }
     } catch (e) {
@@ -1746,7 +1798,7 @@ export async function executeDirectLocalKickDrawer() {
     try {
       const ok = await sendNativeKickDrawerAsync();
       if (ok) {
-        showToast('Laci kasir terbuka!', 'success');
+        showToast('Sinyal terkirim. Cek laci.', 'success');
         return true;
       } else {
         const errMsg = lastNativeKickDrawerError || 'Printer Bluetooth tidak merespons.';
@@ -1784,7 +1836,7 @@ export async function executeDirectLocalKickDrawer() {
       document.body.appendChild(link);
       link.click();
       setTimeout(() => { try { link.remove(); } catch (_) {} }, 500);
-      showToast('Sinyal buka laci terkirim (RawBT)!', 'success');
+      showToast('Sinyal terkirim (RawBT). Cek laci.', 'success');
       return true;
     } catch (e) {
       console.warn('RawBT kick error:', e);
@@ -1797,7 +1849,7 @@ export async function executeDirectLocalKickDrawer() {
     try {
       const bytes = buildOpenDrawerBytes();
       await sendSerialData(bytes);
-      showToast('Sinyal buka laci terkirim (USB Serial)!', 'success');
+      showToast('Sinyal terkirim (USB). Cek laci.', 'success');
       return true;
     } catch (e) {
       console.warn('Serial kick error:', e);
@@ -1811,7 +1863,7 @@ export async function executeDirectLocalKickDrawer() {
       try {
         const bytes = buildOpenDrawerBytes();
         await sendBluetoothData(bytes);
-        showToast('Sinyal buka laci kasir terkirim (Bluetooth)!', 'success');
+        showToast('Sinyal terkirim (Bluetooth). Cek laci.', 'success');
         return true;
       } catch (e) {
         console.warn('Bluetooth kick error:', e);
@@ -2199,10 +2251,10 @@ export async function kickCashDrawer(directOnly = false) {
   // Dulu: perintah hangus bila printer sibuk (cetak struk + tendang laci
   // berkejaran → laci tidak pernah terbuka tanpa jejak). Sekarang: antre.
   if (isPrinterActionBusy) {
-    showToast('Printer sibuk — perintah laci antre...', 'info', 2000);
+    showToast('Printer sibuk. Perintah laci menunggu.', 'info', 2000);
     const freed = await waitForPrinterIdle(3500);
     if (!freed) {
-      showToast('Printer masih sibuk, laci tidak jadi dibuka. Coba tekan lagi.', 'warning', 3000);
+      showToast('Printer masih sibuk. Coba lagi.', 'warning', 3000);
       return false;
     }
   }
@@ -2223,7 +2275,7 @@ export async function kickCashDrawer(directOnly = false) {
       try {
         const localOk = await tryKickDrawerViaLocalLan(hostIp);
         if (localOk) {
-          showToast('Laci kasir berhasil dibuka.', 'success', 2500);
+          showToast('Laci dibuka.', 'success', 2500);
           return true;
         }
       } catch (_) {}
@@ -2236,10 +2288,10 @@ export async function kickCashDrawer(directOnly = false) {
     }
 
     // 3. Jalur Cadangan (Fallback): Cloud Drawer Relay
-    showToast('Membuka laci kasir...', 'info', 2000);
+    showToast('Membuka laci...', 'info', 2000);
     const jobId = await dispatchRemotePrintJob({ type: 'drawer' });
     await waitForRemotePrintJob(jobId, 5000);
-    showToast('Laci kasir berhasil dibuka.', 'success', 2500);
+    showToast('Laci dibuka.', 'success', 2500);
     return true;
   } catch (err) {
     console.warn('Remote drawer kick note:', err);
@@ -2275,12 +2327,12 @@ export function waitForPrinterIdle(timeoutMs = 3500) {
 export async function testDrawerPulseSequence() {
   playClick('pop');
   if (isPrinterActionBusy) {
-    showToast('Tunggu proses printer sebelumnya selesai dulu...', 'warning', 2500);
+    showToast('Tunggu printer selesai dulu.', 'warning', 2500);
     return false;
   }
   const role = getDevicePrinterMode();
   if (!isLocalPrinterReady() && role !== 'host') {
-    showToast('Tes laci hanya dari perangkat yang terhubung langsung ke printer.', 'warning', 3000);
+    showToast('Tes hanya dari HP yang tersambung ke printer.', 'warning', 3000);
     return false;
   }
   const sel = document.getElementById('printerDrawerPulseSelect');
@@ -2293,11 +2345,11 @@ export async function testDrawerPulseSequence() {
     const steps = [
       ['pin2', 'Pin 2'],
       ['pin5', 'Pin 5'],
-      ['panjang', 'Pulsa Panjang (laci berat)']
+      ['panjang', 'Sinyal kuat']
     ];
     for (let i = 0; i < steps.length; i++) {
       if (selLive) sel.value = steps[i][0];
-      showToast(`Tes laci ${i + 1}/3: ${steps[i][1]} — perhatikan laci fisik sekarang...`, 'info', 2400);
+      showToast(`Tes ${i + 1} dari 3 (${steps[i][1]}). Lihat laci.`, 'info', 2400);
       try {
         await executeDirectLocalKickDrawer();
       } catch (e) {
@@ -2306,7 +2358,28 @@ export async function testDrawerPulseSequence() {
       await new Promise(r => setTimeout(r, 2000));
     }
     if (selLive && originalMode) sel.value = originalMode;
-    showToast('Tes selesai. Mode yang membuka laci → pilih di "Pulsa Laci" lalu Simpan.', 'success', 5000);
+    let opened = false;
+    try {
+      opened = await showConfirmDialog({
+        title: 'Apakah laci terbuka?',
+        message: 'Lihat laci fisik. Terbuka di salah satu dari 3 tes tadi?',
+        confirmText: 'Ya, Terbuka',
+        confirmType: 'success',
+        icon: 'lock_open'
+      });
+    } catch (_) {
+      opened = false;
+    }
+    try {
+      savePrinterConfig({ drawerLastTest: { at: new Date().toISOString(), opened: Boolean(opened) } });
+      syncSavePrinterConfig(state.printerConfig);
+    } catch (_) {}
+    renderDrawerStatus();
+    showToast(
+      opened ? 'Tersimpan: laci terbuka. Pilih sinyalnya lalu Simpan.' : 'Tersimpan: laci tidak terbuka. Cek kabel dan daya, lalu tes lagi.',
+      opened ? 'success' : 'warning',
+      4000
+    );
     return true;
   } finally {
     isPrinterActionBusy = false;
@@ -2492,7 +2565,7 @@ export function setupRemotePrintHostListener() {
         } else if (job.type === 'drawer') {
           const ok = await executeDirectLocalKickDrawer();
           if (!ok) throw new Error('Tendangan laci gagal di printer host.');
-          showToast(`Membuka laci kasir atas perintah [${job.createdByName || 'Staf'}]`, 'info', 3000);
+          showToast(`Buka laci (perintah [${job.createdByName || 'Staf'}])`, 'info', 3000);
         }
 
         await updateRemotePrintJobStatus(job.id, 'completed');
@@ -3275,6 +3348,7 @@ export function openPrinterConfigModal() {
   if (autoPrintKitchenCheckbox) autoPrintKitchenCheckbox.checked = !!cfg.autoPrintKitchen;
   if (autoKickCheckbox) autoKickCheckbox.checked = cfg.autoKickDrawer !== false;
   if (drawerPulseSelect) drawerPulseSelect.value = cfg.drawerPulseMode || 'auto';
+  renderDrawerStatus();
   if (showLogoCheckbox) showLogoCheckbox.checked = cfg.showLogo !== false;
 
   if (cfg.logoBase64) {
@@ -3488,6 +3562,7 @@ export function savePrinterSettings(e) {
   const autoPrintKitchen = document.getElementById('printerAutoPrintKitchen')?.checked || false;
   const autoKickDrawer = document.getElementById('printerAutoKickDrawer')?.checked !== false;
   const drawerPulseMode = document.getElementById('printerDrawerPulseSelect')?.value || 'auto';
+  const drawerLastTest = state.printerConfig?.drawerLastTest || null;
   const showLogo = document.getElementById('printerShowLogo')?.checked !== false;
   const logoBase64 = state.printerConfig?.logoBase64 || '';
   const headerStoreName = document.getElementById('printerStoreNameInput')?.value.trim() || '';
@@ -3510,6 +3585,7 @@ export function savePrinterSettings(e) {
     autoPrintKitchen,
     autoKickDrawer,
     drawerPulseMode,
+    drawerLastTest,
     showLogo,
     logoBase64,
     cashierName,

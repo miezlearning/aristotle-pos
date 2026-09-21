@@ -2,6 +2,15 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.86] - 2026-09-19
+
+### Status Laci Jujur + Bahasa Polos
+- **Status realtime:** koneksi printer + jam periksa dengan tombol Periksa Ulang; hasil tes fisik (belum/terbuka/tidak + jam) tersimpan dan ikut sync.
+- **Tes ditutup konfirmasi Ya/Tidak** — jawaban direkam sebagai status, tanpa sukses palsu.
+- **Bahasa polos:** "Sinyal pembuka laci", opsi Otomatis/Pin 2/Pin 5/Sinyal kuat, semua toast dipangkas.
+
+---
+
 ## [v1.2.85] - 2026-09-19
 
 ### Telemetri via Proxy Cloudflare

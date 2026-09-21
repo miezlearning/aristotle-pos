@@ -1,10 +1,10 @@
 {
-  "versionCode": 134,
-  "versionName": "1.2.85",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.85/Aristotle-POS.apk",
+  "versionCode": 135,
+  "versionName": "1.2.86",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.86/Aristotle-POS.apk",
   "changelog": [
-    "Telemetri via proxy Cloudflare: 1 channel untuk semua HP + rate-limit + embed server-side",
-    "Native dan web lapor field mentah ke proxy (tanpa secret di repo)"
+    "Status laci jujur: koneksi printer realtime + hasil tes fisik + tombol Periksa Ulang",
+    "Tes laci ditutup konfirmasi Ya-Tidak + rekam hasil + bahasa polos semua teks laci"
   ],
   "releaseDate": "2026-09-21"
 }

@@ -3114,6 +3114,7 @@ const KasirApp = {
   printShiftZReport: printer.printShiftZReport,
   kickCashDrawer: printer.kickCashDrawer,
   testDrawerPulseSequence: printer.testDrawerPulseSequence,
+  checkDrawerLinkStatus: printer.checkDrawerLinkStatus,
   isLocalPrinterReady: printer.isLocalPrinterReady,
   testPrintReceipt: printer.testPrintReceipt,
   testPrintKitchenTicket: printer.testPrintKitchenTicket,
