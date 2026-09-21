@@ -959,13 +959,13 @@ export function updateReportToggleUI(mode = currentReportViewMode) {
   const isVisual = mode === 'visual';
   if (btnData) {
     btnData.className = isVisual
-      ? 'relative z-10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 transition-colors duration-200 text-stone-500 hover:text-stone-800 cursor-pointer'
-      : 'relative z-10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-black text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 transition-colors duration-200 text-stone-900 cursor-pointer';
+      ? 'relative z-10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-colors duration-200 text-stone-500 hover:text-stone-800 cursor-pointer'
+      : 'relative z-10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-colors duration-200 text-stone-900 cursor-pointer';
   }
   if (btnVisual) {
     btnVisual.className = isVisual
-      ? 'relative z-10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-black text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 transition-colors duration-200 text-stone-900 cursor-pointer'
-      : 'relative z-10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 transition-colors duration-200 text-stone-500 hover:text-stone-800 cursor-pointer';
+      ? 'relative z-10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-colors duration-200 text-stone-900 cursor-pointer'
+      : 'relative z-10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-colors duration-200 text-stone-500 hover:text-stone-800 cursor-pointer';
   }
 
   if (slider) {

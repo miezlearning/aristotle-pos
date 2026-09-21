@@ -2,6 +2,13 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.88] - 2026-09-19
+
+### Toggle Laporan Rata Tengah
+- Teks + ikon "Ringkasan Data / Grafik Usaha" kini selalu center — `justify-center` yang hilang setiap JS menulis ulang class dikembalikan.
+
+---
+
 ## [v1.2.87] - 2026-09-19
 
 ### Ingat Halaman + Tarik-Refresh Jinak
