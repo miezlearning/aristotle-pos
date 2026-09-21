@@ -933,7 +933,7 @@ export function renderProductSkeletons(count = 8) {
   const grid = document.getElementById('productGrid');
   if (!grid) return;
   grid.innerHTML = Array(count).fill(0).map(() => `
-    <div class="bg-white border border-stone-200/80 rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 flex flex-col justify-between h-48 lg:h-56 animate-pulse shadow-sm">
+    <div class="bg-white border border-stone-200/80 rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 flex flex-col justify-between h-48 lg:h-56 animate-pulse shadow-2xs">
       <div class="w-full h-20 sm:h-24 lg:h-28 rounded-xl sm:rounded-2xl skeleton-shimmer"></div>
       <div class="space-y-2 mt-2">
         <div class="w-3/4 h-4 rounded-lg skeleton-shimmer"></div>
@@ -990,7 +990,7 @@ export function renderProductCardActionHTML(product, qty, isReady) {
   if (qty > 0) {
     return `
       <div class="flex items-center gap-1.5 pt-0.5" onclick="event.stopPropagation()">
-        <div class="flex-1 bg-white rounded-xl p-1 flex items-center justify-between gap-1 border-2 border-emerald-300/80 shadow-sm">
+        <div class="flex-1 bg-white rounded-xl p-1 flex items-center justify-between gap-1 border-2 border-emerald-400 shadow-sm">
           <button data-repeat-target="${product.id}" data-repeat-delta="-1" onclick="window.KasirApp.updateCartQty('${product.id}', -1)"
             class="w-8 h-9 rounded-lg ${qty === 1 ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'} font-black flex items-center justify-center transition active:scale-90 cursor-pointer shrink-0"
             title="${qty === 1 ? 'Hapus dari pesanan' : 'Kurangi 1 (tahan untuk kurangi cepat)'}">
@@ -1013,7 +1013,7 @@ export function renderProductCardActionHTML(product, qty, isReady) {
   }
   return `
     <button type="button"
-      class="w-full py-1 lg:py-2 px-2.5 rounded-xl bg-stone-100/80 hover:bg-emerald-50 text-stone-700 hover:text-emerald-800 border border-stone-200/80 hover:border-emerald-300 flex items-center justify-between text-xs lg:text-sm font-bold transition active:scale-95 shadow-2xs">
+      class="w-full py-1 lg:py-2 px-2.5 rounded-xl bg-stone-100/80 hover:bg-emerald-50 active:bg-emerald-100 text-stone-700 hover:text-emerald-800 border border-stone-200/80 hover:border-emerald-300 flex items-center justify-between text-xs lg:text-sm font-bold transition-colors shadow-2xs">
       <span>+ Tambah</span>
       <span class="material-symbols-rounded text-base text-emerald-600">add</span>
     </button>
@@ -1032,8 +1032,8 @@ export function renderSingleProductCardHTML(product, qty) {
   return `
     <div id="posProductCard_${product.id}" data-product-card="${product.id}" onclick="window.KasirApp.addToCart('${product.id}')" 
       title="${isReady ? 'Ketuk untuk tambah 1 • tahan untuk tambah cepat • ketuk angka untuk isi manual' : 'Stok habis'}"
-      class="pos-product-card relative bg-white rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 lg:p-3 flex flex-col justify-between border ${hasQty ? 'pos-product-card-active' : 'border-stone-200/80 hover:border-emerald-300'} ${!isReady ? 'opacity-65 bg-stone-50/90 cursor-not-allowed' : 'cursor-pointer'} touch-target-large select-none">
-      
+      class="pos-product-card group relative bg-white rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 lg:p-3 flex flex-col justify-between border ${hasQty ? 'pos-product-card-active' : 'border-stone-200/85'} ${!isReady ? 'opacity-65 bg-stone-50/90 cursor-not-allowed' : 'cursor-pointer'} touch-target-large select-none">
+
       <div id="posBadgeSlot_${product.id}">
         ${hasQty ? `
           <span class="absolute -top-2 -right-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow-md z-20 border-2 border-white">
@@ -1049,11 +1049,11 @@ export function renderSingleProductCardHTML(product, qty) {
       ` : ''}
 
       ${imgSrc ? `
-        <div class="relative w-full h-20 sm:h-24 lg:h-28 rounded-xl sm:rounded-2xl overflow-hidden mb-1.5 bg-stone-100 shrink-0 shadow-2xs">
-          <img src="${imgSrc}" alt="${escapeHtml(product.name)}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" onerror="this.parentElement.style.display='none'">
-          <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none"></div>
+        <div class="relative w-full h-24 sm:h-28 lg:h-32 rounded-xl sm:rounded-2xl overflow-hidden mb-2 shrink-0 bg-stone-100 shadow-2xs">
+          <img src="${imgSrc}" alt="${escapeHtml(product.name)}" class="pos-card-img w-full h-full object-cover" loading="lazy" onerror="this.parentElement.style.display='none'">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none"></div>
           <div class="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start">
-            <span class="text-[9px] sm:text-[10px] font-extrabold text-white capitalize px-2 py-0.5 rounded-md bg-stone-900/85 shadow-xs">${escapeHtml(product.category)}</span>
+            <span class="text-[9px] sm:text-[10px] font-extrabold text-white capitalize px-2 py-0.5 rounded-md bg-stone-900/80 shadow-xs">${escapeHtml(product.category)}</span>
           </div>
           <div class="absolute bottom-1.5 right-1.5 flex flex-col gap-1 items-end">
             ${Array.isArray(product.addOns) && product.addOns.length > 0 ? `
@@ -1077,12 +1077,12 @@ export function renderSingleProductCardHTML(product, qty) {
           ` : ''}
         </div>
       ` : `
-        <div class="relative w-full h-20 sm:h-24 lg:h-28 rounded-xl sm:rounded-2xl overflow-hidden mb-1.5 shrink-0 ${vis.gradClass} border border-black/[0.04] flex items-center justify-center shadow-2xs">
-          <div class="w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-2xl bg-white shadow-xs flex items-center justify-center ${vis.accentColor} transition-transform group-hover:scale-110 border border-stone-200/60">
-            <span class="material-symbols-rounded text-2xl sm:text-3xl lg:text-4xl">${vis.icon}</span>
+        <div class="relative w-full h-24 sm:h-28 lg:h-32 rounded-xl sm:rounded-2xl overflow-hidden mb-2 shrink-0 ${vis.gradClass} border border-black/[0.04] flex items-center justify-center shadow-2xs">
+          <div class="pos-card-icon w-12 h-12 sm:w-13 sm:h-13 rounded-2xl bg-white shadow-xs flex items-center justify-center ${vis.accentColor} border border-white/60">
+            <span class="material-symbols-rounded text-2xl sm:text-3xl">${vis.icon}</span>
           </div>
           <div class="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start">
-            <span class="text-[9px] sm:text-[10px] font-bold capitalize px-2 py-0.5 rounded-md bg-white text-stone-700 shadow-2xs border border-stone-200">${escapeHtml(product.category)}</span>
+            <span class="text-[9px] sm:text-[10px] font-bold capitalize px-2 py-0.5 rounded-md bg-white text-stone-700 shadow-2xs border border-stone-200/80">${escapeHtml(product.category)}</span>
           </div>
           <div class="absolute bottom-1.5 right-1.5 flex flex-col gap-1 items-end">
             ${Array.isArray(product.addOns) && product.addOns.length > 0 ? `
@@ -1108,11 +1108,11 @@ export function renderSingleProductCardHTML(product, qty) {
       `}
 
       <div class="flex-1 flex flex-col justify-start">
-        <h3 class="font-extrabold text-stone-900 text-xs sm:text-sm lg:text-[15px] leading-snug line-clamp-2 ${!isReady ? 'text-stone-400 line-through' : ''}">${escapeHtml(product.name)}</h3>
-        <p class="font-black ${isReady ? 'text-emerald-700' : 'text-stone-400'} text-sm sm:text-base lg:text-lg mt-0.5 tracking-tight">${formatRp(product.price)}</p>
+        <h3 class="font-extrabold text-stone-900 text-xs sm:text-sm lg:text-[14.5px] leading-snug line-clamp-2 min-h-[2.4rem] ${!isReady ? 'text-stone-400 line-through' : ''}">${escapeHtml(product.name)}</h3>
+        <p class="font-black ${isReady ? 'text-emerald-700' : 'text-stone-400'} text-sm sm:text-base lg:text-[17px] mt-0.5 tracking-tight">${formatRp(product.price)}</p>
       </div>
 
-      <div id="posActionSlot_${product.id}" class="mt-2 pt-1.5 border-t ${hasQty ? 'border-emerald-200/70' : 'border-stone-100'}">
+      <div id="posActionSlot_${product.id}" class="mt-2 pt-1.5 border-t ${hasQty ? 'border-emerald-200/80' : 'border-stone-100'}">
         ${renderProductCardActionHTML(product, qty, isReady)}
       </div>
     </div>
@@ -1626,8 +1626,38 @@ let cartGestureInitDone = false;
 let pressRepeatState = null;
 let swipeState = null;
 let suppressStepperClick = false;
+let suppressStepperClickTimer = null;
 let cardPressState = null;
 let suppressCardClick = false;
+let suppressCardClickTimer = null;
+
+function setSuppressCardClick(val) {
+  suppressCardClick = Boolean(val);
+  if (suppressCardClickTimer) {
+    clearTimeout(suppressCardClickTimer);
+    suppressCardClickTimer = null;
+  }
+  if (val) {
+    suppressCardClickTimer = setTimeout(() => {
+      suppressCardClick = false;
+      suppressCardClickTimer = null;
+    }, 280);
+  }
+}
+
+function setSuppressStepperClick(val) {
+  suppressStepperClick = Boolean(val);
+  if (suppressStepperClickTimer) {
+    clearTimeout(suppressStepperClickTimer);
+    suppressStepperClickTimer = null;
+  }
+  if (val) {
+    suppressStepperClickTimer = setTimeout(() => {
+      suppressStepperClick = false;
+      suppressStepperClickTimer = null;
+    }, 280);
+  }
+}
 
 const REPEAT_HOLD_MS = 550;
 const REPEAT_TICK_MS = 110;
@@ -1668,7 +1698,7 @@ function onCardPressMove(e) {
   if (Math.hypot(dx, dy) > GESTURE_SLOP_PX) {
     // Niat scroll / sentuhan liar: batalkan hold & telan klik susulan
     s.moved = true;
-    suppressCardClick = true;
+    setSuppressCardClick(true);
     cancelCardPress();
   }
 }
@@ -1680,7 +1710,7 @@ function onCardPressUp() {
   if (s.repeating || s.moved || heldLong) {
     // Hold-repeat sudah menambah (atau jari bergeser / menahan lama):
     // telan klik susulan agar tidak dobel-tambah.
-    suppressCardClick = true;
+    setSuppressCardClick(true);
   }
   cancelCardPress();
 }
@@ -1768,8 +1798,16 @@ export function initCartGestures() {
   zones.forEach((zone) => {
     // Telan klik susulan gestur (bukan ketukan) + tombol Hapus hasil usapan
     zone.addEventListener('click', (e) => {
+      // 1. Tombol eksplisit (seperti tombol "1 porsi", stepper, dsb): JANGAN PERNAH DITELAN!
+      const btn = e.target.closest('button, [role="button"], a, input, select, textarea');
+      if (btn) {
+        setSuppressStepperClick(false);
+        setSuppressCardClick(false);
+        return;
+      }
+
       if (suppressStepperClick) {
-        suppressStepperClick = false;
+        setSuppressStepperClick(false);
         e.stopPropagation();
         e.preventDefault();
         return;
@@ -1777,12 +1815,12 @@ export function initCartGestures() {
       if (suppressCardClick) {
         const card = e.target.closest('[data-product-card]');
         if (card && zone.contains(card)) {
-          suppressCardClick = false;
+          setSuppressCardClick(false);
           e.stopPropagation();
           e.preventDefault();
           return;
         }
-        suppressCardClick = false;
+        setSuppressCardClick(false);
       }
       const del = e.target.closest('[data-swipe-delete]');
       if (del && zone.contains(del)) {
@@ -1806,7 +1844,7 @@ export function initCartGestures() {
           const dy = (ev.clientY ?? startY) - startY;
           if (Math.hypot(dx, dy) > GESTURE_SLOP_PX) {
             // Bergeser = niat scroll, bukan tahan: batalkan repeat & telan klik
-            suppressStepperClick = true;
+            setSuppressStepperClick(true);
             stopPressRepeat();
           }
         };
@@ -1815,7 +1853,7 @@ export function initCartGestures() {
           pressRepeatState.interval = setInterval(tick, REPEAT_TICK_MS);
           tick();
           try { triggerHaptic('medium'); } catch (_) {}
-          suppressStepperClick = true;
+          setSuppressStepperClick(true);
         }, REPEAT_HOLD_MS);
         pressRepeatState = { timer, interval: null, moveListener: onMove };
         window.addEventListener('pointermove', onMove);
@@ -1835,12 +1873,12 @@ export function initCartGestures() {
         const startY = e.clientY ?? 0;
         const startT = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
         cancelCardPress();
-        suppressCardClick = false;
+        setSuppressCardClick(false);
         const holdTimer = setTimeout(() => {
           const s = cardPressState;
           if (!s || s.moved) return;
           s.repeating = true;
-          suppressCardClick = true;
+          setSuppressCardClick(true);
           try { cardEl.classList.add('card-press-hold'); } catch (_) {}
           try { triggerHaptic('medium'); } catch (_) {}
           // Tambah pertama dari hold (tap biasa ditelan via suppressCardClick)

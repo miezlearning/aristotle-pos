@@ -483,7 +483,12 @@ export function initM3RippleSystem() {
 
     target.appendChild(wave);
     setTimeout(() => {
-      try { wave.remove(); } catch (_) {}
+      try {
+        wave.remove();
+        if (target && !target.querySelector('.m3-ripple-wave')) {
+          target.classList.remove('m3-ripple-surface');
+        }
+      } catch (_) {}
     }, 250);
   };
 

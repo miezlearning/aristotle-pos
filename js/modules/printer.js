@@ -2699,7 +2699,7 @@ export function updatePrinterUIStatus(skipHeartbeat = false) {
 
     if (headerBadge) headerBadge.className = 'hidden';
     if (headerDot) headerDot.className = dotClass.replace('w-2.5 h-2.5', 'w-2 h-2');
-    if (railDot) railDot.className = `absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-white ${isUsbConnected || (printerName && isReady) ? 'bg-emerald-500 animate-pulse' : (window.AndroidBridge && !isBtEnabled ? 'bg-rose-400' : 'bg-stone-400')}`;
+    if (railDot) railDot.className = `pointer-events-none absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-white z-10 ${isUsbConnected || (printerName && isReady) ? 'bg-emerald-500 animate-pulse' : (window.AndroidBridge && !isBtEnabled ? 'bg-rose-400' : 'bg-stone-400')}`;
     if (headerIcon) {
       headerIcon.textContent = isHotspot ? 'wifi_tethering' : (isUsbConnected ? 'usb' : 'print');
       headerIcon.className = isHotspot ? 'material-symbols-rounded text-sm text-amber-700' : (isUsbConnected || (printerName && isReady) ? 'material-symbols-rounded text-sm text-emerald-700' : 'material-symbols-rounded text-sm text-stone-500');

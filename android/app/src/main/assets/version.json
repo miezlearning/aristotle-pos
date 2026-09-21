@@ -1,9 +1,11 @@
 {
-  "versionCode": 140,
-  "versionName": "1.2.91",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.91/Aristotle-POS.apk",
+  "versionCode": 141,
+  "versionName": "1.2.92",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.92/Aristotle-POS.apk",
   "changelog": [
-    "Header mobile sejajar 44px + dot status ber-border + ikon anti-kepotong"
+    "Penyempurnaan kartu menu POS bebas konflik animasi hover dan klik",
+    "Perbaikan respons sentuhan edit porsi pemicu modal di ketukan pertama",
+    "Perbaikan indikator status dot printer navigasi rail tidak terpotong"
   ],
   "releaseDate": "2026-09-21"
 }

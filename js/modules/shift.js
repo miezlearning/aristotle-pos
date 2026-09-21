@@ -66,7 +66,7 @@ export function updateShiftHeaderUI() {
     }
     if (railShiftDot) {
       railShiftDot.classList.remove('hidden');
-      railShiftDot.className = 'absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white animate-pulse';
+      railShiftDot.className = 'pointer-events-none absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white animate-pulse z-10';
     }
     if (desktopText) {
       desktopText.innerText = `Shift: ${active.cashierName}`;

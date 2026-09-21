@@ -507,33 +507,41 @@ div[id$="Modal"]:not(.hidden) > div,
   color: #334155;
 }
 
-/* Modern POS Card Elevation & Tactile Touch */
-.pos-product-card {
-  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease, border-color 0.18s ease;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
-}
-
-.pos-product-card:active {
-  transform: scale(0.975);
-}
-
-@media (hover: hover) {
-  .pos-product-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08), 0 6px 8px -4px rgba(0, 0, 0, 0.04);
-  }
-}
-
-/* POS Product Card: Modern iOS / Top-Tier App Smooth Micro-Interaction */
+/* POS Product Card: Modern Tactile Micro-Interactions without Hover/Click Collisions */
 .pos-product-card {
   position: relative;
   overflow: visible !important;
-  transition: transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
   will-change: transform;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pos-product-card:hover:not(:active):not(.card-press-hold) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px -4px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+    border-color: #6ee7b7;
+  }
+
+  .pos-product-card:hover:not(:active):not(.card-press-hold) .pos-card-img {
+    transform: scale(1.035);
+  }
+
+  .pos-product-card:hover:not(:active):not(.card-press-hold) .pos-card-icon {
+    transform: scale(1.08);
+  }
 }
 
 .pos-product-card:active {
-  transform: scale(0.988);
+  transform: scale(0.982);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: transform 0.06s ease-out, box-shadow 0.06s ease-out;
+}
+
+.pos-card-img,
+.pos-card-icon {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .m3-ripple-container {
@@ -546,8 +554,8 @@ div[id$="Modal"]:not(.hidden) > div,
 
 .pos-product-card-active {
   border-color: #059669 !important;
-  background-color: rgba(236, 253, 245, 0.5) !important;
-  box-shadow: 0 0 0 1.5px rgba(5, 150, 105, 0.3), 0 4px 12px -2px rgba(5, 150, 105, 0.12) !important;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.25), 0 8px 16px -2px rgba(5, 150, 105, 0.15) !important;
+  background-color: rgba(236, 253, 245, 0.4) !important;
 }
 
 /* Floating Quick-Checkout Bar on Mobile */
@@ -606,6 +614,11 @@ button:active:not(:disabled),
   position: relative;
   overflow: hidden;
   -webkit-mask-image: -webkit-radial-gradient(white, black); /* Fix webkit overflow border-radius */
+}
+
+.m3-ripple-surface:has([id$="Dot"], [id$="Badge"], .badge) {
+  overflow: visible !important;
+  -webkit-mask-image: none !important;
 }
 
 .m3-ripple-wave {
@@ -870,11 +883,7 @@ div[id$="Modal"] > div {
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
-/* 12b. Transisi lembut kartu katalog saat qty 0 <-> >0 (border & shadow
-   beranimasi, tidak patah). */
-.pos-product-card {
-  transition: padding 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
-}
+
 
 /* 12. Native View Transitions API Integration (Shared-Axis Cross-Dissolve) */
 #mainAppHeader {
