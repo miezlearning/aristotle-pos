@@ -126,7 +126,7 @@
       <div class="relative w-11 h-11">
         <button id="railStoreBtn" type="button" onclick="window.KasirApp.handleBrandLogoClick()"
           class="w-full h-full rounded-2xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 shadow-2xs flex items-center justify-center p-1.5 transition active:scale-95 cursor-pointer group"
-          title="Profil Toko">
+          data-tooltip="Profil Toko">
           <img src="icon-192.png" alt="Aristotle POS" class="w-full h-full object-contain">
         </button>
         <!-- Pulse Status Dot -->
@@ -141,7 +141,7 @@
         <!-- 1. Destination: Kasir (POS) -->
         <button id="railNavPos" type="button" onclick="switchView('pos')"
           class="flex flex-col items-center justify-center w-12 py-1.5 rounded-2xl group transition active:scale-95 cursor-pointer"
-          title="Kasir">
+          data-tooltip="Kasir">
           <div id="railPillPos" class="w-12 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center transition shadow-xs">
             <span class="material-symbols-rounded text-xl">point_of_sale</span>
           </div>
@@ -151,7 +151,7 @@
         <!-- 2. Destination: Laporan Keuangan -->
         <button id="railNavReport" type="button" onclick="switchView('report')"
           class="flex flex-col items-center justify-center w-12 py-1.5 rounded-2xl group transition active:scale-95 cursor-pointer"
-          title="Laporan">
+          data-tooltip="Laporan">
           <div id="railPillReport" class="w-12 h-8 rounded-full text-stone-600 group-hover:bg-stone-100 flex items-center justify-center transition">
             <span class="material-symbols-rounded text-xl">account_balance_wallet</span>
           </div>
@@ -161,7 +161,7 @@
         <!-- 3. Destination: Kelola Menu -->
         <button id="railNavAdmin" type="button" onclick="switchView('admin')"
           class="flex flex-col items-center justify-center w-12 py-1.5 rounded-2xl group transition active:scale-95 cursor-pointer"
-          title="Kelola Menu">
+          data-tooltip="Kelola Menu">
           <div id="railPillAdmin" class="w-12 h-8 rounded-full text-stone-600 group-hover:bg-stone-100 flex items-center justify-center transition">
             <span class="material-symbols-rounded text-xl">inventory_2</span>
           </div>
@@ -179,7 +179,7 @@
       <div class="relative w-10 h-10">
         <button id="railPrinterBtn" type="button" onclick="window.KasirApp.openPrinterConfigModal()"
           class="w-full h-full rounded-2xl bg-stone-100 hover:bg-stone-200/80 text-stone-700 flex items-center justify-center border border-stone-200/80 transition active:scale-95 cursor-pointer shadow-2xs"
-          title="Status Printer">
+          data-tooltip="Status Printer">
           <span class="material-symbols-rounded text-lg leading-none text-stone-700">print</span>
         </button>
         <span id="railPrinterDot" class="pointer-events-none absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-stone-400 border border-white z-10"></span>
@@ -189,7 +189,7 @@
       <div class="relative w-10 h-10">
         <button id="railShiftBtn" type="button" onclick="window.KasirApp.handleShiftHeaderClick()"
           class="w-full h-full rounded-2xl bg-stone-100 hover:bg-stone-200/80 text-stone-700 flex items-center justify-center border border-stone-200/80 transition active:scale-95 cursor-pointer shadow-2xs"
-          title="Shift Kasir">
+          data-tooltip="Shift Kasir">
           <span class="material-symbols-rounded text-lg leading-none text-stone-700">schedule</span>
         </button>
         <span id="railShiftDot" class="hidden pointer-events-none absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white animate-pulse z-10"></span>
@@ -201,14 +201,14 @@
       <!-- Help: WhatsApp Support -->
       <a href="https://wa.me/6281345028895" target="_blank"
         class="w-10 h-10 rounded-2xl bg-white hover:bg-emerald-50 text-emerald-700 flex items-center justify-center border border-stone-200/80 transition active:scale-95 cursor-pointer shadow-2xs"
-        title="Bantuan WhatsApp: 081345028895">
+        data-tooltip="Bantuan WhatsApp">
         <span class="material-symbols-rounded text-lg">chat</span>
       </a>
 
       <!-- Guide: Interactive Tour -->
       <button type="button" onclick="KasirApp.openGuideTour(0)"
         class="w-10 h-10 rounded-2xl bg-white hover:bg-stone-100 text-stone-600 flex items-center justify-center border border-stone-200/80 transition active:scale-95 cursor-pointer shadow-2xs"
-        title="Panduan Interaktif Kasir">
+        data-tooltip="Panduan Kasir">
         <span class="material-symbols-rounded text-lg text-stone-500">help</span>
       </button>
     </div>
@@ -227,7 +227,7 @@
         <div class="md:hidden flex items-center gap-1.5 min-w-0 flex-1 pr-1">
           <button id="mobileStoreProfileBtn" type="button" onclick="window.KasirApp.handleBrandLogoClick(event)"
             class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200/80 border border-stone-200/80 shadow-2xs transition active:scale-95 touch-target-large cursor-pointer min-w-0 max-w-full"
-            title="Klik untuk Info Toko / Hubungkan Perangkat & Ganti Role (3x untuk Super Admin)">
+            data-tooltip="Profil Toko & Peran">
             <div class="relative w-5 h-5 rounded-md overflow-hidden bg-white p-0.5 border border-stone-200/60 shrink-0">
               <img src="icon-192.png" alt="Aristotle POS" class="w-full h-full object-contain">
               <span id="mobileStoreSyncDot" class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-white animate-pulse"></span>
@@ -244,7 +244,7 @@
           <!-- Store Selector Filter Chip (Full Width & Uncramped) -->
           <button type="button" onclick="window.KasirApp.openCloudModal()"
             class="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-stone-100 hover:bg-stone-200/80 border border-stone-200/80 text-stone-900 transition active:scale-95 group text-left cursor-pointer shadow-2xs select-none shrink-0"
-            title="Profil Toko & Pengaturan Akses">
+            data-tooltip="Profil Toko">
             <span id="desktopStoreSyncDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0 shadow-2xs animate-pulse"></span>
             <span id="appHeaderStoreTitle" class="text-sm font-black tracking-tight text-stone-900 group-hover:text-emerald-800 transition truncate max-w-[280px] lg:max-w-[420px]">
               Toko Saya
@@ -267,7 +267,7 @@
           <!-- Kiosk / Fullscreen Toggle Button -->
           <button type="button" onclick="window.KasirApp.toggleFullscreen()"
             class="w-9 h-9 rounded-xl bg-stone-100 hover:bg-stone-200/80 text-stone-600 hover:text-stone-900 flex items-center justify-center border border-stone-200/90 transition active:scale-95 cursor-pointer shadow-2xs"
-            title="Layar Penuh">
+            data-tooltip="Layar penuh">
             <span id="headerFullscreenIcon" class="material-symbols-rounded text-lg">fullscreen</span>
           </button>
         </div>
@@ -276,19 +276,19 @@
         <div class="md:hidden flex items-center gap-1.5 shrink-0">
           <button id="mobileHeaderShiftBtn" type="button" onclick="window.KasirApp.handleShiftHeaderClick()"
             class="w-11 h-11 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center border border-stone-200/80 shadow-2xs transition active:scale-90 relative shrink-0"
-            title="Shift Kasir">
+            data-tooltip="Shift Kasir">
             <span id="mobileHeaderShiftDot" class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 border border-white animate-pulse"></span>
             <span class="material-symbols-rounded text-xl leading-none text-emerald-700">schedule</span>
           </button>
           <button id="mobileHeaderPrinterBtn" type="button" onclick="window.KasirApp.openPrinterConfigModal()"
             class="w-11 h-11 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center border border-stone-200/80 shadow-2xs transition active:scale-90 relative shrink-0"
-            title="Status Printer">
+            data-tooltip="Status Printer">
             <span id="mobileHeaderPrinterDot" class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-stone-400 border border-white"></span>
             <span class="material-symbols-rounded text-xl leading-none text-stone-600">print</span>
           </button>
           <button id="mobileHeaderCartBtn" type="button" onclick="toggleMobileCartDrawer()"
             class="relative px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200/80 flex items-center gap-1 active:scale-95 transition shrink-0 shadow-2xs"
-            title="Keranjang">
+            data-tooltip="Keranjang">
             <span class="material-symbols-rounded text-base leading-none text-stone-600">shopping_cart</span>
             <span id="mobileHeaderCartTotal" class="text-xs font-black">0</span>
           </button>
@@ -312,7 +312,7 @@
           <!-- Scroll Left Button (hidden on mobile, visible on desktop) -->
           <button id="queueScrollLeftBtn" onclick="window.KasirApp.scrollQueueTabs('left')"
             class="hidden md:flex w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition shrink-0 items-center justify-center touch-target-large cursor-pointer"
-            title="Geser antrian ke kiri">
+            data-tooltip="Geser kiri">
             <span class="material-symbols-rounded text-lg">chevron_left</span>
           </button>
 
@@ -325,7 +325,7 @@
           <!-- Scroll Right Button (hidden on mobile, visible on desktop) -->
           <button id="queueScrollRightBtn" onclick="window.KasirApp.scrollQueueTabs('right')"
             class="hidden md:flex w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition shrink-0 items-center justify-center touch-target-large cursor-pointer"
-            title="Geser antrian ke kanan">
+            data-tooltip="Geser kanan">
             <span class="material-symbols-rounded text-lg">chevron_right</span>
           </button>
 
@@ -334,6 +334,7 @@
 
           <!-- Add Queue Button (Fixed Right without overlapping tabs) -->
           <button onclick="addNewOrderQueue()"
+            data-tooltip="Tambah antrian baru"
             class="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-extrabold text-xs flex items-center gap-1 border border-emerald-300/80 shrink-0 touch-target-large transition active:scale-95 shadow-2xs cursor-pointer">
             <span class="material-symbols-rounded text-base text-emerald-700">add</span>
             <span class="hidden sm:inline">Antrian Baru</span>
@@ -365,13 +366,13 @@
               <span id="searchKbdHint"
                 class="hidden md:inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold text-stone-400 bg-stone-200/70 border border-stone-300/80 select-none cursor-pointer"
                 onclick="document.getElementById('searchInput')?.focus()"
-                title="Tekan tombol '/' di keyboard untuk mencari cepat">
+                data-tooltip="Cari menu" data-tooltip-shortcut="/">
                 /
               </span>
 
               <button type="button" id="clearSearchBtn" onclick="window.KasirApp.clearSearch()"
                 class="hidden w-6 h-6 rounded-full bg-stone-200 hover:bg-rose-100 hover:text-rose-600 text-stone-600 flex items-center justify-center transition active:scale-90"
-                title="Hapus pencarian (Esc)" aria-label="Hapus pencarian">
+                data-tooltip="Hapus pencarian" data-tooltip-shortcut="Esc" aria-label="Hapus pencarian">
                 <span class="material-symbols-rounded text-xs">close</span>
               </button>
             </div>
@@ -380,28 +381,33 @@
           <!-- Category Pills: horizontal scroll di HP, vertikal penuh di samping (xl+) -->
           <div class="flex lg:flex-col items-center lg:items-stretch gap-1.5 overflow-x-auto lg:overflow-visible custom-scroll w-full py-0.5 scroll-smooth">
             <button onclick="setCategory('all')" id="cat-all"
+              data-tooltip="Semua menu"
               class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-black text-xs sm:text-sm text-center bg-stone-900 text-white shadow-xs transition flex items-center justify-center lg:justify-start gap-1.5 touch-target-large border border-stone-900 whitespace-nowrap active:scale-95 cursor-pointer lg:w-full">
               <span class="material-symbols-rounded text-base">apps</span>
               <span>Semua</span>
             </button>
             <button onclick="setCategory('makanan')" id="cat-makanan"
+              data-tooltip="Kategori Makanan"
               class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center lg:justify-start gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap active:scale-95 cursor-pointer lg:w-full">
               <span class="material-symbols-rounded text-base">lunch_dining</span>
               <span>Makanan</span>
             </button>
             <button onclick="setCategory('minuman')" id="cat-minuman"
+              data-tooltip="Kategori Minuman"
               class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center lg:justify-start gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap active:scale-95 cursor-pointer lg:w-full">
               <span class="material-symbols-rounded text-base">local_cafe</span>
               <span>Minuman</span>
             </button>
             <button onclick="setCategory('camilan')" id="cat-camilan"
+              data-tooltip="Kategori Camilan"
               class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center lg:justify-start gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap active:scale-95 cursor-pointer lg:w-full">
               <span class="material-symbols-rounded text-base">bakery_dining</span>
               <span>Camilan</span>
             </button>
             <button onclick="setCategory('topping')" id="cat-topping"
+              data-tooltip="Kategori Topping"
               class="cat-pill shrink-0 py-2 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-center bg-stone-100 hover:bg-stone-200/80 text-stone-700 transition flex items-center justify-center lg:justify-start gap-1.5 touch-target-large border border-stone-200/80 shadow-2xs whitespace-nowrap active:scale-95 cursor-pointer lg:w-full">
-              <span class="material-symbols-rounded text-base">add_circle</span>
+              <span class="material-symbols-rounded text-base">extension</span>
               <span>Topping</span>
             </button>
           </div>
@@ -429,6 +435,7 @@
               </div>
               <div class="truncate">
                 <h3 class="text-sm font-black text-stone-900 cursor-pointer flex items-center gap-1 truncate"
+                  data-tooltip="Ubah nama antrian"
                   onclick="promptRenameQueue()">
                   <span id="currentOrderTitle" class="truncate">Pesanan #1</span>
                   <span class="material-symbols-rounded text-xs text-stone-400 shrink-0">edit</span>
@@ -439,12 +446,12 @@
             <div class="flex items-center gap-1 shrink-0">
               <button onclick="deleteCurrentActiveQueue()"
                 class="w-7 h-7 rounded-lg hover:bg-rose-50 text-stone-400 hover:text-rose-600 flex items-center justify-center transition"
-                title="Hapus antrian ini">
+                data-tooltip="Hapus antrian ini">
                 <span class="material-symbols-rounded text-base">delete</span>
               </button>
               <button onclick="confirmClearCart()"
                 class="w-7 h-7 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-stone-700 flex items-center justify-center transition"
-                title="Kosongkan keranjang">
+                data-tooltip="Kosongkan keranjang">
                 <span class="material-symbols-rounded text-base">remove_shopping_cart</span>
               </button>
             </div>
@@ -466,6 +473,7 @@
               <span id="cartTotalDisplay" class="text-emerald-700 text-lg">Rp 0</span>
             </div>
             <button id="btnCheckout" onclick="openPaymentModal()" disabled
+              data-tooltip="Bayar pesanan" data-tooltip-shortcut="F9"
               class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:pointer-events-none text-white font-black text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 active:scale-98 transition">
               <span>PROSES BAYAR</span>
               <span class="material-symbols-rounded text-lg">arrow_forward</span>
@@ -495,10 +503,11 @@
         <div class="flex items-center gap-1.5 shrink-0">
           <button onclick="toggleMobileCartDrawer()"
             class="w-9 h-9 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 border border-stone-700/80 flex items-center justify-center active:scale-90 transition shadow-2xs shrink-0"
-            title="Lihat Keranjang">
+            data-tooltip="Lihat keranjang">
             <span class="material-symbols-rounded text-lg">receipt_long</span>
           </button>
           <button onclick="openPaymentModal()"
+            data-tooltip="Bayar pesanan"
             class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-stone-950 font-black text-xs sm:text-sm flex items-center gap-1 shadow-md shadow-emerald-500/20 active:scale-95 transition shrink-0">
             <span>BAYAR</span>
             <span class="material-symbols-rounded text-base font-black">arrow_forward</span>
@@ -518,6 +527,7 @@
             <span class="material-symbols-rounded text-2xl text-emerald-700 shrink-0">receipt_long</span>
             <div class="truncate">
               <h3 class="text-base font-black text-stone-900 cursor-pointer flex items-center gap-1 truncate"
+                data-tooltip="Ubah nama antrian"
                 onclick="promptRenameQueue()">
                 <span id="mobileDrawerTitle" class="truncate">Pesanan #1</span>
                 <span class="material-symbols-rounded text-sm text-stone-400 shrink-0">edit</span>
@@ -528,10 +538,11 @@
           <div class="flex items-center gap-1 shrink-0">
             <button onclick="deleteCurrentActiveQueue()"
               class="p-1.5 rounded-xl bg-stone-100 hover:bg-red-50 text-stone-500 hover:text-red-600 transition touch-target-large flex items-center justify-center border border-stone-200"
-              title="Tutup antrian ini">
+              data-tooltip="Hapus antrian ini">
               <span class="material-symbols-rounded text-base">delete</span>
             </button>
             <button onclick="toggleMobileCartDrawer()"
+              data-tooltip="Tutup"
               class="p-1.5 rounded-full hover:bg-stone-100 text-stone-500 touch-target-large flex items-center justify-center">
               <span class="material-symbols-rounded text-2xl">close</span>
             </button>
@@ -551,10 +562,12 @@
 
           <div class="grid grid-cols-3 gap-2">
             <button onclick="confirmClearCart()"
+              data-tooltip="Kosongkan keranjang"
               class="col-span-1 py-2.5 rounded-xl bg-red-50 text-red-600 font-bold text-xs border border-red-200 flex items-center justify-center gap-1 touch-target-large">
               <span class="material-symbols-rounded text-base">delete</span> Kosongkan
             </button>
             <button onclick="openPaymentModal(); toggleMobileCartDrawer(false);"
+              data-tooltip="Bayar pesanan"
               class="col-span-2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-stone-950 font-black text-sm flex items-center justify-center gap-1.5 shadow touch-target-large active:scale-95">
               <span class="material-symbols-rounded text-lg">payments</span> BAYAR SEKARANG
             </button>
@@ -610,7 +623,7 @@
                   <div id="activeDiscountBadge" class="hidden items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 border border-rose-300 text-rose-900 text-xs font-black shadow-xs">
                     <span class="material-symbols-rounded text-sm text-rose-600">local_offer</span>
                     <span id="activeDiscountText">Diskon 10% (-Rp 5.000)</span>
-                    <button type="button" onclick="window.KasirApp.removeDiscount()" class="w-4 h-4 rounded-full bg-rose-200 hover:bg-rose-300 text-rose-800 flex items-center justify-center ml-0.5 cursor-pointer" title="Hapus Diskon"><span class="material-symbols-rounded text-[10px] font-bold">close</span></button>
+                    <button type="button" onclick="window.KasirApp.removeDiscount()" class="w-4 h-4 rounded-full bg-rose-200 hover:bg-rose-300 text-rose-800 flex items-center justify-center ml-0.5 cursor-pointer" data-tooltip="Hapus Diskon"><span class="material-symbols-rounded text-[10px] font-bold">close</span></button>
                   </div>
                 </div>
               </div>
@@ -995,7 +1008,7 @@
           </button>
           <button type="button" id="voidConfirmBtn"
             class="relative overflow-hidden py-2.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer active:scale-95 select-none"
-            title="Tahan 1 detik untuk mem-void">
+            data-tooltip="Void transaksi">
             <span id="voidHoldFill" class="absolute inset-y-0 left-0 w-0 bg-white/25 pointer-events-none"></span>
             <span class="material-symbols-rounded text-base relative pointer-events-none">check</span>
             <span id="voidConfirmLabel" class="relative pointer-events-none">Tahan 1 dtk untuk Void</span>
@@ -1197,7 +1210,7 @@
 
             <button onclick="openBulkImportModal()"
               class="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-95 touch-target-large cursor-pointer shadow-2xs"
-              title="Tambah banyak menu sekaligus (Tabel cepat atau tempel teks WA)">
+              data-tooltip="Import menu">
               <span class="material-symbols-rounded text-lg">playlist_add</span>
               <span class="truncate">+ Tambah Banyak (Bulk)</span>
             </button>
@@ -1207,31 +1220,31 @@
           <div class="grid grid-cols-5 gap-1.5">
             <button type="button" onclick="window.KasirApp.openCashierManageModal()"
               class="min-h-[52px] px-0.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold flex flex-col items-center justify-center gap-0.5 transition active:scale-95 touch-target-large cursor-pointer shadow-2xs"
-              title="Kelola Akun Kasir & PIN 6 Digit">
+              data-tooltip="Kelola Kasir">
               <span class="material-symbols-rounded text-lg text-amber-700">badge</span>
               <span class="text-[10px] font-bold leading-none">Kasir</span>
             </button>
             <button type="button" onclick="window.KasirApp.openPrinterConfigModal()"
               class="min-h-[52px] px-0.5 py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold flex flex-col items-center justify-center gap-0.5 transition active:scale-95 touch-target-large cursor-pointer"
-              title="Atur printer thermal & struk">
+              data-tooltip="Pengaturan Printer">
               <span class="material-symbols-rounded text-lg text-stone-500">print</span>
               <span class="text-[10px] font-bold leading-none">Printer</span>
             </button>
             <button onclick="openQrisModal()"
               class="min-h-[52px] px-0.5 py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold flex flex-col items-center justify-center gap-0.5 transition active:scale-95 touch-target-large cursor-pointer"
-              title="Atur QRIS toko">
+              data-tooltip="Pengaturan QRIS">
               <span class="material-symbols-rounded text-lg text-stone-500">qr_code_2</span>
               <span class="text-[10px] font-bold leading-none">QRIS</span>
             </button>
             <button onclick="exportDataBackup()"
               class="min-h-[52px] px-0.5 py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold flex flex-col items-center justify-center gap-0.5 transition active:scale-95 touch-target-large cursor-pointer"
-              title="Cadangkan seluruh data toko ke file JSON">
+              data-tooltip="Cadangkan Data">
               <span class="material-symbols-rounded text-lg text-stone-500">download</span>
               <span class="text-[10px] font-bold leading-none">Cadang</span>
             </button>
             <button onclick="document.getElementById('importFileInput').click()"
               class="min-h-[52px] px-0.5 py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold flex flex-col items-center justify-center gap-0.5 transition active:scale-95 touch-target-large cursor-pointer"
-              title="Pulihkan data toko dari file JSON cadangan">
+              data-tooltip="Pulihkan Data">
               <span class="material-symbols-rounded text-lg text-stone-500">upload</span>
               <span class="text-[10px] font-bold leading-none">Pulih</span>
             </button>
@@ -1242,13 +1255,13 @@
           <div class="grid grid-cols-2 gap-1.5">
             <button type="button" onclick="window.KasirApp.openDiagnosticsModal()"
               class="min-h-[52px] px-2 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 font-bold flex flex-col items-center justify-center gap-0.5 transition active:scale-95 touch-target-large cursor-pointer shadow-2xs"
-              title="Lihat, salin, atau kirim data diagnostik ke support">
+              data-tooltip="Data Diagnostik">
               <span class="material-symbols-rounded text-lg text-sky-700">bug_report</span>
               <span class="text-[10px] font-bold leading-none">Diagnostik</span>
             </button>
             <button type="button" onclick="document.getElementById('auditTrailCard')?.scrollIntoView({ behavior: 'smooth', block: 'start' })"
               class="min-h-[52px] px-2 py-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 font-bold flex flex-col items-center justify-center gap-0.5 transition active:scale-95 touch-target-large cursor-pointer shadow-2xs"
-              title="Lihat jejak void, diskon, dan selisih laci">
+              data-tooltip="Audit Transaksi">
               <span class="material-symbols-rounded text-lg text-stone-500">history</span>
               <span class="text-[10px] font-bold leading-none">Jejak Audit</span>
             </button>
@@ -1377,13 +1390,13 @@
             <div id="adminBulkActionContainer" class="hidden flex items-center gap-2 animate-fadeIn">
               <button type="button" onclick="window.KasirApp.deleteSelectedProducts()"
                 class="px-3 py-2 min-h-[40px] rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95 touch-target-large whitespace-nowrap"
-                title="Hapus semua menu yang dicentang">
+                data-tooltip="Hapus pilihan">
                 <span class="material-symbols-rounded text-base">delete</span>
                 <span id="adminDeleteSelectedBtnText">Hapus Terpilih</span>
               </button>
               <button type="button" onclick="window.KasirApp.clearAdminSelection()"
                 class="px-3 py-2 min-h-[40px] rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition whitespace-nowrap"
-                title="Batalkan pilihan centang">
+                data-tooltip="Batal pilih">
                 Batal
               </button>
             </div>
@@ -1392,7 +1405,7 @@
             <div id="adminNormalActionContainer" class="flex items-center gap-2">
               <button type="button" onclick="window.KasirApp.openDeleteAllModal()"
                 class="px-3 py-2 min-h-[40px] rounded-xl text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 font-extrabold text-xs flex items-center gap-1.5 transition whitespace-nowrap"
-                title="Hapus seluruh daftar menu sekaligus">
+                data-tooltip="Hapus semua menu">
                 <span class="material-symbols-rounded text-base">delete_sweep</span>
                 <span class="hidden sm:inline">Hapus Seluruh Menu</span>
                 <span class="sm:hidden">Hapus Semua</span>
@@ -1455,7 +1468,7 @@
             <!-- Tombol Rentang Tanggal (Date Range) -->
             <button type="button" id="btnReportDateRange" onclick="KasirApp.openDatePicker('range')"
               class="flex items-center gap-2 px-3.5 py-1.5 rounded-full border bg-white text-stone-700 border-stone-300 hover:border-stone-400 font-extrabold text-xs sm:text-sm transition shrink-0 shadow-2xs cursor-pointer"
-              title="Filter rentang tanggal khusus">
+              data-tooltip="Filter tanggal">
               <span class="material-symbols-rounded text-base text-emerald-700">date_range</span>
               <span id="reportRangeBtnLabel">Rentang Tanggal</span>
             </button>
@@ -1468,25 +1481,25 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <button onclick="openExpenseModal()"
             class="h-11 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer"
-            title="Catat biaya belanja / operasional">
+            data-tooltip="Catat Pengeluaran">
             <span class="material-symbols-rounded text-lg">receipt_long</span>
             <span>+ Catat Pengeluaran</span>
           </button>
           <button onclick="window.KasirApp.handleShiftHeaderClick()"
             class="h-11 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 border border-emerald-300 transition cursor-pointer"
-            title="Kelola Shift & Rekap Tutup Kasir (Z-Report)">
+            data-tooltip="Shift Kasir">
             <span class="material-symbols-rounded text-lg text-emerald-700">schedule</span>
             <span>Shift & Laporan Z</span>
           </button>
           <button onclick="shareReportWhatsApp()"
             class="h-11 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 border border-stone-200 transition cursor-pointer"
-            title="Kirim rekap laporan ke WhatsApp">
+            data-tooltip="Kirim WhatsApp">
             <span class="material-symbols-rounded text-lg text-emerald-700">chat</span>
             <span>Kirim WA</span>
           </button>
           <button onclick="exportReportCSV()"
             class="h-11 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 border border-stone-200 transition cursor-pointer"
-            title="Download Excel CSV">
+            data-tooltip="Unduh CSV">
             <span class="material-symbols-rounded text-lg text-stone-600">table_view</span>
             <span>Excel</span>
           </button>
@@ -1615,13 +1628,13 @@
             <div class="flex items-center gap-1.5">
               <button onclick="clearTodayData()"
                 class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl font-black text-xs flex items-center gap-1 border border-red-200 transition touch-target-large shadow-sm"
-                title="Hapus seluruh data transaksi & pengeluaran HARI INI jika ada salah input">
+                data-tooltip="Reset data hari ini">
                 <span class="material-symbols-rounded text-base text-red-600">history_toggle_off</span>
                 <span>Hapus Data Hari Ini</span>
               </button>
               <button onclick="clearAllHistory()"
                 class="p-1.5 text-stone-400 hover:text-red-600 rounded-xl transition hover:bg-stone-100"
-                title="Hapus seluruh riwayat semua periode">
+                data-tooltip="Hapus semua riwayat">
                 <span class="material-symbols-rounded text-lg">delete_forever</span>
               </button>
             </div>
@@ -1906,7 +1919,7 @@
           <div class="flex items-center gap-2.5 min-w-0">
             <button type="button" onclick="switchView('pos')"
               class="h-9 w-9 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center transition active:scale-95 shrink-0"
-              title="Kembali ke Kasir">
+              data-tooltip="Kembali ke Kasir">
               <span class="material-symbols-rounded text-lg">arrow_back</span>
             </button>
             <div class="flex items-center gap-2 min-w-0">
@@ -1925,13 +1938,13 @@
           <div class="flex items-center gap-1.5 shrink-0">
             <button type="button" onclick="KasirApp.renderSuperAdminDashboard()" id="saRefreshBtn"
               class="h-9 w-9 sm:w-auto sm:px-3 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-stone-200 transition active:scale-95"
-              title="Muat ulang data">
+              data-tooltip="Segarkan data">
               <span class="material-symbols-rounded text-base">sync</span>
               <span class="hidden sm:inline">Refresh</span>
             </button>
             <button type="button" onclick="KasirApp.logoutSuperAdmin()"
               class="h-9 w-9 sm:w-auto sm:px-3 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-stone-200 transition active:scale-95"
-              title="Kunci sesi admin">
+              data-tooltip="Kunci Admin">
               <span class="material-symbols-rounded text-base">lock</span>
               <span class="hidden sm:inline">Kunci</span>
             </button>
@@ -1968,7 +1981,7 @@
           </div>
           <button type="button" onclick="KasirApp.openSuperAdminAddStoreModal()" id="saAddStoreBtn"
             class="h-10 px-3.5 sm:px-4 rounded-xl bg-stone-900 hover:bg-black text-white font-extrabold text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95 shrink-0 whitespace-nowrap cursor-pointer"
-            title="Tambah Toko Mitra">
+            data-tooltip="Tambah Toko">
             <span class="material-symbols-rounded text-base text-emerald-400">add_business</span>
             <span class="hidden sm:inline">+ Tambah Mitra</span>
             <span class="sm:hidden">+ Mitra</span>
@@ -2055,12 +2068,12 @@
           <div class="flex items-center p-0.5 bg-stone-100 rounded-lg border border-stone-200">
             <button type="button" id="saViewModeGridBtn" onclick="KasirApp.setSuperAdminViewMode('grid')"
               class="p-1.5 rounded-md bg-white text-stone-900 shadow-sm transition"
-              title="Tampilan kartu">
+              data-tooltip="Tampilan kartu">
               <span class="material-symbols-rounded text-lg block">grid_view</span>
             </button>
             <button type="button" id="saViewModeTableBtn" onclick="KasirApp.setSuperAdminViewMode('table')"
               class="p-1.5 rounded-md text-stone-400 hover:text-stone-700 transition"
-              title="Tampilan tabel">
+              data-tooltip="Tampilan tabel">
               <span class="material-symbols-rounded text-lg block">table_rows</span>
             </button>
           </div>
@@ -2690,7 +2703,7 @@
             <p class="text-[11px] sm:text-xs text-stone-500 font-medium mt-0.5">Nama, harga, stok</p>
           </div>
         </div>
-        <button type="button" onclick="closeProductModal()" class="w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-800 flex items-center justify-center transition cursor-pointer" title="Tutup">
+        <button type="button" onclick="closeProductModal()" class="w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-800 flex items-center justify-center transition cursor-pointer" data-tooltip="Tutup">
           <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
@@ -2890,7 +2903,7 @@
             <p class="text-xs text-stone-500 font-medium mt-0.5">Tabel cepat atau tempel teks</p>
           </div>
         </div>
-        <button type="button" onclick="closeBulkImportModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer" title="Tutup">
+        <button type="button" onclick="closeBulkImportModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer" data-tooltip="Tutup">
           <span class="material-symbols-rounded text-2xl">close</span>
         </button>
       </div>
@@ -2928,13 +2941,13 @@
               </button>
               <button type="button" onclick="clearEmptyBulkRows()"
                 class="px-2.5 py-1.5 bg-stone-50 hover:bg-stone-100 text-stone-500 hover:text-stone-700 font-bold text-xs rounded-xl border border-stone-200 transition active:scale-95 cursor-pointer"
-                title="Hapus baris yang namanya masih kosong">
+                data-tooltip="Hapus baris kosong">
                 <span class="material-symbols-rounded text-sm">cleaning_services</span>
                 <span>Bersihkan kosong</span>
               </button>
               <button type="button" onclick="window.KasirApp.clearAllBulkRows()"
                 class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs rounded-xl border border-red-200 transition active:scale-95 cursor-pointer"
-                title="Hapus seluruh baris di tabel">
+                data-tooltip="Hapus semua baris">
                 <span class="material-symbols-rounded text-sm">delete_sweep</span>
                 <span>Hapus semua</span>
               </button>
@@ -2972,12 +2985,12 @@
             <div class="flex items-center gap-2">
               <button type="button" onclick="document.getElementById('bulkMenuTextInput').value='';handleBulkTextInput()"
                 class="px-2.5 py-1 text-stone-500 hover:text-stone-700 font-bold text-xs rounded-lg hover:bg-stone-100 transition cursor-pointer"
-                title="Kosongkan teks">
+                data-tooltip="Hapus teks">
                 <span>Hapus teks</span>
               </button>
               <button type="button" onclick="loadUserSampleMenu()"
                 class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-lg border border-indigo-200 flex items-center gap-1 transition shadow-2xs cursor-pointer"
-                title="Isi otomatis dengan contoh 22 menu">
+                data-tooltip="Isi contoh menu">
                 <span class="material-symbols-rounded text-sm">content_paste</span>
                 <span>Tempel Contoh Menu (22)</span>
               </button>
@@ -3150,7 +3163,7 @@ Kopi susu 7k"
           </button>
           <button onclick="window.KasirApp.printCurrentKitchenTicket()"
             class="py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition active:scale-95 cursor-pointer"
-            title="Cetak tiket dapur untuk koki">
+            data-tooltip="Cetak tiket dapur">
             <span class="material-symbols-rounded text-base">restaurant</span>
             <span>Tiket Dapur</span>
           </button>
@@ -3160,13 +3173,13 @@ Kopi susu 7k"
         <div class="grid grid-cols-2 gap-1.5">
           <button onclick="window.KasirApp.kickCurrentDrawer()"
             class="py-1.5 px-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300/80 font-bold text-[11px] flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer"
-            title="Kirim sinyal buka laci uang">
+            data-tooltip="Buka laci uang">
             <span class="material-symbols-rounded text-sm text-amber-700">payments</span>
             <span>Buka Laci</span>
           </button>
           <button onclick="window.KasirApp.openPrinterConfigModal()"
             class="py-1.5 px-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-[11px] flex items-center justify-center gap-1 border border-stone-200 transition active:scale-95 cursor-pointer"
-            title="Buka pengaturan printer">
+            data-tooltip="Pengaturan printer">
             <span class="material-symbols-rounded text-sm text-stone-600">tune</span>
             <span>Atur Printer</span>
           </button>
@@ -3399,13 +3412,13 @@ Kopi susu 7k"
 
               <div class="grid grid-cols-2 gap-1.5 pt-2 border-t border-amber-200/60">
                 <button type="button" onclick="KasirApp.connectBluetoothPrinter()"
-                  title="Sambungkan printer thermal kasir lewat Bluetooth (Rekomendasi untuk HP & Tablet Android)"
+                  data-tooltip="Hubungkan Bluetooth"
                   class="h-10 px-2.5 sm:px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 font-bold text-xs flex items-center justify-center gap-1.5 transition">
                   <span class="material-symbols-rounded text-base text-blue-700">bluetooth</span>
                   <span>Bluetooth (HP)</span>
                 </button>
                 <button type="button" onclick="KasirApp.connectSerialPrinter()"
-                  title="Sambungkan printer lewat kabel USB (Khusus Komputer / Laptop di Chrome & Edge)"
+                  data-tooltip="Hubungkan USB"
                   class="h-10 px-2.5 sm:px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 font-bold text-xs flex items-center justify-center gap-1.5 transition">
                   <span class="material-symbols-rounded text-base">usb</span>
                   <span>Kabel USB (PC)</span>
@@ -3433,7 +3446,7 @@ Kopi susu 7k"
                   <option value="panjang">Sinyal kuat (untuk laci berat)</option>
                 </select>
                 <button type="button" onclick="KasirApp.testDrawerPulseSequence()"
-                  title="Kirim 3 sinyal berbeda berurutan — perhatikan laci fisik"
+                  data-tooltip="Tes buka laci"
                   class="w-full h-11 px-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95">
                   <span class="material-symbols-rounded text-base">lock_open</span>
                   <span>Tes Buka Laci</span>
@@ -3853,7 +3866,7 @@ Kopi susu 7k"
         <div class="flex items-center justify-center gap-3">
           <button type="button" id="qtyMinusBtn" onclick="KasirApp.changeQtyEditorDelta(-1)"
             class="w-12 h-12 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-black text-xl flex items-center justify-center transition active:scale-90 touch-target-large cursor-pointer"
-            title="Ketuk kurangi 1 • tahan kurangi cepat" aria-label="Kurangi 1">
+            data-tooltip="Kurangi 1" aria-label="Kurangi 1">
             <span class="material-symbols-rounded text-2xl">remove</span>
           </button>
           <input type="number" id="qtyEditInput" min="0" max="999" step="1" inputmode="numeric" required
@@ -3861,7 +3874,7 @@ Kopi susu 7k"
             class="w-28 px-4 py-3 rounded-2xl border-2 border-emerald-500 focus:border-emerald-600 focus:outline-none text-2xl font-black text-center text-stone-900 bg-white shadow-sm transition">
           <button type="button" id="qtyPlusBtn" onclick="KasirApp.changeQtyEditorDelta(1)"
             class="w-12 h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xl flex items-center justify-center transition active:scale-90 touch-target-large cursor-pointer shadow-md shadow-emerald-600/20"
-            title="Ketuk tambah 1 • tahan tambah cepat" aria-label="Tambah 1">
+            data-tooltip="Tambah 1" aria-label="Tambah 1">
             <span class="material-symbols-rounded text-2xl">add</span>
           </button>
         </div>
@@ -4227,7 +4240,7 @@ Kopi susu 7k"
           <p class="text-[11px] text-stone-500 truncate mt-px"><span id="cloudStoreIdShort" class="font-bold text-stone-700">toko</span><span class="text-stone-300"> • </span><span id="cloudModalStatusDot" class="inline-block align-middle w-2 h-2 rounded-full bg-emerald-500"></span> <span id="cloudModalStatusText" class="font-medium text-stone-600">Online</span></p>
           <span id="cloudStoreIdDisplay" class="hidden"></span>
         </div>
-        <button type="button" onclick="closeCloudModal()" class="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-800 flex items-center justify-center transition cursor-pointer shrink-0" title="Tutup">
+        <button type="button" onclick="closeCloudModal()" class="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-800 flex items-center justify-center transition cursor-pointer shrink-0" data-tooltip="Tutup">
           <span class="material-symbols-rounded text-lg">close</span>
         </button>
       </div>
@@ -4239,7 +4252,7 @@ Kopi susu 7k"
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <!-- Banner Status Lisensi Toko (status saja, tanpa material key) -->
         <div id="cloudModalLicenseBox" onclick="closeCloudModal(); window.KasirApp.openActivateLicenseModal();"
-          class="p-2.5 rounded-2xl bg-stone-50 border border-stone-200/90 flex items-center justify-between gap-2 shadow-2xs min-w-0 cursor-pointer hover:bg-stone-100/70 transition" title="Kelola lisensi">
+          class="p-2.5 rounded-2xl bg-stone-50 border border-stone-200/90 flex items-center justify-between gap-2 shadow-2xs min-w-0 cursor-pointer hover:bg-stone-100/70 transition" data-tooltip="Kelola lisensi">
           <div class="flex items-center gap-2 min-w-0">
             <div id="cloudModalLicenseIconContainer" class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 border border-emerald-200/70">
               <span id="cloudModalLicenseIcon" class="material-symbols-rounded text-base">verified</span>
@@ -4279,7 +4292,7 @@ Kopi susu 7k"
           </div>
           <button type="button" id="cloudModalRoleCardBtn" onclick="closeCloudModal(); window.KasirApp.openRoleSwitchModal();"
             class="px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-extrabold text-[11px] transition shadow-xs shrink-0 cursor-pointer flex items-center gap-1"
-            title="Ganti Peran Kasir / Owner">
+            data-tooltip="Ganti peran">
             <span id="cloudModalRoleCardBtnIcon" class="material-symbols-rounded text-sm">sync_alt</span>
             <span id="cloudModalRoleCardBtnText">Ganti</span>
           </button>
@@ -4508,7 +4521,7 @@ Kopi susu 7k"
           </div>
           <button type="button" id="cloudModalSuperAdminBtn" onclick="closeCloudModal(); window.KasirApp.openSuperAdmin();"
             class="text-stone-500 hover:text-stone-900 font-bold text-[11px] transition flex items-center gap-1 cursor-pointer shrink-0 min-h-[32px]"
-            title="Super Admin">
+            data-tooltip="Super Admin">
             <span class="material-symbols-rounded text-xs">shield_person</span>
             <span>Super Admin</span>
           </button>
@@ -4594,7 +4607,7 @@ Kopi susu 7k"
                 class="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-emerald-600 font-mono font-bold text-stone-900 text-center tracking-wider text-base outline-none">
               <button type="button" onclick="window.KasirApp.togglePasswordVisibility('loginPinInput', this)"
                 class="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1 flex items-center justify-center"
-                title="Tampilkan / Sembunyikan PIN">
+                data-tooltip="Lihat PIN">
                 <span class="material-symbols-rounded text-lg">visibility</span>
               </button>
             </div>
@@ -4676,7 +4689,7 @@ Kopi susu 7k"
                 class="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-emerald-600 font-mono font-bold text-stone-900 text-center tracking-wider text-base outline-none">
               <button type="button" onclick="window.KasirApp.togglePasswordVisibility('regPin', this)"
                 class="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1 flex items-center justify-center"
-                title="Tampilkan / Sembunyikan PIN">
+                data-tooltip="Lihat PIN">
                 <span class="material-symbols-rounded text-lg">visibility</span>
               </button>
             </div>
@@ -4726,11 +4739,11 @@ Kopi susu 7k"
           <div class="flex items-center gap-1.5">
             <code id="installedLicenseKeyText" class="flex-1 min-w-0 truncate font-mono font-bold text-xs text-stone-800 bg-white px-2.5 py-2 rounded-xl border border-emerald-200 select-all">••••-••••-••••-••••</code>
             <button type="button" onclick="window.KasirApp.toggleInstalledLicenseVisibility()" id="btnToggleInstalledLicense"
-              class="w-9 h-9 rounded-xl bg-white border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0 transition active:scale-90 cursor-pointer" title="Lihat / sembunyikan kode">
+              class="w-9 h-9 rounded-xl bg-white border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0 transition active:scale-90 cursor-pointer" data-tooltip="Lihat kode">
               <span id="installedLicenseEyeIcon" class="material-symbols-rounded text-lg">visibility</span>
             </button>
             <button type="button" onclick="window.KasirApp.copyInstalledLicenseKey()"
-              class="w-9 h-9 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white flex items-center justify-center shrink-0 transition active:scale-90 cursor-pointer" title="Salin kode lisensi">
+              class="w-9 h-9 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white flex items-center justify-center shrink-0 transition active:scale-90 cursor-pointer" data-tooltip="Salin kode">
               <span class="material-symbols-rounded text-lg">content_copy</span>
             </button>
           </div>
@@ -4830,7 +4843,7 @@ Kopi susu 7k"
             class="w-full pl-3 pr-10 py-2.5 rounded-xl bg-stone-100 border border-stone-300 focus:bg-white focus:border-emerald-600 font-mono font-bold text-stone-900 text-center tracking-wider text-base outline-none">
           <button type="button" onclick="window.KasirApp.togglePasswordVisibility('pinSecurityInput', this)"
             class="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1 flex items-center justify-center"
-            title="Tampilkan / Sembunyikan PIN">
+            data-tooltip="Lihat PIN">
             <span class="material-symbols-rounded text-lg">visibility</span>
           </button>
         </div>
@@ -4869,7 +4882,7 @@ Kopi susu 7k"
             class="w-full pl-4 pr-11 py-3 rounded-2xl bg-stone-100 border-2 border-stone-200 focus:bg-white focus:border-amber-600 font-mono font-bold text-stone-900 text-center tracking-wider text-base outline-none transition">
           <button type="button" onclick="KasirApp.togglePasskeyVisibility()"
             class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1 flex items-center justify-center"
-            title="Tampilkan / Sembunyikan Passkey">
+            data-tooltip="Lihat Passkey">
             <span id="superAdminPasskeyEyeIcon" class="material-symbols-rounded text-xl">visibility</span>
           </button>
         </div>
@@ -5202,7 +5215,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.93</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.94</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -5362,7 +5375,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.93</span>
+    <span id="appVersionBadge" class="hidden">v1.2.94</span>
   </div>
 
   <!-- Main JavaScript App Module -->
@@ -5386,7 +5399,7 @@ Kopi susu 7k"
           </div>
         </div>
         <button type="button" onclick="window.KasirApp.closeRoleSwitchModal()"
-          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition" title="Tutup">
+          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition" data-tooltip="Tutup">
           <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
@@ -5433,7 +5446,7 @@ Kopi susu 7k"
               class="w-full pl-4 pr-10 py-3 rounded-xl border-2 border-stone-300 focus:border-emerald-600 focus:outline-none text-center text-base sm:text-lg tracking-wider font-bold text-stone-900 bg-stone-50">
             <button type="button" onclick="window.KasirApp.togglePasswordVisibility('roleSwitchPinInput', this)"
               class="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1 flex items-center justify-center"
-              title="Tampilkan / Sembunyikan PIN">
+              data-tooltip="Lihat PIN">
               <span class="material-symbols-rounded text-lg">visibility</span>
             </button>
           </div>
@@ -5484,7 +5497,7 @@ Kopi susu 7k"
           </div>
         </div>
         <button type="button" onclick="window.KasirApp.closeCashierManageModal()"
-          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition" title="Tutup">
+          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition" data-tooltip="Tutup">
           <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
@@ -5558,7 +5571,7 @@ Kopi susu 7k"
           </div>
         </div>
         <button type="button" onclick="window.KasirApp.closeChangeOwnerPinModal()"
-          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition" title="Tutup">
+          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition" data-tooltip="Tutup">
           <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
@@ -5673,7 +5686,7 @@ Kopi susu 7k"
           </div>
         </div>
         <button type="button" onclick="window.KasirApp.closeChangeCashierPinModal()"
-          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition" title="Tutup">
+          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition" data-tooltip="Tutup">
           <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>

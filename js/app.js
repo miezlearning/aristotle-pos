@@ -498,7 +498,7 @@ export function renderSavedStoresList() {
             class="px-2.5 py-1 rounded-lg ${isCurrent ? 'bg-emerald-700 text-white' : 'bg-stone-100 hover:bg-emerald-100 text-stone-800'} font-bold text-[11px] transition">
             ${isCurrent ? 'Aktif' : 'Buka'}
           </button>
-          <button type="button" onclick="KasirApp.deleteSavedStoreCard('${escapeHtml(s.id)}')" title="Hapus dari daftar cepat"
+          <button type="button" onclick="KasirApp.deleteSavedStoreCard('${escapeHtml(s.id)}')" data-tooltip="Hapus dari daftar"
             class="p-1 text-stone-400 hover:text-rose-600 rounded-md transition">
             <span class="material-symbols-rounded text-base">delete</span>
           </button>
@@ -1972,12 +1972,12 @@ export function renderCashiersListInModal() {
       <div class="flex items-center gap-1 shrink-0">
         <button type="button" onclick="window.KasirApp.openChangeCashierPinModal('${c.id}', '${escapeHtml(c.name)}')"
           class="px-2.5 py-1.5 rounded-lg text-stone-600 hover:text-stone-900 hover:bg-stone-100 font-bold text-xs transition active:scale-95 cursor-pointer"
-          title="Ubah PIN 6 Digit">
+          data-tooltip="Ubah PIN">
           Ubah PIN
         </button>
         <button type="button" onclick="window.KasirApp.handleDeleteCashier('${c.id}', '${escapeHtml(c.name)}')"
           class="w-8 h-8 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition active:scale-90 cursor-pointer"
-          title="Hapus Kasir">
+          data-tooltip="Hapus Kasir">
           <span class="material-symbols-rounded text-lg">delete</span>
         </button>
       </div>

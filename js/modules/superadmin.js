@@ -405,7 +405,7 @@ export function updateMetricsAndList() {
             </div>
             <button type="button" onclick="window.KasirApp.openSuperAdminChangePin('${escapeHtml(store.id)}', '${escapeHtml(store.name || store.id)}', '${escapeHtml(store.pin || '123456')}')"
               class="h-7 px-2 rounded-lg bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 text-xs flex items-center gap-1 shrink-0 transition active:scale-95"
-              title="Ubah PIN (6 Digit)">
+              data-tooltip="Ubah PIN">
               <span class="material-symbols-rounded text-sm text-stone-400">key</span>
               <span class="font-mono font-bold">${escapeHtml(store.pin || '123456')}</span>
             </button>
@@ -430,20 +430,20 @@ export function updateMetricsAndList() {
             ${store.phone ? `
               <a href="${waLink}" target="_blank"
                 class="h-8 w-8 sm:w-auto sm:px-2 rounded-lg border border-stone-200 hover:bg-stone-50 text-stone-700 text-xs font-medium flex items-center justify-center gap-1 transition active:scale-95 shrink-0"
-                title="Hubungi WhatsApp (${escapeHtml(store.phone)})">
+                data-tooltip="WhatsApp">
                 <span class="material-symbols-rounded text-sm text-emerald-600">chat</span>
                 <span class="font-mono text-[11px] hidden sm:inline truncate max-w-[90px]">${escapeHtml(store.phone)}</span>
               </a>
             ` : ''}
             <button type="button" onclick="window.KasirApp.openSuperAdminEditStoreModal('${escapeHtml(store.id)}')"
               class="h-8 px-2.5 rounded-lg border border-stone-200 hover:bg-stone-50 text-stone-700 text-xs font-bold flex items-center gap-1 transition active:scale-95"
-              title="Edit Profil Toko">
+              data-tooltip="Edit Toko">
               <span class="material-symbols-rounded text-sm text-stone-500">edit</span>
               <span>Edit</span>
             </button>
             <button type="button" onclick="window.KasirApp.openSuperAdminDeleteStoreModal('${escapeHtml(store.id)}')"
               class="h-8 w-8 rounded-lg border border-stone-200 hover:bg-red-50 hover:border-red-200 text-stone-400 hover:text-red-600 text-xs flex items-center justify-center transition active:scale-95 shrink-0"
-              title="Hapus Toko">
+              data-tooltip="Hapus Toko">
               <span class="material-symbols-rounded text-sm">delete</span>
             </button>
             <div class="flex-1 min-w-0"></div>
@@ -506,12 +506,12 @@ export function updateMetricsAndList() {
             <div class="flex items-center justify-end gap-1.5">
               <button type="button" onclick="window.KasirApp.openSuperAdminEditStoreModal('${escapeHtml(store.id)}')"
                 class="p-1.5 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition"
-                title="Edit Toko">
+                data-tooltip="Edit Toko">
                 <span class="material-symbols-rounded text-base block">edit</span>
               </button>
               <button type="button" onclick="window.KasirApp.openSuperAdminDeleteStoreModal('${escapeHtml(store.id)}')"
                 class="p-1.5 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition"
-                title="Hapus Toko">
+                data-tooltip="Hapus Toko">
                 <span class="material-symbols-rounded text-base block">delete</span>
               </button>
               <button type="button" onclick="window.KasirApp.impersonateStore('${escapeHtml(store.id)}')"
@@ -1142,16 +1142,16 @@ export async function renderSuperAdminLicensesTable() {
           <td class="py-3.5 px-4 text-right whitespace-nowrap">
             <div class="flex items-center justify-end gap-1.5">
               <button type="button" onclick="window.KasirApp.copySpecificLicenseCode('${safeKey}')"
-                class="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 transition active:scale-95 cursor-pointer shadow-2xs" title="Salin Kode">
+                class="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 transition active:scale-95 cursor-pointer shadow-2xs" data-tooltip="Salin Kode">
                 <span class="material-symbols-rounded text-base">content_copy</span>
               </button>
               <button type="button" onclick="window.KasirApp.shareSpecificLicenseViaWA('${safeKey}', '${safeName}', '${safePhone}', '${lic.tier}')"
-                class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition active:scale-95 cursor-pointer shadow-2xs" title="Kirim WhatsApp">
+                class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition active:scale-95 cursor-pointer shadow-2xs" data-tooltip="Kirim WhatsApp">
                 <span class="material-symbols-rounded text-base">chat</span>
               </button>
               ${!isRevoked ? `
                 <button type="button" onclick="window.KasirApp.revokeLicenseAction('${safeKey}')"
-                  class="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 transition active:scale-95 cursor-pointer shadow-2xs" title="Bekukan Lisensi">
+                  class="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 transition active:scale-95 cursor-pointer shadow-2xs" data-tooltip="Bekukan Lisensi">
                   <span class="material-symbols-rounded text-base">block</span>
                 </button>
               ` : ''}

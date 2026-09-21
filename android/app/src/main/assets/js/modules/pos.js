@@ -60,15 +60,16 @@ export function renderOrderQueueTabs(autoScrollTab = false) {
     }
 
     return `
-      <div class="active-queue-tab-wrapper flex items-center rounded-xl transition shrink-0 ${tabStyle}" data-qid="${q.id}" title="Tahan lalu geser untuk mengubah urutan">
+      <div class="active-queue-tab-wrapper flex items-center rounded-xl transition shrink-0 ${tabStyle}" data-qid="${q.id}" data-tooltip="Urutan antrian">
         <button onclick="window.KasirApp.switchOrderQueue('${q.id}')"
-          class="px-3 py-2 text-xs sm:text-sm flex items-center gap-1.5 touch-target-large">
+          class="px-3 py-2 text-xs sm:text-sm flex items-center gap-1.5 touch-target-large"
+          data-tooltip="Pilih antrian">
           <span>${escapeHtml(q.name)}</span>
           ${itemCount > 0 ? `<span data-queue-count class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs ${badgeStyle}">${itemCount}</span>` : ''}
         </button>
         ${isActive ? `
           <button type="button" data-no-reorder onclick="event.stopPropagation(); window.KasirApp.promptRenameQueue()"
-            title="Ubah nama antrian" class="pr-2.5 pl-0.5 py-2 text-white/80 hover:text-white transition flex items-center">
+            data-tooltip="Ubah nama antrian" class="pr-2.5 pl-0.5 py-2 text-white/80 hover:text-white transition flex items-center">
             <span class="material-symbols-rounded text-sm">edit</span>
           </button>
         ` : ''}
@@ -993,18 +994,18 @@ export function renderProductCardActionHTML(product, qty, isReady) {
         <div class="flex-1 bg-white rounded-xl p-1 flex items-center justify-between gap-1 border-2 border-emerald-400 shadow-sm">
           <button data-repeat-target="${product.id}" data-repeat-delta="-1" onclick="window.KasirApp.updateCartQty('${product.id}', -1)"
             class="w-8 h-9 rounded-lg ${qty === 1 ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'} font-black flex items-center justify-center transition active:scale-90 cursor-pointer shrink-0"
-            title="${qty === 1 ? 'Hapus dari pesanan' : 'Kurangi 1 (tahan untuk kurangi cepat)'}">
+            data-tooltip="${qty === 1 ? 'Hapus item' : 'Kurangi 1'}">
             ${qty === 1 ? '<span class="material-symbols-rounded text-base">delete</span>' : '<span class="material-symbols-rounded text-base">remove</span>'}
           </button>
           <button type="button" onclick="event.stopPropagation(); window.KasirApp.openQtyEditor('${product.id}')"
             class="flex-1 flex flex-col items-center justify-center leading-none px-1 py-0.5 rounded-lg hover:bg-emerald-50 transition active:scale-95 cursor-pointer select-none min-w-0"
-            title="Ketuk untuk isi jumlah manual">
+            data-tooltip="Ubah jumlah">
             <span class="font-black text-stone-950 text-[15px] flex items-center gap-1">${qty} <span class="material-symbols-rounded text-sm text-emerald-600">edit</span></span>
             <span class="text-[8px] font-extrabold text-stone-500 uppercase tracking-tighter">porsi</span>
           </button>
           <button data-repeat-target="${product.id}" data-repeat-delta="1" onclick="window.KasirApp.updateCartQty('${product.id}', 1)"
             class="w-8 h-9 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm font-black flex items-center justify-center transition active:scale-90 cursor-pointer shrink-0"
-            title="Ketuk untuk tambah 1, tahan untuk tambah cepat">
+            data-tooltip="Tambah 1">
             <span class="material-symbols-rounded text-lg">add</span>
           </button>
         </div>
@@ -1013,6 +1014,7 @@ export function renderProductCardActionHTML(product, qty, isReady) {
   }
   return `
     <button type="button"
+      data-tooltip="Tambah ke pesanan"
       class="w-full py-1 lg:py-2 px-2.5 rounded-xl bg-stone-100/80 hover:bg-emerald-50 active:bg-emerald-100 text-stone-700 hover:text-emerald-800 border border-stone-200/80 hover:border-emerald-300 flex items-center justify-between text-xs lg:text-sm font-bold transition-colors shadow-2xs">
       <span>+ Tambah</span>
       <span class="material-symbols-rounded text-base text-emerald-600">add</span>
@@ -1031,7 +1033,7 @@ export function renderSingleProductCardHTML(product, qty) {
 
   return `
     <div id="posProductCard_${product.id}" data-product-card="${product.id}" onclick="window.KasirApp.addToCart('${product.id}')" 
-      title="${isReady ? 'Ketuk untuk tambah 1 • tahan untuk tambah cepat • ketuk angka untuk isi manual' : 'Stok habis'}"
+      data-tooltip="${isReady ? 'Tambah ke pesanan' : 'Stok habis'}"
       class="pos-product-card group relative bg-white rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 lg:p-3 flex flex-col justify-between border ${hasQty ? 'pos-product-card-active' : 'border-stone-200/85'} ${!isReady ? 'opacity-65 bg-stone-50/90 cursor-not-allowed' : 'cursor-pointer'} touch-target-large select-none">
 
       <div id="posBadgeSlot_${product.id}">
@@ -1070,7 +1072,7 @@ export function renderSingleProductCardHTML(product, qty) {
           </div>
           ${hasQty ? `
             <button type="button" onclick="event.stopPropagation(); window.KasirApp.openItemNoteModal('${product.id}')"
-              title="Catatan & Add-on"
+              data-tooltip="Catatan & Add-on"
               class="absolute bottom-1.5 left-1.5 z-10 h-7 min-w-[28px] px-1 rounded-full ${hasNoteOrAddOn ? 'bg-amber-400 text-white border-amber-500' : 'bg-white/95 text-amber-700 border-amber-200'} border shadow-md flex items-center justify-center transition active:scale-90 cursor-pointer">
               <span class="material-symbols-rounded text-[15px]">edit_note</span>
             </button>
@@ -1099,7 +1101,7 @@ export function renderSingleProductCardHTML(product, qty) {
           </div>
           ${hasQty ? `
             <button type="button" onclick="event.stopPropagation(); window.KasirApp.openItemNoteModal('${product.id}')"
-              title="Catatan & Add-on"
+              data-tooltip="Catatan & Add-on"
               class="absolute bottom-1.5 left-1.5 z-10 h-7 min-w-[28px] px-1 rounded-full ${hasNoteOrAddOn ? 'bg-amber-400 text-white border-amber-500' : 'bg-white/95 text-amber-700 border-amber-200'} border shadow-md flex items-center justify-center transition active:scale-90 cursor-pointer">
               <span class="material-symbols-rounded text-[15px]">edit_note</span>
             </button>
@@ -2002,7 +2004,7 @@ export function renderCart() {
     return `
       <div class="cart-line-swipe relative overflow-hidden border-b border-stone-100 last:border-0" data-cart-line="${item.lineId}">
         <div class="absolute inset-y-0 right-0 w-[92px] bg-rose-600 text-white" aria-hidden="true">
-          <button type="button" data-swipe-delete="${item.lineId}" title="Hapus item ini" aria-label="Hapus ${escapeHtml(p.name)}"
+          <button type="button" data-swipe-delete="${item.lineId}" data-tooltip="Hapus item" aria-label="Hapus ${escapeHtml(p.name)}"
             class="absolute inset-0 flex flex-col items-center justify-center gap-0.5 cursor-pointer">
             <span class="material-symbols-rounded text-xl">delete</span>
             <span class="text-[10px] font-black leading-none">Hapus</span>
@@ -2037,12 +2039,14 @@ export function renderCart() {
           <div class="mt-1 flex items-center gap-1.5 flex-wrap">
             ${hasNote ? `
               <button type="button" onclick="window.KasirApp.openItemNoteModal('${item.lineId}')" 
+                data-tooltip="Ubah catatan"
                 class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-200 transition text-left cursor-pointer shadow-2xs">
                 <span class="material-symbols-rounded text-sm text-amber-700">edit_note</span>
                 <span class="truncate max-w-[140px] sm:max-w-[200px]">${escapeHtml(item.note)}</span>
               </button>
             ` : `
               <button type="button" onclick="window.KasirApp.openItemNoteModal('${item.lineId}')"
+                data-tooltip="Tambah catatan"
                 class="inline-flex items-center gap-1 text-[10.5px] font-bold text-stone-500 hover:text-amber-900 bg-stone-50 hover:bg-amber-50 px-2 py-0.5 rounded-lg border border-stone-200 hover:border-amber-300 transition cursor-pointer">
                 <span class="material-symbols-rounded text-sm text-amber-600">note_add</span>
                 <span>Catatan / Add-on</span>
@@ -2054,13 +2058,13 @@ export function renderCart() {
         <div class="flex items-center gap-1 shrink-0 mt-0.5">
           <button type="button" onclick="window.KasirApp.openItemNoteModal('${item.lineId}')"
             class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg ${hasNote || hasAddOns ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 ring-1 ring-amber-400/40' : 'bg-stone-100 hover:bg-amber-50 hover:text-amber-700 text-stone-500 border border-stone-200'} flex items-center justify-center touch-target-large transition cursor-pointer active:scale-95 shadow-2xs"
-            title="${hasNote ? `Catatan: ${escapeHtml(item.note)}` : 'Tambah Catatan / Add-on'}">
+            data-tooltip="${hasNote ? `Catatan: ${escapeHtml(item.note)}` : 'Catatan & Add-on'}">
             <span class="material-symbols-rounded text-base sm:text-lg ${hasNote || hasAddOns ? 'text-amber-700' : 'text-stone-500'}">edit_note</span>
           </button>
-          <button data-repeat-target="${item.lineId}" data-repeat-delta="-1" onclick="window.KasirApp.updateCartQty('${item.lineId}', -1)" title="Ketuk untuk kurangi 1, tahan untuk kurangi cepat" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 font-black text-sm flex items-center justify-center touch-target-large transition cursor-pointer">-</button>
-          <button type="button" onclick="window.KasirApp.openQtyEditor('${item.lineId}')" title="Ketuk untuk isi jumlah manual"
+          <button data-repeat-target="${item.lineId}" data-repeat-delta="-1" onclick="window.KasirApp.updateCartQty('${item.lineId}', -1)" data-tooltip="Kurangi 1" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 font-black text-sm flex items-center justify-center touch-target-large transition cursor-pointer">-</button>
+          <button type="button" onclick="window.KasirApp.openQtyEditor('${item.lineId}')" data-tooltip="Ubah jumlah"
             class="w-8 min-w-[2rem] h-7 sm:h-8 px-1 rounded-lg hover:bg-emerald-50 border border-transparent hover:border-emerald-300 text-center font-black text-xs sm:text-sm text-stone-800 hover:text-emerald-800 transition active:scale-95 cursor-pointer touch-target-large">${item.qty}</button>
-          <button data-repeat-target="${item.lineId}" data-repeat-delta="1" onclick="window.KasirApp.updateCartQty('${item.lineId}', 1)" title="Ketuk untuk tambah 1, tahan untuk tambah cepat" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm flex items-center justify-center touch-target-large shadow-sm transition cursor-pointer">+</button>
+          <button data-repeat-target="${item.lineId}" data-repeat-delta="1" onclick="window.KasirApp.updateCartQty('${item.lineId}', 1)" data-tooltip="Tambah 1" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm flex items-center justify-center touch-target-large shadow-sm transition cursor-pointer">+</button>
         </div>
         </div>
       </div>

@@ -325,7 +325,7 @@ function renderCard(step, idx) {
 
   // Progress Dots
   const dotsHtml = TOUR_STEPS.map((_, i) => `
-    <button type="button" onclick="KasirApp.goToTourStep(${i})" title="Langkah ${i + 1}"
+    <button type="button" onclick="KasirApp.goToTourStep(${i})" data-tooltip="Langkah ${i + 1}"
       class="h-2 rounded-full transition-all duration-300 ${i === idx ? 'w-6 bg-emerald-700' : 'w-2 bg-stone-300 hover:bg-stone-400'}">
     </button>
   `).join('');
@@ -340,7 +340,7 @@ function renderCard(step, idx) {
         </span>
       </div>
       <button type="button" onclick="KasirApp.closeGuideTour()"
-        class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition touch-target-large" title="Lewati / Tutup Panduan">
+        class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition touch-target-large" data-tooltip="Tutup Panduan">
         <span class="material-symbols-rounded text-xl">close</span>
       </button>
     </div>

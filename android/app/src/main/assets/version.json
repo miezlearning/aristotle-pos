@@ -1,9 +1,9 @@
 {
-  "versionCode": 142,
-  "versionName": "1.2.93",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.93/Aristotle-POS.apk",
+  "versionCode": 143,
+  "versionName": "1.2.94",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.94/Aristotle-POS.apk",
   "changelog": [
-    "Sistem custom floating tooltip modern beranimasi halus + smart auto-flip"
+    "Standarisasi custom tooltip ringkas pada seluruh tombol dan aksi antarmuka"
   ],
   "releaseDate": "2026-09-21"
 }

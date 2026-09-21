@@ -250,7 +250,7 @@ export function renderAdminTable() {
           <!-- 1-Tap Toggle Status Ready / Habis -->
           <button onclick="window.KasirApp.toggleProductAvailability('${p.id}')" 
             class="w-9 h-9 sm:w-auto sm:h-auto sm:px-2.5 sm:py-2 sm:min-h-[40px] p-0 rounded-xl font-black text-xs transition touch-target-large flex items-center justify-center gap-1 border cursor-pointer ${isReady ? 'bg-emerald-50 text-emerald-950 border-emerald-300 hover:bg-emerald-100' : 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100'}"
-            title="Klik untuk ubah status Ready/Habis">
+            data-tooltip="Ubah status stok">
             <span class="material-symbols-rounded text-lg sm:text-base">${isReady ? 'check_circle' : 'cancel'}</span>
             <span class="hidden sm:inline">${isReady ? 'Ready' : 'Habis'}</span>
           </button>
@@ -258,7 +258,7 @@ export function renderAdminTable() {
           <!-- Tombol Ubah Menu -->
           <button onclick="window.KasirApp.openEditProductModal('${p.id}')" 
             class="w-9 h-9 sm:w-auto sm:h-auto sm:px-2.5 sm:py-2 sm:min-h-[40px] p-0 rounded-xl bg-stone-100 text-stone-800 hover:bg-emerald-100 hover:text-emerald-900 border border-stone-200 font-black text-xs flex items-center justify-center gap-1 transition touch-target-large cursor-pointer" 
-            title="Ubah nama, harga, atau stok menu">
+            data-tooltip="Edit menu">
             <span class="material-symbols-rounded text-lg sm:text-base">edit</span>
             <span class="hidden sm:inline">Ubah</span>
           </button>
@@ -266,7 +266,7 @@ export function renderAdminTable() {
           <!-- Hapus Menu Tunggal -->
           <button onclick="window.KasirApp.deleteProduct('${p.id}')" 
             class="w-9 h-9 sm:h-auto sm:min-h-[40px] sm:px-2.5 p-0 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 font-bold touch-target-large cursor-pointer flex items-center justify-center" 
-            title="Hapus menu">
+            data-tooltip="Hapus menu">
             <span class="material-symbols-rounded text-lg sm:text-base">delete</span>
           </button>
         </div>
@@ -318,7 +318,7 @@ export function addNewAddOnRow(name = '', price = '') {
         class="addon-price-input w-20 px-2 py-1.5 rounded-lg border border-stone-300 text-xs font-black text-emerald-800 focus:border-amber-500 focus:outline-none">
     </div>
     <button type="button" onclick="this.closest('.addon-row').remove()"
-      class="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer" title="Hapus Add-on">
+      class="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer" data-tooltip="Hapus Add-on">
       <span class="material-symbols-rounded text-base">delete</span>
     </button>
   `;
@@ -1486,7 +1486,7 @@ export function renderBulkTable() {
       <td class="text-center py-1.5 px-1">
         <button type="button" onclick="window.KasirApp.removeBulkRow(${idx})"
           class="w-7 h-7 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center mx-auto transition cursor-pointer"
-          title="Hapus baris ini">
+          data-tooltip="Hapus baris">
           <span class="material-symbols-rounded text-base">close</span>
         </button>
       </td>

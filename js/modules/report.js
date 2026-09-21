@@ -443,10 +443,10 @@ export function renderFinancialReport() {
               ${voidMeta}
             </div>
             <div class="flex items-center gap-1 shrink-0">
-              <button onclick='window.KasirApp.reprintTx("${tx.id}")' class="p-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold transition touch-target-large" title="${tx.voided ? 'Lihat salinan berstempel VOID' : 'Lihat / Cetak Struk'}">
+              <button onclick='window.KasirApp.reprintTx("${tx.id}")' class="p-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold transition touch-target-large" data-tooltip="${tx.voided ? 'Salinan Void' : 'Cetak Struk'}">
                 <span class="material-symbols-rounded text-base">receipt</span>
               </button>
-              ${(!tx.voided && canVoid) ? `<button onclick='window.KasirApp.deleteTransaction("${tx.id}")' class="p-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold transition touch-target-large" title="Batalkan transaksi (void berjejak)">
+              ${(!tx.voided && canVoid) ? `<button onclick='window.KasirApp.deleteTransaction("${tx.id}")' class="p-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold transition touch-target-large" data-tooltip="Batalkan transaksi (Void)">
                 <span class="material-symbols-rounded text-base">do_not_disturb_on</span>
               </button>` : ''}
             </div>
@@ -473,7 +473,7 @@ export function renderFinancialReport() {
               </div>
               <p class="text-[11px] font-bold text-stone-700 truncate mt-0.5">${escapeHtml(exp.name)} <span class="text-[10px] text-stone-400 font-normal">(${escapeHtml(exp.category)})</span></p>
             </div>
-            <button onclick="window.KasirApp.deleteExpense('${exp.id}')" class="p-1.5 rounded-xl text-red-500 hover:bg-red-50 font-bold transition touch-target-large" title="Hapus catatan">
+            <button onclick="window.KasirApp.deleteExpense('${exp.id}')" class="p-1.5 rounded-xl text-red-500 hover:bg-red-50 font-bold transition touch-target-large" data-tooltip="Hapus catatan">
               <span class="material-symbols-rounded text-base">delete</span>
             </button>
           </div>
@@ -1156,14 +1156,14 @@ function ensureM3Cal() {
 
       <!-- Month Navigation -->
       <div class="px-4 pt-3 pb-1 flex items-center justify-between">
-        <button type="button" id="m3CalPrev" class="w-9 h-9 rounded-full hover:bg-stone-100 text-stone-700 flex items-center justify-center transition cursor-pointer" title="Bulan Sebelumnya">
+        <button type="button" id="m3CalPrev" class="w-9 h-9 rounded-full hover:bg-stone-100 text-stone-700 flex items-center justify-center transition cursor-pointer" data-tooltip="Bulan sebelumnya">
           <span class="material-symbols-rounded">chevron_left</span>
         </button>
-        <button type="button" id="m3CalTitle" class="text-sm font-black text-stone-900 px-3 h-9 rounded-xl hover:bg-stone-100 transition flex items-center gap-1 cursor-pointer" title="Pilih Bulan / Tahun">
+        <button type="button" id="m3CalTitle" class="text-sm font-black text-stone-900 px-3 h-9 rounded-xl hover:bg-stone-100 transition flex items-center gap-1 cursor-pointer" data-tooltip="Pilih periode">
           <span id="m3CalTitleText">–</span>
           <span class="material-symbols-rounded text-base text-stone-400">arrow_drop_down</span>
         </button>
-        <button type="button" id="m3CalNext" class="w-9 h-9 rounded-full hover:bg-stone-100 text-stone-700 flex items-center justify-center transition cursor-pointer" title="Bulan Berikutnya">
+        <button type="button" id="m3CalNext" class="w-9 h-9 rounded-full hover:bg-stone-100 text-stone-700 flex items-center justify-center transition cursor-pointer" data-tooltip="Bulan berikutnya">
           <span class="material-symbols-rounded">chevron_right</span>
         </button>
       </div>
