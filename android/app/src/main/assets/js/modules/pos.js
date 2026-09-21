@@ -1404,9 +1404,64 @@ export function openQtyEditor(targetId) {
     }
   }
   if (modal) modal.classList.remove('hidden');
+  initQtyEditorHold();
   if (inputEl) {
     setTimeout(() => { try { inputEl.focus(); inputEl.select(); } catch (_) {} }, 120);
   }
+}
+
+// ============ TAHAN-ULANG +/- MODAL QTY (pola sama dengan stepper kasir) ============
+// Ketuk = ±1 seperti biasa (inline onclick). Tahan 550ms tanpa geser = angka
+// jalan terus tiap 110ms sampai dilepas; klik susulan ditelan agar tak dobel.
+function initQtyEditorHold() {
+  const pairs = [
+    [document.getElementById('qtyMinusBtn'), -1],
+    [document.getElementById('qtyPlusBtn'), 1]
+  ];
+  pairs.forEach(([btn, delta]) => {
+    if (!btn || btn.dataset.holdInit) return;
+    btn.dataset.holdInit = 'true';
+    let timer = null;
+    let interval = null;
+    let startX = 0;
+    let startY = 0;
+
+    const stop = () => {
+      if (timer) { clearTimeout(timer); timer = null; }
+      if (interval) { clearInterval(interval); interval = null; }
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', stop);
+      window.removeEventListener('pointercancel', stop);
+    };
+    const onMove = (ev) => {
+      const dx = (ev.clientX ?? startX) - startX;
+      const dy = (ev.clientY ?? startY) - startY;
+      if (Math.hypot(dx, dy) > GESTURE_SLOP_PX) stop();
+    };
+    btn.addEventListener('pointerdown', (e) => {
+      if (e.button !== undefined && e.button > 0) return;
+      startX = e.clientX ?? 0;
+      startY = e.clientY ?? 0;
+      stop();
+      timer = setTimeout(() => {
+        timer = null;
+        interval = setInterval(() => { try { changeQtyEditorDelta(delta); } catch (_) {} }, REPEAT_TICK_MS);
+        try { changeQtyEditorDelta(delta); } catch (_) {}
+        try { triggerHaptic('medium'); } catch (_) {}
+        btn.dataset.swallowNextClick = '1';
+      }, REPEAT_HOLD_MS);
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', stop);
+      window.addEventListener('pointercancel', stop);
+    });
+    btn.addEventListener('click', (e) => {
+      if (btn.dataset.swallowNextClick === '1') {
+        btn.dataset.swallowNextClick = '';
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    }, true);
+  });
 }
 
 export function closeQtyEditor() {

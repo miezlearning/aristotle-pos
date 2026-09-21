@@ -3,7 +3,7 @@
  */
 
 import { state, currentStorageKeys, saveExpenses, saveHistory, saveProducts, isLiveTx } from '../state.js';
-import { formatRp, formatDateShort, formatDateFull, escapeHtml, showToast, showConfirmDialog, playClick } from '../utils.js';
+import { formatRp, formatDateShort, formatDateFull, escapeHtml, showToast, showConfirmDialog, playClick, triggerHaptic } from '../utils.js';
 import { showReceipt } from './payment.js';
 import { updateProductCardDOM } from './pos.js';
 import { 
@@ -25,6 +25,78 @@ export const VOID_REASONS = {
 
 let voidTxId = null;
 let voidReason = null;
+
+// ============ TAHAN-KONFIRMASI VOID (anti-tap-nyasar, ramah lansia) ============
+// Tombol void wajib DITAHAN 1 detik (progress bar putih) — ketuk biasa hanya
+// menampilkan petunjuk. Keyboard (Enter/Spasi) tetap bisa sebagai fallback.
+const VOID_HOLD_MS = 1000;
+let voidHoldTimer = null;
+let voidHoldFired = false;
+
+function resetVoidHoldFill() {
+  try {
+    const fill = document.getElementById('voidHoldFill');
+    if (fill) {
+      fill.style.transition = 'none';
+      fill.style.width = '0%';
+    }
+  } catch (_) {}
+}
+
+function cancelVoidHold() {
+  if (voidHoldTimer) { clearTimeout(voidHoldTimer); voidHoldTimer = null; }
+  resetVoidHoldFill();
+}
+
+function startVoidHold() {
+  if (voidHoldTimer) return;
+  if (!voidReason) {
+    showToast('Pilih alasan pembatalan dulu (wajib untuk audit).', 'warning');
+    return;
+  }
+  try {
+    const fill = document.getElementById('voidHoldFill');
+    if (fill) {
+      fill.style.transition = 'none';
+      fill.style.width = '0%';
+      void fill.offsetWidth; // paksa reflow agar animasi mulai dari 0
+      fill.style.transition = `width ${VOID_HOLD_MS}ms linear`;
+      fill.style.width = '100%';
+    }
+  } catch (_) {}
+  try { triggerHaptic('light'); } catch (_) {}
+  voidHoldTimer = setTimeout(() => {
+    voidHoldTimer = null;
+    voidHoldFired = true;
+    resetVoidHoldFill();
+    submitVoid();
+  }, VOID_HOLD_MS);
+}
+
+function initVoidHoldButton() {
+  const btn = document.getElementById('voidConfirmBtn');
+  if (!btn || btn.dataset.holdInit) return;
+  btn.dataset.holdInit = 'true';
+  btn.addEventListener('pointerdown', (e) => {
+    if (e.button !== undefined && e.button > 0) return;
+    startVoidHold();
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev =>
+    btn.addEventListener(ev, () => cancelVoidHold())
+  );
+  btn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      cancelVoidHold();
+      voidHoldFired = true;
+      submitVoid();
+    }
+  });
+  btn.addEventListener('click', () => {
+    if (voidHoldFired) { voidHoldFired = false; return; }
+    showToast('Tahan tombol 1 detik untuk mem-void transaksi.', 'info', 1800);
+  });
+}
 
 // ================= PAGINATION JURNAL + ARSIP (anti-lemot & anti-penuh) =================
 // Jurnal di-render bertahap (50 terbaru + tombol Muat Lagi) agar ribuan struk
@@ -497,6 +569,9 @@ export function openVoidModal(txId) {
   playClick('pop');
   voidTxId = txId;
   voidReason = null;
+  voidHoldFired = false;
+  cancelVoidHold();
+  initVoidHoldButton();
   try {
     document.querySelectorAll('.void-reason-chip').forEach(ch => {
       ch.className = 'void-reason-chip py-2 px-1 rounded-xl bg-stone-100 border border-stone-200 font-bold text-xs text-stone-700 transition active:scale-95 touch-target-large text-center';
@@ -513,6 +588,7 @@ export function closeVoidModal() {
   playClick('pop');
   voidTxId = null;
   voidReason = null;
+  cancelVoidHold();
   const modal = document.getElementById('voidTxModal');
   if (modal) modal.classList.add('hidden');
 }

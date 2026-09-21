@@ -2,6 +2,15 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.83] - 2026-09-19
+
+### Hold Action: Qty Repeat + Tahan-Konfirmasi Void
+- **Tahan +/- modal qty manual:** tahan 550ms → angka jalan terus tiap 110ms + getar; geser = batal; klik susulan ditelan anti-dobel (pola sama dengan stepper kasir).
+- **Tahan 1 detik = Void:** tombol void wajib ditahan dengan progress bar; ketuk biasa hanya petunjuk; lepas awal = batal; keyboard Enter/Spasi tetap bisa.
+- Diskon tidak diubah (tanpa stepper), rename-tab tidak dipakai (bentrok drag-reorder).
+
+---
+
 ## [v1.2.82] - 2026-09-19
 
 ### Perbaiki Laci Kasir Diam
