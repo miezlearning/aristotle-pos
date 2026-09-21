@@ -1,10 +1,10 @@
 {
-  "versionCode": 133,
-  "versionName": "1.2.84",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.84/Aristotle-POS.apk",
+  "versionCode": 134,
+  "versionName": "1.2.85",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.85/Aristotle-POS.apk",
   "changelog": [
-    "Cabut webhook Discord dari repo (JS + native) menjadi runtime-config per perangkat",
-    "Fuse .mjs ke .js: modul gagal load di server statis + mapping MIME serve.js"
+    "Telemetri via proxy Cloudflare: 1 channel untuk semua HP + rate-limit + embed server-side",
+    "Native dan web lapor field mentah ke proxy (tanpa secret di repo)"
   ],
   "releaseDate": "2026-09-21"
 }

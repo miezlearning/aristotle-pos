@@ -104,16 +104,16 @@ public class MainActivity extends AppCompatActivity {
     private static final String OFFLINE_FALLBACK_URL = "file:///android_asset/index.html";
 
     // Telemetri native: URL webhook TIDAK di-hardcode (pernah bocor & dihapus
-    // Discord). Disimpan di SharedPreferences per perangkat; isi lewat bridge
-    // setTelemetryWebhookUrl() sekali saja, tidak pernah masuk repo.
+    // Discord). Yang disimpan hanya URL PROXY (publik, aman) — rahasia webhook
+    // tinggal di server proxy. Isi sekali via bridge setTelemetryProxyUrl().
     private static final String TELEMETRY_PREFS_NAME = "AristotleTelemetryPrefs";
-    private static final String KEY_TELEMETRY_WEBHOOK = "discord_webhook_url";
+    private static final String KEY_TELEMETRY_PROXY = "telemetry_proxy_url";
 
-    private String getTelemetryWebhookUrl() {
+    private String getTelemetryProxyUrl() {
         try {
             android.content.SharedPreferences prefs = getSharedPreferences(TELEMETRY_PREFS_NAME, MODE_PRIVATE);
-            String url = prefs.getString(KEY_TELEMETRY_WEBHOOK, "");
-            if (url != null && url.startsWith("https://discord.com/api/webhooks/")) {
+            String url = prefs.getString(KEY_TELEMETRY_PROXY, "");
+            if (url != null && url.startsWith("https://")) {
                 return url;
             }
         } catch (Exception ignored) {}
@@ -659,15 +659,15 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @JavascriptInterface
-        public boolean setTelemetryWebhookUrl(String url) {
+        public boolean setTelemetryProxyUrl(String url) {
             try {
                 String clean = url != null ? url.trim() : "";
-                if (!clean.startsWith("https://discord.com/api/webhooks/")) {
+                if (!clean.startsWith("https://")) {
                     return false;
                 }
                 getSharedPreferences(TELEMETRY_PREFS_NAME, MODE_PRIVATE)
                         .edit()
-                        .putString(KEY_TELEMETRY_WEBHOOK, clean)
+                        .putString(KEY_TELEMETRY_PROXY, clean)
                         .apply();
                 return true;
             } catch (Exception e) {
@@ -2149,25 +2149,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             Thread reporter = new Thread(() -> {
                 try {
-                    JSONObject embed = new JSONObject();
-                    embed.put("title", "💥 [Aristotle POS] Native Android Fatal Crash");
-                    embed.put("description", "**Fatal Exception:**\n```\n" + (throwable.getMessage() != null ? throwable.getMessage() : throwable.toString()) + "\n```");
-                    embed.put("color", 0xDC2626); // Crimson Red
-
-                    JSONArray fields = new JSONArray();
-
-                    JSONObject f1 = new JSONObject();
-                    f1.put("name", "📱 Perangkat & Brand");
-                    f1.put("value", Build.MANUFACTURER + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ", SDK " + Build.VERSION.SDK_INT + ")");
-                    f1.put("inline", true);
-                    fields.put(f1);
-
-                    JSONObject f2 = new JSONObject();
-                    f2.put("name", "🧵 Thread");
-                    f2.put("value", thread.getName() + " (ID: " + thread.getId() + ")");
-                    f2.put("inline", true);
-                    fields.put(f2);
-
+                    // Kontrak field mentah ke proxy (embed dibangun server-side).
                     java.io.StringWriter sw = new java.io.StringWriter();
                     java.io.PrintWriter pw = new java.io.PrintWriter(sw);
                     throwable.printStackTrace(pw);
@@ -2176,30 +2158,24 @@ public class MainActivity extends AppCompatActivity {
                         stackStr = stackStr.substring(0, 880) + "\n... [truncated]";
                     }
 
-                    JSONObject f3 = new JSONObject();
-                    f3.put("name", "📋 Native Stack Trace");
-                    f3.put("value", "```java\n" + stackStr + "\n```");
-                    f3.put("inline", false);
-                    fields.put(f3);
-
-                    embed.put("fields", fields);
-                    
-                    JSONObject footer = new JSONObject();
-                    footer.put("text", "Aristotle POS Native Crash Watchdog");
-                    embed.put("footer", footer);
-
                     JSONObject payload = new JSONObject();
-                    payload.put("username", "Aristotle POS Native Watchdog");
-                    payload.put("avatar_url", "https://miezlearning.github.io/aristotle-pos/icon-192.png");
-                    JSONArray embeds = new JSONArray();
-                    embeds.put(embed);
-                    payload.put("embeds", embeds);
+                    payload.put("app", "aristotle-pos");
+                    payload.put("storeId", "apk");
+                    payload.put("storeName", Build.MANUFACTURER + " " + Build.MODEL);
+                    payload.put("type", "Native Fatal Crash");
+                    payload.put("errorName", throwable.getClass().getSimpleName());
+                    payload.put("message", throwable.getMessage() != null ? throwable.getMessage() : throwable.toString());
+                    payload.put("stack", stackStr);
+                    payload.put("location", thread.getName() + " (ID: " + thread.getId() + ")");
+                    payload.put("level", "error");
+                    payload.put("os", "Android " + Build.VERSION.RELEASE);
+                    payload.put("view", "native");
 
-                    String webhookUrl = getTelemetryWebhookUrl();
-                    if (webhookUrl.isEmpty()) {
+                    String proxyUrl = getTelemetryProxyUrl();
+                    if (proxyUrl.isEmpty()) {
                         return;
                     }
-                    URL url = new URL(webhookUrl);
+                    URL url = new URL(proxyUrl);
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json");
@@ -2222,44 +2198,26 @@ public class MainActivity extends AppCompatActivity {
 
     private void sendCustomErrorToDiscord(String title, String message, String stack) {
         try {
-            JSONObject embed = new JSONObject();
-            embed.put("title", "🚨 [Aristotle POS] " + (title != null ? title : "Hardware / Native Event"));
-            embed.put("description", "```\n" + (message != null ? message : "No detail") + "\n```");
-            embed.put("color", 0xF59E0B); // Amber
-
-            JSONArray fields = new JSONArray();
-            JSONObject f1 = new JSONObject();
-            f1.put("name", "📱 Perangkat");
-            f1.put("value", Build.MANUFACTURER + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ")");
-            f1.put("inline", true);
-            fields.put(f1);
-
-            if (stack != null && !stack.isEmpty()) {
-                JSONObject f2 = new JSONObject();
-                f2.put("name", "📋 Detail");
-                String s = stack.length() > 900 ? stack.substring(0, 880) + "..." : stack;
-                f2.put("value", "```\n" + s + "\n```");
-                f2.put("inline", false);
-                fields.put(f2);
-            }
-            embed.put("fields", fields);
-
-            JSONObject footer = new JSONObject();
-            footer.put("text", "Aristotle POS Watchdog Telemetry");
-            embed.put("footer", footer);
-
+            // Kontrak field mentah ke proxy (embed dibangun server-side).
+            String s = (stack != null && stack.length() > 900) ? stack.substring(0, 880) + "..." : (stack != null ? stack : "");
             JSONObject payload = new JSONObject();
-            payload.put("username", "Aristotle POS Watchdog");
-            payload.put("avatar_url", "https://miezlearning.github.io/aristotle-pos/icon-192.png");
-            JSONArray embeds = new JSONArray();
-            embeds.put(embed);
-            payload.put("embeds", embeds);
+            payload.put("app", "aristotle-pos");
+            payload.put("storeId", "apk");
+            payload.put("storeName", Build.MANUFACTURER + " " + Build.MODEL);
+            payload.put("type", title != null ? title : "Native Event");
+            payload.put("errorName", "NativeEvent");
+            payload.put("message", message != null ? message : "No detail");
+            payload.put("stack", s);
+            payload.put("location", "native-bridge");
+            payload.put("level", "warning");
+            payload.put("os", "Android " + Build.VERSION.RELEASE);
+            payload.put("view", "native");
 
-            String webhookUrl = getTelemetryWebhookUrl();
-            if (webhookUrl.isEmpty()) {
+            String proxyUrl = getTelemetryProxyUrl();
+            if (proxyUrl.isEmpty()) {
                 return;
             }
-            URL url = new URL(webhookUrl);
+            URL url = new URL(proxyUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");

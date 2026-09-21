@@ -1,26 +1,24 @@
 /**
- * Aristotle POS - Enterprise Error Telemetry & Discord Crash Reporter
+ * Aristotle POS - Enterprise Error Telemetry & Crash Reporter
  * Memantau error JavaScript, unhandled promise rejections, dan crash hardware/jaringan secara otomatis
- * dan mengirimkannya ke Discord Webhook dengan format embed standar industri.
- *
- * KEAMANAN: URL webhook TIDAK BOLEH di-hardcode di repo (pernah bocor ke
- * GitHub & dihapus permanen oleh Discord). Aktifkan sekali per perangkat via:
- *   localStorage.setItem('aristotle_telemetry_webhook', 'https://discord.com/api/webhooks/...')
- * Tanpa URL, telemetri diam (tidak error, tidak spam).
+ * dan mengirimkannya ke PROXY telemetri (Cloudflare Worker → Discord).
+ * URL webhook Discord TIDAK ADA di aplikasi — proxy yang memegangnya.
  */
 
-// Kunci penyimpanan URL webhook di perangkat (bukan di repo)
-const TELEMETRY_WEBHOOK_KEY = 'aristotle_telemetry_webhook';
+// Kunci override & URL proxy (publik, aman di-commit — bukan rahasia).
+// URL proxy diisi saat Worker Cloudflare jadi; override darurat via localStorage.
+const TELEMETRY_PROXY_KEY = 'aristotle_telemetry_proxy';
+const TELEMETRY_PROXY_URL = 'https://aris-pos-telemetry.gottfriedemptiness.workers.dev/';
 
-function resolveTelemetryWebhookUrl() {
+function resolveTelemetryProxyUrl() {
   try {
-    if (typeof window !== 'undefined' && window.__ARISTOTLE_TELEMETRY_URL) {
-      return window.__ARISTOTLE_TELEMETRY_URL;
+    if (typeof window !== 'undefined' && window.__ARISTOTLE_TELEMETRY_PROXY) {
+      return window.__ARISTOTLE_TELEMETRY_PROXY;
     }
-    const saved = localStorage.getItem(TELEMETRY_WEBHOOK_KEY);
-    if (saved && saved.startsWith('https://discord.com/api/webhooks/')) return saved;
+    const saved = localStorage.getItem(TELEMETRY_PROXY_KEY);
+    if (saved && saved.startsWith('https://')) return saved;
   } catch (_) {}
-  return '';
+  return TELEMETRY_PROXY_URL;
 }
 
 // In-memory cache untuk deduplikasi & rate-limiting
@@ -109,9 +107,9 @@ export async function sendTelemetryToDiscord({
   extra = {}
 }) {
   try {
-    // 0. Telemetri mati bila URL belum dikonfigurasi di perangkat ini.
-    const webhookUrl = resolveTelemetryWebhookUrl();
-    if (!webhookUrl) return false;
+    // 0. Tanpa URL proxy, telemetri diam (tidak error, tidak spam).
+    const proxyUrl = resolveTelemetryProxyUrl();
+    if (!proxyUrl) return false;
 
     const now = Date.now();
 
@@ -138,92 +136,40 @@ export async function sendTelemetryToDiscord({
     }
     lastReportTimestamp = Date.now();
 
-    // 4. Bangun Metadata Konteks
+    // 4. Konteks + kirim field mentah ke proxy.
+    // Embed Discord DIBANGUN server-side (anti-spam/karang-konten).
     const ctx = getTelemetryContext();
 
-    // Pilih Warna Embed
-    let embedColor = 0xEF4444; // Merah untuk Error/Crash
-    if (level === 'warning') embedColor = 0xF59E0B; // Amber
-    else if (level === 'info') embedColor = 0x3B82F6; // Biru
-    else if (type.includes('Promise')) embedColor = 0xF97316; // Oranye
-
-    const embed = {
-      title: `🚨 [Aristotle POS] ${type}: ${errorName}`,
-      description: `**Pesan Error:**\n\`\`\`\n${message.slice(0, 500)}\n\`\`\``,
-      color: embedColor,
-      fields: [
-        {
-          name: '🏷️ Versi & Build',
-          value: `\`${ctx.version}\``,
-          inline: true
-        },
-        {
-          name: '🏪 Toko / Kasir',
-          value: `**${ctx.storeName}**\n\`ID: ${ctx.storeId}\` (Role: ${ctx.role})`,
-          inline: true
-        },
-        {
-          name: '📱 Perangkat & Status',
-          value: `${ctx.osName} • ${ctx.isOnline ? '🟢 Online' : '🔴 Offline'}\n${ctx.screenResolution}`,
-          inline: true
-        },
-        {
-          name: '🧭 Layar & Antrian',
-          value: `View: \`${ctx.currentView}\`\nAntrian: \`${ctx.queueContext}\``,
-          inline: true
-        },
-        {
-          name: '📍 Lokasi Berkas',
-          value: `\`${location || 'N/A'}\``,
-          inline: true
-        },
-        {
-          name: '📋 Stack Trace',
-          value: `\`\`\`js\n${formatStackTrace(stack)}\n\`\`\``,
-          inline: false
-        }
-      ],
-      footer: {
-        text: 'Aristotle POS Enterprise Crash Telemetry • Live Monitoring'
-      },
-      timestamp: new Date().toISOString()
-    };
-
-    // Tambahan Extra info jika ada
-    if (extra && Object.keys(extra).length > 0) {
-      try {
-        const extraStr = JSON.stringify(extra, null, 2);
-        if (extraStr.length < 900) {
-          embed.fields.push({
-            name: '🔍 Konteks Tambahan',
-            value: `\`\`\`json\n${extraStr}\n\`\`\``,
-            inline: false
-          });
-        }
-      } catch (_) {}
-    }
-
     const payload = {
-      username: 'Aristotle POS Sentry',
-      avatar_url: 'https://miezlearning.github.io/aristotle-pos/icon-192.png',
-      embeds: [embed]
+      app: 'aristotle-pos',
+      storeId: ctx.storeId,
+      storeName: ctx.storeName,
+      type,
+      errorName,
+      message,
+      stack,
+      location,
+      level,
+      os: ctx.osName,
+      view: ctx.currentView,
+      version: ctx.version
     };
 
-    // Kirim via fetch
-    const response = await fetch(webhookUrl, {
+    // Kirim via proxy
+    const response = await fetch(proxyUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
     if (!response.ok && response.status === 429) {
-      console.warn('[Telemetry] Discord Webhook 429 Rate Limited. Backing off...');
+      console.warn('[Telemetry] Proxy 429 Rate Limited. Backing off...');
     }
 
     return response.ok;
   } catch (telemetryErr) {
     // Telemetry tidak boleh pernah membuat aplikasi kasir crash
-    console.error('[Telemetry] Gagal mengirim laporan error ke Discord:', telemetryErr);
+    console.error('[Telemetry] Gagal mengirim laporan error:', telemetryErr);
     return false;
   }
 }
@@ -281,9 +227,9 @@ export function initErrorTelemetry() {
 
   // 3. Expose ke window agar bisa dipanggil dari mana saja jika perlu manual log
   window.reportErrorToDiscord = sendTelemetryToDiscord;
-  if (resolveTelemetryWebhookUrl()) {
-    console.log('[Telemetry] Aristotle POS Enterprise Discord Crash Reporter Aktif.');
+  if (resolveTelemetryProxyUrl()) {
+    console.log('[Telemetry] Crash Reporter Aktif (via proxy).');
   } else {
-    console.log('[Telemetry] Nonaktif (belum ada webhook perangkat). Set localStorage aristotle_telemetry_webhook untuk mengaktifkan.');
+    console.log('[Telemetry] Nonaktif (URL proxy belum diisi).');
   }
 }

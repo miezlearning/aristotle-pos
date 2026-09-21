@@ -2,6 +2,14 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.85] - 2026-09-19
+
+### Telemetri via Proxy Cloudflare
+- Worker `workers/telemetry-proxy.js`: rate-limit + validasi + embed Discord dibangun server-side; rahasia webhook hanya sebagai env.
+- Web & native lapor field mentah ke proxy (1 channel untuk semua HP, tanpa setting per HP, tanpa secret di repo).
+
+---
+
 ## [v1.2.84] - 2026-09-19
 
 ### Cabut Webhook Bocor + Perbaiki Modul Fuse
