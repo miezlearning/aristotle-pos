@@ -1,10 +1,10 @@
 {
-  "versionCode": 138,
-  "versionName": "1.2.89",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.89/Aristotle-POS.apk",
+  "versionCode": 139,
+  "versionName": "1.2.90",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.90/Aristotle-POS.apk",
   "changelog": [
-    "Worker telemetri: CORS preflight + header semua respons",
-    "Telemetri sebut nama file saat modul gagal dimuat (capture listener)"
+    "Diagnostik 1-tap: ring buffer error + modal Salin dan Kirim ke Discord via proxy",
+    "Jejak Audit kasir: timeline void diskon selisih laci + ringkasan per periode"
   ],
   "releaseDate": "2026-09-21"
 }

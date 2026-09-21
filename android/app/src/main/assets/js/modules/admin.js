@@ -1,10 +1,11 @@
 import { state, saveProducts, saveQueues, saveHistory, saveExpenses, saveQrisPayload } from '../state.js';
-import { formatRp, escapeHtml, showToast, showConfirmDialog, playClick, compressImageToDataUrl } from '../utils.js';
+import { formatRp, formatDateShort, escapeHtml, showToast, showConfirmDialog, playClick, compressImageToDataUrl } from '../utils.js';
 import { renderProducts, renderCart } from './pos.js';
 import { syncSaveProduct, syncDeleteProduct, syncBatchDeleteProducts, syncClearAllProducts, forceUploadAllToCloud, syncSaveQrisPayload } from '../firebase.js';
 import { decodeQRFromImage, renderQRToContainer, parseQRISMetadata } from '../qris.js';
 import { getStoreLicenseStatus, DEMO_MAX_PRODUCTS } from './license.js';
 import { fuzzyFilterProducts } from './fuzzy.js';
+import { filterByPeriod, getPeriodLabel } from './report.js';
 import { resolveProductImage, putProductPhoto, deleteProductPhoto, migrateInlinePhotos, getCachedPhoto } from './photos.js';
 
 // State seleksi & filter internal tabel admin
@@ -945,6 +946,125 @@ export function importDataBackup(event) {
     }
   };
   reader.readAsText(file);
+}
+
+// ================= JEJAK AUDIT KASIR (Owner: anti-kecurangan) =================
+// Satu timeline dari data yang sudah ada — tanpa skema baru:
+// - void (pelaku + alasan + nominal + waktu),
+// - diskon (pemberi/penyetuju + nominal),
+// - tutup shift (kasir + selisih laci).
+// Biaya operasional TIDAK masuk (tanpa pelaku = noise).
+function getAuditEntries() {
+  const out = [];
+  try {
+    const journal = filterByPeriod(state.transactions || [], true);
+    journal.forEach(t => {
+      if (!t) return;
+      if (t.voided) {
+        out.push({
+          at: t.voidAt || t.date,
+          kind: 'void',
+          actor: t.voidBy || 'Owner',
+          label: t.voidReasonLabel || t.voidReason || 'Batal',
+          total: Number(t.total) || 0,
+          order: t.orderName || ''
+        });
+      } else if (t.discount && Number(t.discount.amount) > 0) {
+        out.push({
+          at: t.date,
+          kind: 'discount',
+          actor: t.discount.by || t.discount.approvedBy || '—',
+          label: t.discount.reason || t.discount.type || 'Diskon',
+          amount: Number(t.discount.amount) || 0,
+          order: t.orderName || ''
+        });
+      }
+    });
+    const shifts = filterByPeriod(
+      (state.shifts || []).map(s => ({ ...s, date: s.endTime || s.startTime })), true
+    );
+    shifts.forEach(s => {
+      if (!s || s.status !== 'closed') return;
+      out.push({
+        at: s.endTime || s.startTime,
+        kind: 'shift',
+        actor: s.cashierName || 'Kasir',
+        difference: Number(s.summary?.difference ?? s.difference) || 0,
+        txCount: Number(s.summary?.txCount) || 0
+      });
+    });
+  } catch (_) {}
+  out.sort((a, b) => new Date(b.at) - new Date(a.at));
+  return out.filter(e => e.at && !isNaN(new Date(e.at).getTime()));
+}
+
+const AUDIT_KIND_META = {
+  void: { icon: 'do_not_disturb_on', chip: 'bg-stone-800 text-white', title: 'Void' },
+  discount: { icon: 'local_offer', chip: 'bg-amber-100 text-amber-900 border border-amber-300', title: 'Diskon' },
+  shift: { icon: 'point_of_sale', chip: 'bg-emerald-100 text-emerald-900 border border-emerald-300', title: 'Tutup Shift' }
+};
+
+export function renderAuditTrail() {
+  const listEl = document.getElementById('auditTrailList');
+  if (!listEl) return;
+  const sumEl = document.getElementById('auditSummary');
+  const periodEl = document.getElementById('auditPeriodLabel');
+  const entries = getAuditEntries();
+
+  if (periodEl) periodEl.innerText = getPeriodLabel();
+
+  const voids = entries.filter(e => e.kind === 'void');
+  const discs = entries.filter(e => e.kind === 'discount');
+  const voidRp = voids.reduce((s, e) => s + (e.total || 0), 0);
+  const discRp = discs.reduce((s, e) => s + (e.amount || 0), 0);
+  const shiftDiff = entries
+    .filter(e => e.kind === 'shift')
+    .reduce((s, e) => s + (Number(e.difference) || 0), 0);
+
+  if (sumEl) {
+    const chip = (label, val, valCls) => `
+      <div class="flex-1 min-w-[100px] bg-stone-50 border border-stone-200 rounded-xl px-2.5 py-1.5">
+        <p class="text-[10px] font-bold text-stone-500">${label}</p>
+        <p class="text-xs font-black tabular-nums ${valCls}">${val}</p>
+      </div>`;
+    sumEl.innerHTML =
+      chip(`Void ${voids.length}x`, formatRp(voidRp), 'text-stone-700') +
+      chip(`Diskon ${discs.length}x`, '-' + formatRp(discRp), 'text-amber-800') +
+      chip('Selisih laci', (shiftDiff >= 0 ? '+' : '−') + formatRp(Math.abs(shiftDiff)), shiftDiff >= 0 ? 'text-emerald-700' : 'text-red-600');
+  }
+
+  if (entries.length === 0) {
+    listEl.innerHTML = `<div class="py-6 text-center text-stone-400 font-bold text-xs">Bersih — tidak ada void, diskon, atau selisih pada periode ini.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = entries.slice(0, 50).map(e => {
+    const meta = AUDIT_KIND_META[e.kind] || AUDIT_KIND_META.void;
+    const when = formatDateShort(e.at);
+    let title = '';
+    let nominal = '';
+    if (e.kind === 'void') {
+      title = `Batal ${formatRp(e.total)} (${escapeHtml(e.label)}${e.order ? ` • ${escapeHtml(e.order)}` : ''})`;
+      nominal = `<span class="font-black text-xs tabular-nums text-stone-400 line-through">${formatRp(e.total)}</span>`;
+    } else if (e.kind === 'discount') {
+      title = `Diskon ${escapeHtml(e.label)}${e.order ? ` • ${escapeHtml(e.order)}` : ''}`;
+      nominal = `<span class="font-black text-xs tabular-nums text-amber-800">-${formatRp(e.amount)}</span>`;
+    } else {
+      title = `Tutup shift • ${e.txCount} struk`;
+      nominal = `<span class="font-black text-xs tabular-nums ${e.difference >= 0 ? 'text-emerald-700' : 'text-red-600'}">${e.difference >= 0 ? '+' : '−'}${formatRp(Math.abs(e.difference))}</span>`;
+    }
+    return `
+      <div class="py-2.5 flex items-center justify-between gap-1.5 border-b border-stone-100 last:border-0">
+        <div class="flex items-center gap-2 min-w-0 flex-1">
+          <span class="material-symbols-rounded text-lg shrink-0 px-1.5 py-1 rounded-lg ${meta.chip}">${meta.icon}</span>
+          <div class="min-w-0">
+            <p class="text-xs font-extrabold text-stone-900 truncate">${title}</p>
+            <p class="text-[10.5px] text-stone-500 truncate">${escapeHtml(e.actor || '—')} • ${when}</p>
+          </div>
+        </div>
+        <div class="shrink-0">${nominal}</div>
+      </div>`;
+  }).join('') + (entries.length > 50 ? `<p class="pt-2 text-center text-[10px] text-stone-400 font-bold">+${entries.length - 50} kejadian lain (persempit periode)</p>` : '');
 }
 
 // ================= BULK MENU TEXT IMPORT =================

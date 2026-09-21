@@ -36,6 +36,7 @@ import * as notification from './modules/notification.js';
 import { saveNotificationConfig } from './state.js';
 import { preloadProductPhotos } from './modules/photos.js';
 import { initErrorTelemetry, sendTelemetryToDiscord } from './modules/telemetry.js';
+import { openDiagnosticsModal, closeDiagnosticsModal, copyDiagnosticsText, sendDiagnosticsNow } from './modules/diagnostics.js';
 import { 
   initAllCustomSelects, 
   enhanceSelectElement, 
@@ -169,6 +170,7 @@ export function switchView(viewName) {
     if (mobileNav) mobileNav.classList.remove('hidden');
     if (btnAdminM) btnAdminM.className = navActiveClass;
     admin.renderAdminTable();
+    try { admin.renderAuditTrail(); } catch (_) {}
     if (state.storeId) {
       window.history.replaceState(null, '', `${window.location.pathname}?store=${encodeURIComponent(state.storeId)}`);
     }
@@ -3238,6 +3240,13 @@ const KasirApp = {
   saveQrisSettings: admin.saveQrisSettings,
   exportDataBackup: admin.exportDataBackup,
   importDataBackup: admin.importDataBackup,
+  renderAuditTrail: admin.renderAuditTrail,
+
+  // Diagnostik 1-Tap (Owner)
+  openDiagnosticsModal,
+  closeDiagnosticsModal,
+  copyDiagnosticsText,
+  sendDiagnosticsNow,
 
   // Bulk Menu Rapid Table & Smart Text Importer
   openBulkImportModal: admin.openBulkImportModal,

@@ -10,8 +10,7 @@
 const TELEMETRY_PROXY_KEY = 'aristotle_telemetry_proxy';
 const TELEMETRY_PROXY_URL = 'https://aris-pos-telemetry.gottfriedemptiness.workers.dev/';
 
-function resolveTelemetryProxyUrl() {
-  try {
+export function resolveTelemetryProxyUrl() {  try {
     if (typeof window !== 'undefined' && window.__ARISTOTLE_TELEMETRY_PROXY) {
       return window.__ARISTOTLE_TELEMETRY_PROXY;
     }
@@ -26,6 +25,23 @@ const errorDedupeCache = new Map();
 let lastReportTimestamp = 0;
 const MIN_REPORT_INTERVAL_MS = 2500; // Minimal jeda 2.5 detik per pesan agar tidak terkena rate limit Discord
 const DEDUPE_WINDOW_MS = 60000; // Drop error kembar yang sama persis dalam 60 detik
+
+// Ring buffer error lokal (maks 20) — bahan tombol "Kirim Data Diagnostik".
+// Dicatat SELALU (walau proxy belum dikonfigurasi) agar dukungan tetap bisa
+// membaca riwayat lewat Salin.
+const recentErrors = [];
+const RECENT_ERRORS_MAX = 20;
+
+export function getRecentErrors() {
+  return recentErrors.slice();
+}
+
+function logRecentError(entry) {
+  try {
+    recentErrors.push({ at: new Date().toISOString(), ...entry });
+    while (recentErrors.length > RECENT_ERRORS_MAX) recentErrors.shift();
+  } catch (_) {}
+}
 
 /**
  * Buat fingerprint unik dari error untuk deduplikasi
@@ -109,6 +125,8 @@ export async function sendTelemetryToDiscord({
   try {
     // 0. Tanpa URL proxy, telemetri diam (tidak error, tidak spam).
     const proxyUrl = resolveTelemetryProxyUrl();
+    // Catat lokal dulu — selalu, agar riwayat tersedia untuk diagnostik.
+    logRecentError({ type, errorName, message: String(message || '').slice(0, 200), location });
     if (!proxyUrl) return false;
 
     const now = Date.now();

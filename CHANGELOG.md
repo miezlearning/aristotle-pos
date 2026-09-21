@@ -2,6 +2,14 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.90] - 2026-09-19
+
+### Diagnostik 1-Tap + Jejak Audit
+- **Diagnostik (Owner):** ring buffer 20 error + modal berisi versi/storage/printer/error dengan tombol Salin (WA) dan Kirim ke Discord via proxy (cabang `kind=diagnostics` di worker — tempel ulang worker).
+- **Jejak Audit (Owner):** timeline void + diskon + selisih tutup shift per periode laporan, ringkasan 3 chip, tanpa skema baru.
+
+---
+
 ## [v1.2.89] - 2026-09-19
 
 ### Worker CORS + Diagnosis Gagal Muat

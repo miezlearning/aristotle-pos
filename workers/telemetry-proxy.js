@@ -83,6 +83,54 @@ export default {
       return corsReply('Bad app', 400);
     }
 
+    const secret = (env && env.DISCORD_WEBHOOK_URL) || '';
+    if (!secret.startsWith('https://discord.com/api/webhooks/')) {
+      return corsReply('Proxy belum dikonfigurasi (env DISCORD_WEBHOOK_URL).', 500);
+    }
+
+    // Bundel diagnostik 1-tap: embed ringkas server-side, rinci tapi terbatas.
+    if (b.kind === 'diagnostics') {
+      const d = (b.data && typeof b.data === 'object') ? b.data : {};
+      const errLines = Array.isArray(d.errors) ? d.errors.slice(0, 4).map(e =>
+        `${cap(e.at, 16).slice(5) || '?'} — ${cap(e.errorName, 30)}: ${cap(e.message, 80)}`
+      ).join('\n') : '';
+      const diagEmbed = {
+        title: `🩺 [Aristotle POS] Diagnostik: ${cap(d.storeName, 50) || '-'}`,
+        description: `Laporan 1-tap dari perangkat kasir`,
+        color: 0x3B82F6,
+        fields: [
+          {
+            name: '🏪 Toko & Aplikasi',
+            value: `**${cap(d.storeName, 50) || '-'}** (\`${cap(d.storeId, 30)}\`)\nApp ${cap(d.appVersion, 20) || '?'} • ${cap(d.os, 20) || '?'} • ${d.online === false ? '🔴 Offline' : '🟢 Online'}`,
+            inline: false
+          },
+          {
+            name: '💾 Data Lokal',
+            value: `${cap(d.storageText, 60) || '-'}\nProduk ${d.products | 0} • Transaksi ${d.transactions | 0} • Biaya ${d.expenses | 0}`,
+            inline: true
+          },
+          {
+            name: '🖨️ Printer',
+            value: `${cap(d.printerText, 90) || '-'}`,
+            inline: true
+          },
+          {
+            name: '📋 Error Terakhir',
+            value: errLines ? `\`\`\`\n${errLines}\n\`\`\`` : 'Bersih — tidak ada error tercatat.',
+            inline: false
+          }
+        ],
+        footer: { text: 'Aristotle POS Telemetry Proxy • diagnostik' },
+        timestamp: new Date().toISOString()
+      };
+      const res = await fetch(secret, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: 'Aristotle POS Sentry', embeds: [diagEmbed] })
+      });
+      return corsReply(res.ok ? 'ok' : 'discord error', res.ok ? 200 : 502);
+    }
+
     const level = b.level === 'warning' ? 'warning' : b.level === 'info' ? 'info' : 'error';
     const color = level === 'warning' ? 0xF59E0B : level === 'info' ? 0x3B82F6 : 0xEF4444;
 
@@ -117,11 +165,6 @@ export default {
       footer: { text: 'Aristotle POS Telemetry Proxy' },
       timestamp: new Date().toISOString()
     };
-
-    const secret = (env && env.DISCORD_WEBHOOK_URL) || '';
-    if (!secret.startsWith('https://discord.com/api/webhooks/')) {
-      return corsReply('Proxy belum dikonfigurasi (env DISCORD_WEBHOOK_URL).', 500);
-    }
 
     const res = await fetch(secret, {
       method: 'POST',
