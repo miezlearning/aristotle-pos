@@ -2,9 +2,26 @@
  * Aristotle POS - Enterprise Error Telemetry & Discord Crash Reporter
  * Memantau error JavaScript, unhandled promise rejections, dan crash hardware/jaringan secara otomatis
  * dan mengirimkannya ke Discord Webhook dengan format embed standar industri.
+ *
+ * KEAMANAN: URL webhook TIDAK BOLEH di-hardcode di repo (pernah bocor ke
+ * GitHub & dihapus permanen oleh Discord). Aktifkan sekali per perangkat via:
+ *   localStorage.setItem('aristotle_telemetry_webhook', 'https://discord.com/api/webhooks/...')
+ * Tanpa URL, telemetri diam (tidak error, tidak spam).
  */
 
-const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1547145982947491941/tJFIxfrErcDXb1_N3Hd3BlIznMTX33DB-O6WhjxNILb0JinDVwpmdxPh6dt4Uk0HJgZg';
+// Kunci penyimpanan URL webhook di perangkat (bukan di repo)
+const TELEMETRY_WEBHOOK_KEY = 'aristotle_telemetry_webhook';
+
+function resolveTelemetryWebhookUrl() {
+  try {
+    if (typeof window !== 'undefined' && window.__ARISTOTLE_TELEMETRY_URL) {
+      return window.__ARISTOTLE_TELEMETRY_URL;
+    }
+    const saved = localStorage.getItem(TELEMETRY_WEBHOOK_KEY);
+    if (saved && saved.startsWith('https://discord.com/api/webhooks/')) return saved;
+  } catch (_) {}
+  return '';
+}
 
 // In-memory cache untuk deduplikasi & rate-limiting
 const errorDedupeCache = new Map();
@@ -92,6 +109,10 @@ export async function sendTelemetryToDiscord({
   extra = {}
 }) {
   try {
+    // 0. Telemetri mati bila URL belum dikonfigurasi di perangkat ini.
+    const webhookUrl = resolveTelemetryWebhookUrl();
+    if (!webhookUrl) return false;
+
     const now = Date.now();
 
     // 1. Deduplikasi: Cek apakah error yang sama sudah pernah dilaporkan dalam 60 detik terakhir
@@ -189,7 +210,7 @@ export async function sendTelemetryToDiscord({
     };
 
     // Kirim via fetch
-    const response = await fetch(DISCORD_WEBHOOK_URL, {
+    const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -260,5 +281,9 @@ export function initErrorTelemetry() {
 
   // 3. Expose ke window agar bisa dipanggil dari mana saja jika perlu manual log
   window.reportErrorToDiscord = sendTelemetryToDiscord;
-  console.log('[Telemetry] Aristotle POS Enterprise Discord Crash Reporter Aktif.');
+  if (resolveTelemetryWebhookUrl()) {
+    console.log('[Telemetry] Aristotle POS Enterprise Discord Crash Reporter Aktif.');
+  } else {
+    console.log('[Telemetry] Nonaktif (belum ada webhook perangkat). Set localStorage aristotle_telemetry_webhook untuk mengaktifkan.');
+  }
 }

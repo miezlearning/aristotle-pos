@@ -2,6 +2,14 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.84] - 2026-09-19
+
+### Cabut Webhook Bocor + Perbaiki Modul Fuse
+- **Webhook Discord keluar dari repo** (JS + native Android) menjadi runtime-config per perangkat; tanpa URL telemetri diam. Cara aktifkan: `localStorage`/bridge, tidak pernah commit.
+- **Fuse `.mjs` → `.js`:** modul gagal dimuat server statis (MIME text/plain) yang meruntuhkan seluruh `KasirApp`; mapping `.mjs` ditambahkan ke dev server.
+
+---
+
 ## [v1.2.83] - 2026-09-19
 
 ### Hold Action: Qty Repeat + Tahan-Konfirmasi Void

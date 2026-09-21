@@ -4,7 +4,7 @@
  * Contoh: "nasgor" → "Nasi Goreng Spesial", "teh" → "Teh Manis Dingin".
  */
 
-import Fuse from '../lib/fuse.min.mjs';
+import Fuse from '../lib/fuse.min.js';
 
 const FUSE_OPTS = {
   keys: ['name', 'category'],

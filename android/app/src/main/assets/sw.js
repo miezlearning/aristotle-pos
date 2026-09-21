@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aristotle-pos-v132';
+const CACHE_NAME = 'aristotle-pos-v133';
 const PRECACHE_ASSETS = [
   './',
   './index.html',
@@ -8,7 +8,7 @@ const PRECACHE_ASSETS = [
   './css/tailwind.css',
   './fonts/material-symbols-rounded-core.woff2',
   './js/lib/dexie.min.js',
-  './js/lib/fuse.min.mjs',
+  './js/lib/fuse.min.js',
   './js/app.js',
   './js/config.js',
   './js/state.js',

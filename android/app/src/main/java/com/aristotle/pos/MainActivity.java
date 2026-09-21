@@ -102,7 +102,23 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String PRODUCTION_URL = "https://miezlearning.github.io/aristotle-pos/";
     private static final String OFFLINE_FALLBACK_URL = "file:///android_asset/index.html";
-    private static final String DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1547145982947491941/tJFIxfrErcDXb1_N3Hd3BlIznMTX33DB-O6WhjxNILb0JinDVwpmdxPh6dt4Uk0HJgZg";
+
+    // Telemetri native: URL webhook TIDAK di-hardcode (pernah bocor & dihapus
+    // Discord). Disimpan di SharedPreferences per perangkat; isi lewat bridge
+    // setTelemetryWebhookUrl() sekali saja, tidak pernah masuk repo.
+    private static final String TELEMETRY_PREFS_NAME = "AristotleTelemetryPrefs";
+    private static final String KEY_TELEMETRY_WEBHOOK = "discord_webhook_url";
+
+    private String getTelemetryWebhookUrl() {
+        try {
+            android.content.SharedPreferences prefs = getSharedPreferences(TELEMETRY_PREFS_NAME, MODE_PRIVATE);
+            String url = prefs.getString(KEY_TELEMETRY_WEBHOOK, "");
+            if (url != null && url.startsWith("https://discord.com/api/webhooks/")) {
+                return url;
+            }
+        } catch (Exception ignored) {}
+        return "";
+    }
 
     // Standard Serial Port Profile (SPP) UUID for Classic Bluetooth Thermal Printers
     private static final UUID SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
@@ -640,6 +656,23 @@ public class MainActivity extends AppCompatActivity {
             printExecutor.execute(() -> {
                 sendCustomErrorToDiscord(title, message, stack);
             });
+        }
+
+        @JavascriptInterface
+        public boolean setTelemetryWebhookUrl(String url) {
+            try {
+                String clean = url != null ? url.trim() : "";
+                if (!clean.startsWith("https://discord.com/api/webhooks/")) {
+                    return false;
+                }
+                getSharedPreferences(TELEMETRY_PREFS_NAME, MODE_PRIVATE)
+                        .edit()
+                        .putString(KEY_TELEMETRY_WEBHOOK, clean)
+                        .apply();
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
         }
 
         @JavascriptInterface
@@ -2162,7 +2195,11 @@ public class MainActivity extends AppCompatActivity {
                     embeds.put(embed);
                     payload.put("embeds", embeds);
 
-                    URL url = new URL(DISCORD_WEBHOOK_URL);
+                    String webhookUrl = getTelemetryWebhookUrl();
+                    if (webhookUrl.isEmpty()) {
+                        return;
+                    }
+                    URL url = new URL(webhookUrl);
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json");
@@ -2218,7 +2255,11 @@ public class MainActivity extends AppCompatActivity {
             embeds.put(embed);
             payload.put("embeds", embeds);
 
-            URL url = new URL(DISCORD_WEBHOOK_URL);
+            String webhookUrl = getTelemetryWebhookUrl();
+            if (webhookUrl.isEmpty()) {
+                return;
+            }
+            URL url = new URL(webhookUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");
