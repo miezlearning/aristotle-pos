@@ -1,9 +1,10 @@
 {
-  "versionCode": 137,
-  "versionName": "1.2.88",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.88/Aristotle-POS.apk",
+  "versionCode": 138,
+  "versionName": "1.2.89",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.89/Aristotle-POS.apk",
   "changelog": [
-    "Toggle laporan rata tengah: kembalikan justify-center yang hilang saat ganti mode"
+    "Worker telemetri: CORS preflight + header semua respons",
+    "Telemetri sebut nama file saat modul gagal dimuat (capture listener)"
   ],
   "releaseDate": "2026-09-21"
 }

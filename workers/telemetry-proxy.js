@@ -44,28 +44,43 @@ function rateHit(key, max) {
 
 const cap = (v, n) => (typeof v === 'string' ? v.slice(0, n) : '');
 
+// CORS: aplikasi memanggil dari origin mana pun (Pages, localhost, APK).
+// Preflight browser (OPTIONS, karena Content-Type: application/json)
+// WAJIB dijawab — tanpanya fetch diblokir sebelum sampai logika.
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type'
+};
+
+const corsReply = (body, status) =>
+  new Response(body, { status, headers: CORS_HEADERS });
+
 export default {
   async fetch(request, env) {
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: CORS_HEADERS });
+    }
     if (request.method !== 'POST') {
-      return new Response('Aristotle POS telemetry proxy. POST JSON to report.', { status: 405 });
+      return corsReply('Aristotle POS telemetry proxy. POST JSON to report.', 405);
     }
 
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
     if (!rateHit('ip:' + ip, RATE_MAX_PER_IP)) {
-      return new Response('Rate limited', { status: 429 });
+      return corsReply('Rate limited', 429);
     }
     if (!rateHit('global', RATE_MAX_GLOBAL)) {
-      return new Response('Rate limited', { status: 429 });
+      return corsReply('Rate limited', 429);
     }
 
     let b;
     try {
       b = await request.json();
     } catch (_) {
-      return new Response('Bad JSON', { status: 400 });
+      return corsReply('Bad JSON', 400);
     }
     if (!b || b.app !== 'aristotle-pos') {
-      return new Response('Bad app', { status: 400 });
+      return corsReply('Bad app', 400);
     }
 
     const level = b.level === 'warning' ? 'warning' : b.level === 'info' ? 'info' : 'error';
@@ -105,7 +120,7 @@ export default {
 
     const secret = (env && env.DISCORD_WEBHOOK_URL) || '';
     if (!secret.startsWith('https://discord.com/api/webhooks/')) {
-      return new Response('Proxy belum dikonfigurasi (env DISCORD_WEBHOOK_URL).', { status: 500 });
+      return corsReply('Proxy belum dikonfigurasi (env DISCORD_WEBHOOK_URL).', 500);
     }
 
     const res = await fetch(secret, {
@@ -113,6 +128,6 @@ export default {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: 'Aristotle POS Sentry', embeds: [embed] })
     });
-    return new Response(res.ok ? 'ok' : 'discord error', { status: res.ok ? 200 : 502 });
+    return corsReply(res.ok ? 'ok' : 'discord error', res.ok ? 200 : 502);
   }
 };

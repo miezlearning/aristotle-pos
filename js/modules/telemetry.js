@@ -178,6 +178,26 @@ export async function sendTelemetryToDiscord({
  * Inisialisasi Listener Global untuk Menangkap Semua Error
  */
 export function initErrorTelemetry() {
+  // 0. Tangkap kegagalan load resource/modul (MIME salah, 404 file JS/CSS,
+  //    font). Error jenis ini TIDAK bubble — wajib capture:true — dan inilah
+  //    yang menyebut NAMA FILE-nya (kasus fuse.min.mjs kemarin bisu).
+  window.addEventListener('error', (event) => {
+    try {
+      const t = event.target || {};
+      if (t && (t.tagName === 'SCRIPT' || t.tagName === 'LINK')) {
+        const src = (t.src || t.href || '').slice(0, 200);
+        sendTelemetryToDiscord({
+          type: 'Resource Load Failure',
+          errorName: 'ResourceError',
+          message: `Gagal memuat: ${src || '(sumber tak dikenal)'}`,
+          stack: '',
+          location: src || 'unknown',
+          level: 'error'
+        });
+      }
+    } catch (_) {}
+  }, true);
+
   // 1. Tangkap Uncaught JavaScript Error (syntax, runtime, null pointer)
   window.addEventListener('error', (event) => {
     try {

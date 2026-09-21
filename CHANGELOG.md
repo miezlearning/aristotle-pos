@@ -2,6 +2,14 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.89] - 2026-09-19
+
+### Worker CORS + Diagnosis Gagal Muat
+- Worker jawab preflight OPTIONS + header CORS di semua respons (fetch dari Pages/APK tidak lagi diblokir).
+- Telemetri laporkan **nama file** saat modul/resource gagal dimuat (listener capture).
+
+---
+
 ## [v1.2.88] - 2026-09-19
 
 ### Toggle Laporan Rata Tengah
