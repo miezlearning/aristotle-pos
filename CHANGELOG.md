@@ -2,6 +2,15 @@
 
 Semua perubahan besar dan pembaruan fitur pada **Aristotle POS** (Multi-Tenant SaaS POS System) didokumentasikan dalam file ini.
 
+## [v1.2.91] - 2026-09-19
+
+### Rapi Header Mobile
+- Tombol shift/printer/keranjang sejajar 44px + ikon text-xl.
+- Dot status ber-border putih (tidak menyatu background) termasuk update JS.
+- Ikon utilitas leading-none anti-kepotong font.
+
+---
+
 ## [v1.2.90] - 2026-09-19
 
 ### Diagnostik 1-Tap + Jejak Audit

@@ -178,7 +178,7 @@
         class="relative w-10 h-10 rounded-2xl bg-stone-100 hover:bg-stone-200/80 text-stone-700 flex items-center justify-center border border-stone-200/80 transition active:scale-95 cursor-pointer shadow-2xs"
         title="Status Printer">
         <span id="railPrinterDot" class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-stone-400 border border-white"></span>
-        <span class="material-symbols-rounded text-lg text-stone-700">print</span>
+        <span class="material-symbols-rounded text-lg leading-none text-stone-700">print</span>
       </button>
 
       <!-- Ops: Shift Kasir (Z-Report) -->
@@ -186,7 +186,7 @@
         class="relative w-10 h-10 rounded-2xl bg-stone-100 hover:bg-stone-200/80 text-stone-700 flex items-center justify-center border border-stone-200/80 transition active:scale-95 cursor-pointer shadow-2xs"
         title="Shift Kasir">
         <span id="railShiftDot" class="hidden absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white animate-pulse"></span>
-        <span class="material-symbols-rounded text-lg text-stone-700">schedule</span>
+        <span class="material-symbols-rounded text-lg leading-none text-stone-700">schedule</span>
       </button>
 
       <!-- Hidden trigger for compatibility -->
@@ -269,21 +269,21 @@
         <!-- Right Side on Mobile (< md): Quick Essential Actions (Shift, Printer, Cart) -->
         <div class="md:hidden flex items-center gap-1.5 shrink-0">
           <button id="mobileHeaderShiftBtn" type="button" onclick="window.KasirApp.handleShiftHeaderClick()"
-            class="w-8 h-8 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center border border-stone-200/80 shadow-2xs transition active:scale-90 relative shrink-0"
+            class="w-11 h-11 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center border border-stone-200/80 shadow-2xs transition active:scale-90 relative shrink-0"
             title="Shift Kasir">
-            <span id="mobileHeaderShiftDot" class="hidden absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span class="material-symbols-rounded text-base text-emerald-700">schedule</span>
+            <span id="mobileHeaderShiftDot" class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 border border-white animate-pulse"></span>
+            <span class="material-symbols-rounded text-xl leading-none text-emerald-700">schedule</span>
           </button>
           <button id="mobileHeaderPrinterBtn" type="button" onclick="window.KasirApp.openPrinterConfigModal()"
-            class="w-8 h-8 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center border border-stone-200/80 shadow-2xs transition active:scale-90 relative shrink-0"
+            class="w-11 h-11 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center border border-stone-200/80 shadow-2xs transition active:scale-90 relative shrink-0"
             title="Status Printer">
-            <span id="mobileHeaderPrinterDot" class="absolute top-1 right-1 w-2 h-2 rounded-full bg-stone-400"></span>
-            <span class="material-symbols-rounded text-base text-stone-600">print</span>
+            <span id="mobileHeaderPrinterDot" class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-stone-400 border border-white"></span>
+            <span class="material-symbols-rounded text-xl leading-none text-stone-600">print</span>
           </button>
           <button id="mobileHeaderCartBtn" type="button" onclick="toggleMobileCartDrawer()"
             class="relative px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200/80 flex items-center gap-1 active:scale-95 transition shrink-0 shadow-2xs"
             title="Keranjang">
-            <span class="material-symbols-rounded text-base text-stone-600">shopping_cart</span>
+            <span class="material-symbols-rounded text-base leading-none text-stone-600">shopping_cart</span>
             <span id="mobileHeaderCartTotal" class="text-xs font-black">0</span>
           </button>
         </div>
@@ -5196,7 +5196,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.90</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.91</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -5356,7 +5356,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.90</span>
+    <span id="appVersionBadge" class="hidden">v1.2.91</span>
   </div>
 
   <!-- Main JavaScript App Module -->

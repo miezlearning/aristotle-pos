@@ -2705,7 +2705,7 @@ export function updatePrinterUIStatus(skipHeartbeat = false) {
       headerIcon.className = isHotspot ? 'material-symbols-rounded text-sm text-amber-700' : (isUsbConnected || (printerName && isReady) ? 'material-symbols-rounded text-sm text-emerald-700' : 'material-symbols-rounded text-sm text-stone-500');
     }
     if (headerText) headerText.textContent = displayName;
-    if (mobileDot) mobileDot.className = `absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${isUsbConnected || (printerName && isReady) ? 'bg-emerald-500 animate-pulse' : (window.AndroidBridge && !isBtEnabled ? 'bg-rose-400' : 'bg-stone-400')}`;
+    if (mobileDot) mobileDot.className = `absolute top-1.5 right-1.5 w-2 h-2 rounded-full border border-white ${isUsbConnected || (printerName && isReady) ? 'bg-emerald-500 animate-pulse' : (window.AndroidBridge && !isBtEnabled ? 'bg-rose-400' : 'bg-stone-400')}`;
 
     if (modalBadge) modalBadge.innerHTML = badgeHtml;
     if (roleCard) roleCard.className = cardClass;

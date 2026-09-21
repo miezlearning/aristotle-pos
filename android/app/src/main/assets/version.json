@@ -1,10 +1,9 @@
 {
-  "versionCode": 139,
-  "versionName": "1.2.90",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.90/Aristotle-POS.apk",
+  "versionCode": 140,
+  "versionName": "1.2.91",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.91/Aristotle-POS.apk",
   "changelog": [
-    "Diagnostik 1-tap: ring buffer error + modal Salin dan Kirim ke Discord via proxy",
-    "Jejak Audit kasir: timeline void diskon selisih laci + ringkasan per periode"
+    "Header mobile sejajar 44px + dot status ber-border + ikon anti-kepotong"
   ],
   "releaseDate": "2026-09-21"
 }

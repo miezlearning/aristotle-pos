@@ -73,7 +73,7 @@ export function updateShiftHeaderUI() {
     }
     if (mobileDot) {
       mobileDot.classList.remove('hidden');
-      mobileDot.className = 'absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+      mobileDot.className = 'absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 border border-white animate-pulse';
     }
   } else {
     if (desktopBadge) {
