@@ -315,7 +315,7 @@ export async function probePrinterEntry(id) {
   if (!entry || !entry.address) return;
   playClick('tap');
   if (!window.AndroidBridge || typeof window.AndroidBridge.probeBluetoothPrinterAsync !== 'function') {
-    showToast('Periksa sambungan butuh aplikasi Android (APK).', 'warning');
+    showToast('Cek sambungan hanya di aplikasi HP.', 'warning');
     return;
   }
   probingPrinterId = id;
@@ -324,10 +324,10 @@ export async function probePrinterEntry(id) {
   probingPrinterId = null;
   renderPrinterList();
   if (ok === null) {
-    showToast(`Periksa ${entry.name || 'printer'}: tidak menjawab (20 dtk).`, 'warning', 3500);
+    showToast(`${entry.name || 'Printer'}: tidak jawab (20 detik).`, 'warning', 3500);
   } else {
     showToast(
-      ok ? `${entry.name || 'Printer'}: terhubung.` : `${entry.name || 'Printer'}: tidak terjangkau. Nyalakan printer & dekatkan HP.`,
+      ok ? `${entry.name || 'Printer'}: terhubung.` : `${entry.name || 'Printer'}: tidak ketemu. Nyalakan printer, dekatkan HP.`,
       ok ? 'success' : 'error', 3500
     );
   }
@@ -1071,18 +1071,17 @@ export function renderDrawerStatus() {
         .filter(p => p && p.enabled && p.address);
       const names = pool.map(p => p.name || 'Printer').filter(Boolean).slice(0, 2).join(', ');
       const ok = isLocalPrinterReady();
-      const checked = fmtDrawerTime();
       if (pool.length === 0) {
-        printerEl.innerText = 'Belum ada printer terdaftar';
+        printerEl.innerText = 'Belum ada printer';
         printerEl.className = 'text-stone-500';
       } else if (ok) {
-        printerEl.innerText = `Terhubung${names ? ` (${names})` : ''} • cek ${checked}`;
+        printerEl.innerText = `Terhubung${names ? ` (${names})` : ''}`;
         printerEl.className = 'text-emerald-700';
       } else {
         const lastGood = lastGoodPrintText(pool);
         printerEl.innerText = lastGood
-          ? `Terputus • terakhir baik ${lastGood} • cek ${checked}`
-          : `Terputus • belum pernah tersambung • cek ${checked}`;
+          ? `Putus. Terakhir bisa ${lastGood}.`
+          : 'Putus. Belum pernah sambung.';
         printerEl.className = 'text-red-600';
       }
     }
@@ -1090,13 +1089,13 @@ export function renderDrawerStatus() {
     if (drawerEl) {
       const rec = state.printerConfig?.drawerLastTest;
       if (!rec || !rec.at) {
-        drawerEl.innerText = 'Belum pernah dites — tekan Tes Buka Laci di bawah';
+        drawerEl.innerText = 'Belum pernah dites. Tekan Tes Buka Laci.';
         drawerEl.className = 'text-stone-500';
       } else if (rec.opened) {
-        drawerEl.innerText = `Tes terakhir: terbuka (${fmtDrawerTime(rec.at)})`;
+        drawerEl.innerText = `Terakhir dites terbuka (${fmtDrawerTime(rec.at)})`;
         drawerEl.className = 'text-emerald-700';
       } else {
-        drawerEl.innerText = `Tes terakhir: tidak terbuka (${fmtDrawerTime(rec.at)})`;
+        drawerEl.innerText = `Terakhir dites macet (${fmtDrawerTime(rec.at)})`;
         drawerEl.className = 'text-red-600';
       }
     }
@@ -1110,7 +1109,7 @@ export async function checkDrawerLinkStatus() {
     .filter(p => p && p.enabled && p.address);
   if (pool.length === 0) {
     renderDrawerStatus();
-    showToast('Belum ada printer terdaftar.', 'warning');
+    showToast('Belum ada printer.', 'warning');
     return;
   }
   // Tanpa bridge native: baca status soket saja (jujur sesuai kemampuan).
@@ -1125,7 +1124,7 @@ export async function checkDrawerLinkStatus() {
     return;
   }
   // Probe live berurutan — tanpa kirim byte (tanpa buang kertas).
-  showToast(`Memeriksa ${pool.length} printer...`, 'info', 2000);
+  showToast(`Cek ${pool.length} printer...`, 'info', 2000);
   const results = [];
   for (const p of pool) {
     probingPrinterId = p.id;
@@ -1139,8 +1138,8 @@ export async function checkDrawerLinkStatus() {
   const okN = results.filter(r => r.ok).length;
   showToast(
     okN === results.length
-      ? `Semua printer terhubung (${okN}/${results.length}).`
-      : `Terhubung ${okN} dari ${results.length} printer (${results.filter(r => !r.ok).map(r => r.name).join(', ')}).`,
+      ? 'Semua terhubung.'
+      : `Terhubung ${okN} dari ${results.length}: ${results.filter(r => !r.ok).map(r => r.name).join(', ')}.`,
     okN === results.length ? 'success' : 'warning',
     4000
   );
@@ -1383,7 +1382,7 @@ export function openNativeBluetoothDevicePickerModal(devices = []) {
 
       <div class="p-4 overflow-y-auto flex flex-col gap-2.5 flex-1">
         <p class="text-xs text-stone-600 mb-1">
-          ${addMode ? 'Ketuk printer untuk ditambahkan ke daftar (atur peran setelahnya):' : 'Ketuk printer thermal kasir Anda untuk menghubungkan:'}
+          ${addMode ? 'Ketuk printer untuk tambah ke daftar:' : 'Ketuk printer untuk sambung:'}
         </p>
         ${listHtml}
       </div>
@@ -1444,7 +1443,7 @@ export function selectNativeBluetoothPrinter(address, name) {
 
   updatePrinterStatusBadge('bluetooth', name);
   closeNativeBluetoothDevicePickerModal();
-  showToast(`Printer kasir disetel: ${name}`, 'success', 3000);
+  showToast(`Printer kasir: ${name}`, 'success', 3000);
 }
 
 // ==================== CRUD DAFTAR PRINTER ====================
@@ -1546,7 +1545,7 @@ export async function testPrinterEntry(id) {
   playClick('tap');
   showToast(`Tes ke ${entry.name || 'printer'}...`, 'info', 1500);
   const ok = await sendBytesToPrinterEntry(entry, buildPrinterSelfTestBytes(entry));
-  showToast(ok ? `Tes berhasil: ${entry.name}` : `Tes gagal: ${entry.name} tidak merespons.`, ok ? 'success' : 'error', 3000);
+  showToast(ok ? `Tes berhasil: ${entry.name}` : `Tes gagal: ${entry.name} tidak jawab.`, ok ? 'success' : 'error', 3000);
 }
 
 export function renderPrinterList() {
@@ -1558,8 +1557,8 @@ export function renderPrinterList() {
   if (list.length === 0) {
     box.innerHTML = `
       <div class="text-center py-4 px-3 rounded-xl bg-stone-50 border border-dashed border-stone-300">
-        <p class="text-xs font-bold text-stone-600">Belum ada printer terdaftar.</p>
-        <p class="text-[11px] text-stone-500 mt-1">Ketuk <b>+ Tambah</b> lalu pilih printer Bluetooth yang sudah di-pair di HP.</p>
+        <p class="text-xs font-bold text-stone-600">Belum ada printer.</p>
+        <p class="text-[11px] text-stone-500 mt-1">Ketuk <b>+ Tambah</b>, lalu pilih printer.</p>
       </div>`;
     return;
   }
@@ -1568,13 +1567,13 @@ export function renderPrinterList() {
     const roles = Array.isArray(entry.roles) ? entry.roles : [];
     let statusHtml = '';
     if (probingPrinterId === entry.id) {
-      statusHtml = `<p class="text-[10.5px] text-sky-700 font-bold flex items-center gap-1 mt-0.5"><span class="material-symbols-rounded text-xs animate-spin">sync</span>Memeriksa sambungan...</p>`;
+      statusHtml = `<p class="text-[10.5px] text-sky-700 font-bold flex items-center gap-1 mt-0.5"><span class="material-symbols-rounded text-xs animate-spin">sync</span>Cek sambungan...</p>`;
     } else {
       const st = stats[normPrinterAddr(entry.address)];
       if (st && st.at) {
         statusHtml = st.ok
-          ? `<p class="text-[10.5px] text-emerald-700 font-bold mt-0.5">● Cetak terakhir baik • ${fmtPrintTime(st.at)}</p>`
-          : `<p class="text-[10.5px] text-red-600 font-bold mt-0.5">● Terakhir gagal • ${fmtPrintTime(st.at)}</p>`;
+          ? `<p class="text-[10.5px] text-emerald-700 font-bold mt-0.5">● Terakhir bisa cetak • ${fmtPrintTime(st.at)}</p>`
+          : `<p class="text-[10.5px] text-red-600 font-bold mt-0.5">● Terakhir cetak gagal • ${fmtPrintTime(st.at)}</p>`;
       } else {
         statusHtml = `<p class="text-[10.5px] text-stone-400 font-bold mt-0.5">○ Belum pernah cetak</p>`;
       }
@@ -1600,7 +1599,7 @@ export function renderPrinterList() {
             ${statusHtml}
           </div>
           <button type="button" onclick="KasirApp.togglePrinterEnabled('${entry.id}')"
-            title="${entry.enabled ? 'Jeda printer ini (tidak dipakai cetak)' : 'Pakai lagi printer ini'}"
+            title="${entry.enabled ? 'Jeda printer ini' : 'Pakai lagi'}"
             class="px-2.5 py-1.5 rounded-lg text-[10.5px] font-black border transition active:scale-95 cursor-pointer shrink-0 ${entry.enabled ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-white text-stone-500 border-stone-300'}">
             ${entry.enabled ? 'Dipakai' : 'Jeda'}
           </button>
@@ -1609,7 +1608,7 @@ export function renderPrinterList() {
           ${chips}
           <span class="flex-1"></span>
           <button type="button" onclick="KasirApp.probePrinterEntry('${entry.id}')"
-            title="Periksa sambungan live (tanpa kertas)"
+            title="Cek sambungan (tanpa kertas)"
             class="px-2 py-1 rounded-lg text-[10.5px] font-black bg-white text-stone-600 border border-stone-300 flex items-center gap-1 transition active:scale-95 cursor-pointer">
             <span class="material-symbols-rounded text-[13px]">sync</span>Cek
           </button>

@@ -1,10 +1,10 @@
 {
-  "versionCode": 151,
-  "versionName": "1.2.102",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.102/Aristotle-POS.apk",
+  "versionCode": 152,
+  "versionName": "1.2.103",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.103/Aristotle-POS.apk",
   "changelog": [
-    "Perbaiki updater ditolak palsu: catat URL di UI thread",
-    "Penjaga bridge baca catatan halaman, bukan getUrl langsung"
+    "Hapus em-dash status laci",
+    "Kalimat printer pendek ramah lansia"
   ],
   "releaseDate": "2026-09-22"
 }
