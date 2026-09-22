@@ -122,6 +122,103 @@ export function sendNativeBluetoothDataAsync(bytes) {
   });
 }
 
+// ==================== PRINTER MANAGER MODULAR (N PRINTER + PERAN) ====================
+// Satu HP menyimpan BANYAK printer Bluetooth, masing-masing dengan peran:
+// 'receipt' (struk pelanggan), 'kitchen' (tiket dapur/bar), 'drawer' (laci
+// menempel di printer ini). Migrasi otomatis dari 1 alamat lama.
+// Web Bluetooth/USB tetap 1 perangkat (keterbatasan API browser) — daftar
+// multi-printer berlaku penuh di jalur Native APK.
+export const PRINTER_ROLES = [
+  { id: 'receipt', label: 'Kasir', icon: 'receipt_long' },
+  { id: 'kitchen', label: 'Dapur', icon: 'restaurant' },
+  { id: 'drawer', label: 'Laci', icon: 'payments' }
+];
+
+function genPrinterId() {
+  return 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+export function getPrinterList() {
+  const cfg = state.printerConfig || {};
+  if (Array.isArray(cfg.printers) && cfg.printers.length > 0) return cfg.printers;
+  // Migrasi: alamat tunggal lama menjadi 1 entri dengan semua peran.
+  if (cfg.bluetoothAddress) {
+    return [{
+      id: genPrinterId(),
+      name: cfg.bluetoothName || 'Printer Kasir',
+      address: cfg.bluetoothAddress,
+      transport: 'bluetooth',
+      roles: ['receipt', 'kitchen', 'drawer'],
+      enabled: true
+    }];
+  }
+  return [];
+}
+
+export function savePrinterList(list) {
+  if (!state.printerConfig) state.printerConfig = {};
+  state.printerConfig.printers = Array.isArray(list) ? list : [];
+  // Sinkronkan alamat tunggal lama = printer BT aktif pertama (kompat kode lama).
+  const firstBt = state.printerConfig.printers.find(p => p && p.enabled && p.transport === 'bluetooth' && p.address);
+  if (firstBt) {
+    state.printerConfig.bluetoothAddress = firstBt.address;
+    state.printerConfig.bluetoothName = firstBt.name || '';
+  } else if (state.printerConfig.printers.length === 0) {
+    state.printerConfig.bluetoothAddress = '';
+    state.printerConfig.bluetoothName = '';
+  }
+  try { savePrinterConfig(state.printerConfig); } catch (_) {}
+  try { if (typeof syncSavePrinterConfig === 'function') syncSavePrinterConfig(state.printerConfig); } catch (_) {}
+}
+
+export function getPrintersByRole(role) {
+  return getPrinterList().filter(p => p && p.enabled && Array.isArray(p.roles) && p.roles.includes(role));
+}
+
+function setActivePrinterAddress(address) {
+  try {
+    if (window.AndroidBridge && typeof window.AndroidBridge.setPreferredPrinter === 'function' && address) {
+      window.AndroidBridge.setPreferredPrinter(address);
+    }
+  } catch (_) {}
+}
+
+// Kirim byte ke SATU entri printer (native BT). Socket native pindah otomatis.
+async function sendBytesToPrinterEntry(entry, bytes) {
+  if (!entry || !entry.address) return false;
+  setActivePrinterAddress(entry.address);
+  try {
+    return await sendNativeBluetoothDataAsync(bytes);
+  } catch (_) { return false; }
+}
+
+// Kipas berurutan ke semua printer berperan (BT bergantian, bukan paralel).
+async function fanOutBytesToEntries(entries, bytes) {
+  const targets = (entries || []).filter(t => t && t.transport === 'bluetooth' && t.address);
+  let okCount = 0;
+  const failed = [];
+  for (const t of targets) {
+    const ok = await sendBytesToPrinterEntry(t, bytes);
+    if (ok) okCount++;
+    else failed.push(t.name || t.address);
+  }
+  return { okCount, total: targets.length, failed };
+}
+
+async function fanOutKickToDrawer() {
+  const targets = getPrintersByRole('drawer');
+  if (targets.length === 0) return { okCount: 0, total: 0, failed: [] };
+  let bytes = null;
+  try { bytes = buildOpenDrawerBytes(); } catch (_) { return { okCount: 0, total: targets.length, failed: targets.map(t => t.name || t.address) }; }
+  return await fanOutBytesToEntries(targets, bytes);
+}
+
+function samePrinter(a, b) {
+  return a && b && (a.address || '').toLowerCase() === (b.address || '').toLowerCase();
+}
+
+// ==================== AKHIR PRINTER MANAGER ====================
+
 /**
  * Buka laci kasir native secara asinkron tanpa memblokir UI
  */
@@ -1068,11 +1165,17 @@ export function openNativeBluetoothDevicePickerModal(devices = []) {
   }
 
   const selectedAddr = state.printerConfig?.bluetoothAddress || '';
+  const existingAddrs = new Set(getPrinterList().map(p => (p.address || '').toLowerCase()));
+  const addMode = btPickerAddMode;
 
   const listHtml = (devices && devices.length > 0) ? devices.map(d => {
-    const isSelected = selectedAddr && (selectedAddr.toLowerCase() === (d.address || '').toLowerCase());
+    const isSelected = !addMode && selectedAddr && (selectedAddr.toLowerCase() === (d.address || '').toLowerCase());
+    const alreadyAdded = addMode && existingAddrs.has((d.address || '').toLowerCase());
+    const rowClick = alreadyAdded
+      ? `onclick="KasirApp.showToast('Printer ini sudah ada di daftar.', 'info')"`
+      : `onclick="KasirApp.selectNativeBluetoothPrinter('${escapeHtml(d.address)}', '${escapeHtml(d.name || 'Printer')}')"`;
     return `
-      <div onclick="KasirApp.selectNativeBluetoothPrinter('${escapeHtml(d.address)}', '${escapeHtml(d.name || 'Printer')}')"
+      <div ${rowClick}
         class="flex items-center justify-between p-3.5 rounded-2xl border ${isSelected ? 'border-emerald-500 bg-emerald-50/80 shadow-xs ring-2 ring-emerald-500/20' : 'border-stone-200 bg-white hover:bg-stone-50'} cursor-pointer active:scale-[0.98] transition">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl ${isSelected ? 'bg-emerald-600 text-white' : 'bg-stone-100 text-stone-700'} flex items-center justify-center shadow-2xs">
@@ -1082,12 +1185,13 @@ export function openNativeBluetoothDevicePickerModal(devices = []) {
             <div class="font-extrabold text-stone-900 text-sm flex items-center gap-1.5">
               <span>${escapeHtml(d.name || 'Printer Bluetooth')}</span>
               ${isSelected ? '<span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900">Aktif</span>' : ''}
+              ${alreadyAdded ? '<span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-stone-200 text-stone-600">Sudah ada</span>' : ''}
             </div>
             <div class="text-xs text-stone-500 font-mono mt-0.5">${escapeHtml(d.address)}</div>
           </div>
         </div>
         <span class="material-symbols-rounded ${isSelected ? 'text-emerald-600 font-bold' : 'text-stone-400'}">
-          ${isSelected ? 'check_circle' : 'chevron_right'}
+          ${isSelected ? 'check_circle' : (addMode && !alreadyAdded ? 'add_circle' : 'chevron_right')}
         </span>
       </div>
     `;
@@ -1103,7 +1207,7 @@ export function openNativeBluetoothDevicePickerModal(devices = []) {
         <div class="flex items-center gap-2">
           <span class="material-symbols-rounded text-2xl">bluetooth</span>
           <div>
-            <h3 class="font-black text-base leading-tight">Pilih Printer Bluetooth</h3>
+            <h3 class="font-black text-base leading-tight">${addMode ? 'Tambah Printer' : 'Pilih Printer Bluetooth'}</h3>
             <p class="text-xs text-amber-100">Perangkat yang sudah di-pair di HP</p>
           </div>
         </div>
@@ -1115,7 +1219,7 @@ export function openNativeBluetoothDevicePickerModal(devices = []) {
 
       <div class="p-4 overflow-y-auto flex flex-col gap-2.5 flex-1">
         <p class="text-xs text-stone-600 mb-1">
-          Ketuk printer thermal kasir Anda untuk menghubungkan:
+          ${addMode ? 'Ketuk printer untuk ditambahkan ke daftar (atur peran setelahnya):' : 'Ketuk printer thermal kasir Anda untuk menghubungkan:'}
         </p>
         ${listHtml}
       </div>
@@ -1138,11 +1242,26 @@ export function openNativeBluetoothDevicePickerModal(devices = []) {
 }
 
 export function closeNativeBluetoothDevicePickerModal() {
+  btPickerAddMode = false;
   const modal = document.getElementById('nativeBtPickerModal');
   if (modal) modal.classList.add('hidden');
 }
 
+let btPickerAddMode = false;
+
+export function openAddPrinterPicker() {
+  playClick('tap');
+  btPickerAddMode = true;
+  return connectBluetoothPrinter();
+}
+
 export function selectNativeBluetoothPrinter(address, name) {
+  if (btPickerAddMode) {
+    btPickerAddMode = false;
+    addPrinterEntry({ name: name || 'Printer', address, transport: 'bluetooth' });
+    closeNativeBluetoothDevicePickerModal();
+    return;
+  }
   if (window.AndroidBridge && typeof window.AndroidBridge.setPreferredPrinter === 'function') {
     window.AndroidBridge.setPreferredPrinter(address);
   }
@@ -1151,10 +1270,178 @@ export function selectNativeBluetoothPrinter(address, name) {
   state.printerConfig.bluetoothName = name;
   savePrinterConfig(state.printerConfig);
   syncSavePrinterConfig(state.printerConfig);
+  // Sinkronkan ke daftar bila masih kosong (migrasi berjalan).
+  if (!Array.isArray(state.printerConfig.printers) || state.printerConfig.printers.length === 0) {
+    savePrinterList([{
+      id: genPrinterId(), name: name || 'Printer Kasir', address,
+      transport: 'bluetooth', roles: ['receipt', 'kitchen', 'drawer'], enabled: true
+    }]);
+  }
 
   updatePrinterStatusBadge('bluetooth', name);
   closeNativeBluetoothDevicePickerModal();
   showToast(`Printer kasir disetel: ${name}`, 'success', 3000);
+}
+
+// ==================== CRUD DAFTAR PRINTER ====================
+
+export function addPrinterEntry({ name, address, transport = 'bluetooth' }) {
+  const norm = String(address || '').trim();
+  if (!norm) {
+    showToast('Alamat printer tidak valid.', 'warning');
+    return false;
+  }
+  const list = getPrinterList();
+  if (list.some(p => (p.address || '').toLowerCase() === norm.toLowerCase())) {
+    showToast('Printer ini sudah ada di daftar.', 'info');
+    return false;
+  }
+  const hasReceipt = list.some(p => p.enabled && Array.isArray(p.roles) && p.roles.includes('receipt'));
+  list.push({
+    id: genPrinterId(),
+    name: String(name || 'Printer').slice(0, 32),
+    address: norm,
+    transport,
+    roles: list.length === 0 ? ['receipt', 'kitchen', 'drawer'] : (hasReceipt ? ['kitchen'] : ['receipt', 'kitchen']),
+    enabled: true
+  });
+  savePrinterList(list);
+  renderPrinterList();
+  showToast(`Printer ditambahkan: ${name || 'Printer'}`, 'success');
+  return true;
+}
+
+export function togglePrinterRole(id, role) {
+  const list = getPrinterList();
+  const entry = list.find(p => p.id === id);
+  if (!entry) return;
+  entry.roles = Array.isArray(entry.roles) ? entry.roles : [];
+  if (entry.roles.includes(role)) {
+    entry.roles = entry.roles.filter(r => r !== role);
+  } else {
+    // Peran laci eksklusif: 1 laci = 1 printer (fisik menempel).
+    if (role === 'drawer') {
+      list.forEach(p => { if (p && p.id !== id && Array.isArray(p.roles)) p.roles = p.roles.filter(r => r !== 'drawer'); });
+    }
+    entry.roles.push(role);
+  }
+  playClick('tap');
+  savePrinterList(list);
+  renderPrinterList();
+}
+
+export function togglePrinterEnabled(id) {
+  const list = getPrinterList();
+  const entry = list.find(p => p.id === id);
+  if (!entry) return;
+  entry.enabled = !entry.enabled;
+  playClick('tap');
+  savePrinterList(list);
+  renderPrinterList();
+}
+
+export async function deletePrinterEntry(id) {
+  const list = getPrinterList();
+  const entry = list.find(p => p.id === id);
+  if (!entry) return;
+  const ok = await showConfirmDialog({
+    title: 'Hapus Printer?',
+    message: `Hapus "${entry.name || 'Printer'}" (${entry.address || '-'}) dari daftar?`,
+    confirmText: 'Hapus',
+    confirmType: 'danger',
+    icon: 'delete'
+  });
+  if (!ok) return;
+  savePrinterList(list.filter(p => p.id !== id));
+  renderPrinterList();
+  showToast('Printer dihapus dari daftar.', 'info');
+}
+
+function buildPrinterSelfTestBytes(entry) {
+  const out = [0x1B, 0x40];
+  const enc = new TextEncoder();
+  const roleLabels = PRINTER_ROLES.filter(r => (entry.roles || []).includes(r.id)).map(r => r.label).join(', ') || '-';
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const lines = [
+    '*** TES PRINTER ***',
+    String(entry.name || 'Printer'),
+    String(entry.address || ''),
+    'Peran: ' + roleLabels,
+    `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`,
+    ''
+  ];
+  lines.forEach(ln => { [...enc.encode(ln + '\n')].forEach(b => out.push(b)); });
+  out.push(0x1B, 0x64, 0x03);
+  return out;
+}
+
+export async function testPrinterEntry(id) {
+  const entry = getPrinterList().find(p => p.id === id);
+  if (!entry) return;
+  playClick('tap');
+  showToast(`Tes ke ${entry.name || 'printer'}...`, 'info', 1500);
+  const ok = await sendBytesToPrinterEntry(entry, buildPrinterSelfTestBytes(entry));
+  showToast(ok ? `Tes berhasil: ${entry.name}` : `Tes gagal: ${entry.name} tidak merespons.`, ok ? 'success' : 'error', 3000);
+}
+
+export function renderPrinterList() {
+  const box = document.getElementById('printerListContainer');
+  if (!box) return;
+  const list = getPrinterList();
+  const countEl = document.getElementById('printerListCount');
+  if (countEl) countEl.innerText = list.length > 0 ? `${list.length} printer` : 'Belum ada';
+  if (list.length === 0) {
+    box.innerHTML = `
+      <div class="text-center py-4 px-3 rounded-xl bg-stone-50 border border-dashed border-stone-300">
+        <p class="text-xs font-bold text-stone-600">Belum ada printer terdaftar.</p>
+        <p class="text-[11px] text-stone-500 mt-1">Ketuk <b>+ Tambah</b> lalu pilih printer Bluetooth yang sudah di-pair di HP.</p>
+      </div>`;
+    return;
+  }
+  box.innerHTML = list.map(entry => {
+    const roles = Array.isArray(entry.roles) ? entry.roles : [];
+    const chips = PRINTER_ROLES.map(r => {
+      const on = roles.includes(r.id);
+      return `
+        <button type="button" onclick="KasirApp.togglePrinterRole('${entry.id}', '${r.id}')"
+          title="${on ? 'Nonaktifkan' : 'Aktifkan'} peran ${r.label}"
+          class="px-2 py-1 rounded-lg text-[10.5px] font-black border flex items-center gap-1 transition active:scale-95 cursor-pointer ${on ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-stone-500 border-stone-200'}">
+          <span class="material-symbols-rounded text-[13px]">${r.icon}</span>${r.label}
+        </button>`;
+    }).join('');
+    return `
+      <div class="p-2.5 rounded-2xl border ${entry.enabled ? 'border-stone-200 bg-white' : 'border-stone-200 bg-stone-50 opacity-70'} flex flex-col gap-2">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-9 h-9 rounded-xl ${entry.enabled ? 'bg-emerald-600 text-white' : 'bg-stone-200 text-stone-500'} flex items-center justify-center shrink-0">
+            <span class="material-symbols-rounded text-lg">print</span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="font-extrabold text-stone-900 text-xs truncate">${escapeHtml(entry.name || 'Printer')}</p>
+            <p class="text-[10.5px] text-stone-500 font-mono truncate">${escapeHtml(entry.address || '')}</p>
+          </div>
+          <button type="button" onclick="KasirApp.togglePrinterEnabled('${entry.id}')"
+            title="${entry.enabled ? 'Nonaktifkan' : 'Aktifkan'} printer"
+            class="px-2.5 py-1.5 rounded-lg text-[10.5px] font-black border transition active:scale-95 cursor-pointer shrink-0 ${entry.enabled ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-white text-stone-500 border-stone-300'}">
+            ${entry.enabled ? 'Aktif' : 'Mati'}
+          </button>
+        </div>
+        <div class="flex items-center gap-1.5 flex-wrap">
+          ${chips}
+          <span class="flex-1"></span>
+          <button type="button" onclick="KasirApp.testPrinterEntry('${entry.id}')"
+            title="Tes cetak ke printer ini"
+            class="px-2 py-1 rounded-lg text-[10.5px] font-black bg-sky-50 text-sky-800 border border-sky-200 flex items-center gap-1 transition active:scale-95 cursor-pointer">
+            <span class="material-symbols-rounded text-[13px]">print</span>Tes
+          </button>
+          <button type="button" onclick="KasirApp.deletePrinterEntry('${entry.id}')"
+            title="Hapus printer ini"
+            class="px-2 py-1 rounded-lg text-[10.5px] font-black bg-red-50 text-red-700 border border-red-200 flex items-center gap-1 transition active:scale-95 cursor-pointer">
+            <span class="material-symbols-rounded text-[13px]">delete</span>
+          </button>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 export function openDeviceBluetoothSettings() {
@@ -1760,6 +2047,7 @@ export function isLocalPrinterReady() {
     if (typeof window.AndroidBridge.isBluetoothEnabled === 'function' && !window.AndroidBridge.isBluetoothEnabled()) {
       return false;
     }
+    if (getPrinterList().some(p => p && p.enabled && p.address)) return true;
     return Boolean(state.printerConfig?.bluetoothAddress);
   }
   if (bluetoothCharacteristic && bluetoothDevice && bluetoothDevice.gatt && bluetoothDevice.gatt.connected) {
@@ -1779,6 +2067,17 @@ export async function executeDirectLocalKickDrawer() {
   // (satu pintu keluar untuk semua mode pulsa — tidak lagi tergantung isi
   // hardcoded kickDrawer() native). Fallback ke kickDrawer() bila tidak ada.
   if (window.AndroidBridge) {
+    // Multi-printer: kick ke printer berperan 'drawer'. Kosong = jalur tunggal lama.
+    const drawerTargets = getPrintersByRole('drawer');
+    if (drawerTargets.length > 0) {
+      const res = await fanOutKickToDrawer();
+      if (res.okCount > 0) {
+        showToast(res.total > 1 ? `Sinyal terkirim ke ${res.okCount} laci. Cek laci.` : 'Sinyal terkirim. Cek laci.', 'success');
+        return true;
+      }
+      showToast('Gagal membuka laci: printer laci tidak merespons.', 'warning', 4000);
+      return false;
+    }
     try {
       const hasPrintPath = (typeof window.AndroidBridge.printBluetoothAsync === 'function')
         || (typeof window.AndroidBridge.printBluetooth === 'function');
@@ -1876,6 +2175,52 @@ export async function executeDirectLocalKickDrawer() {
 }
 
 /**
+ * Kipas struk ke printer berperan 'receipt' (native). Laci ikut ke printer
+ * berperan 'drawer'; 1 printer pegang semua peran = 1 job seperti dulu.
+ */
+async function executeReceiptRoleFanOut(tx, shouldKickDrawer, receiptTargets) {
+  const drawerTargets = getPrintersByRole('drawer');
+  const solo = receiptTargets.length === 1 && drawerTargets.length === 1
+    && samePrinter(receiptTargets[0], drawerTargets[0]);
+  try {
+    if (solo) {
+      const bytes = await buildEscPosBytes(tx, shouldKickDrawer);
+      const ok = await sendBytesToPrinterEntry(receiptTargets[0], bytes);
+      if (ok) {
+        showToast('Struk tercetak!', 'success');
+        return true;
+      }
+      const errMsg = lastNativeBluetoothError || 'Printer Bluetooth tidak merespons. Pastikan printer hidup & terhubung.';
+      showToast('Gagal mencetak: ' + errMsg, 'error', 4000);
+      if (errMsg.toLowerCase().includes('belum dipilih') || errMsg.toLowerCase().includes('belum ada printer')) {
+        setTimeout(() => { connectBluetoothPrinter(); }, 600);
+      }
+      return false;
+    }
+    // Tanpa printer laci khusus: perilaku lama (1 job struk+kick per printer).
+    const bytes = await buildEscPosBytes(tx, shouldKickDrawer && drawerTargets.length === 0);
+    const res = await fanOutBytesToEntries(receiptTargets, bytes);
+    if (shouldKickDrawer && drawerTargets.length > 0) {
+      await fanOutKickToDrawer();
+    }
+    if (res.okCount === res.total && res.total > 0) {
+      showToast(res.total > 1 ? `Struk tercetak di ${res.total} printer.` : 'Struk tercetak!', 'success');
+      return true;
+    }
+    if (res.okCount > 0) {
+      showToast(`Tercetak di ${res.okCount} dari ${res.total} printer (gagal: ${res.failed.join(', ')}).`, 'warning', 4000);
+      return true;
+    }
+    showToast('Gagal mencetak ke semua printer kasir.', 'error', 4000);
+    return false;
+  } catch (e) {
+    console.warn('Role receipt fan-out error:', e);
+    showToast('Gagal mencetak: ' + (e.message || 'Kesalahan printer'), 'error', 4000);
+    return false;
+  }
+}
+
+/**
  * Eksekusi Langsung Cetak Struk Utama secara lokal (hardware direct)
  */
 export async function executeDirectLocalPrintReceipt(tx, shouldKickDrawer, forceMethod = null) {
@@ -1887,6 +2232,11 @@ export async function executeDirectLocalPrintReceipt(tx, shouldKickDrawer, force
 
   // 0. Jalur Utama APK Native (Bebas Dialog, Bebas RawBT, Zero UI Freeze)
   if (window.AndroidBridge) {
+    // Multi-printer: kipas ke printer berperan 'receipt'. Kosong = jalur tunggal lama.
+    const receiptTargets = getPrintersByRole('receipt');
+    if (receiptTargets.length > 0) {
+      return await executeReceiptRoleFanOut(tx, shouldKickDrawer, receiptTargets);
+    }
     try {
       const bytes = await buildEscPosBytes(tx, shouldKickDrawer);
       const ok = await sendNativeBluetoothDataAsync(bytes);
@@ -1983,6 +2333,35 @@ export async function executeDirectLocalPrintReceipt(tx, shouldKickDrawer, force
 }
 
 /**
+ * Kipas tiket dapur ke printer berperan 'kitchen' (native). Aturan kick sama
+ * seperti struk: 1 printer pegang semua = 1 job; selain itu split ke laci.
+ */
+async function executeKitchenRoleFanOut(tx, shouldKickDrawer, kitchenTargets) {
+  const drawerTargets = getPrintersByRole('drawer');
+  try {
+    const bytes = buildKitchenTicketEscPosBytes(tx, shouldKickDrawer && drawerTargets.length === 0);
+    const res = await fanOutBytesToEntries(kitchenTargets, bytes);
+    if (shouldKickDrawer && drawerTargets.length > 0) {
+      await fanOutKickToDrawer();
+    }
+    if (res.okCount === res.total && res.total > 0) {
+      showToast(res.total > 1 ? `Tiket dapur tercetak di ${res.total} printer.` : 'Tiket dapur tercetak!', 'success');
+      return true;
+    }
+    if (res.okCount > 0) {
+      showToast(`Tercetak di ${res.okCount} dari ${res.total} printer dapur (gagal: ${res.failed.join(', ')}).`, 'warning', 4000);
+      return true;
+    }
+    showToast('Gagal mencetak ke semua printer dapur.', 'error', 4000);
+    return false;
+  } catch (e) {
+    console.warn('Role kitchen fan-out error:', e);
+    showToast('Gagal mencetak tiket dapur: ' + (e.message || 'Printer error'), 'error', 4000);
+    return false;
+  }
+}
+
+/**
  * Eksekusi Langsung Cetak Tiket Dapur secara lokal (hardware direct)
  */
 export async function executeDirectLocalKitchenTicket(tx, shouldKickDrawer = false) {
@@ -1992,6 +2371,11 @@ export async function executeDirectLocalKitchenTicket(tx, shouldKickDrawer = fal
 
   // 1. Android APK Native (Bebas Dialog, Zero UI Freeze)
   if (window.AndroidBridge) {
+    // Multi-printer: kipas ke printer berperan 'kitchen'. Kosong = jalur tunggal lama.
+    const kitchenTargets = getPrintersByRole('kitchen');
+    if (kitchenTargets.length > 0) {
+      return await executeKitchenRoleFanOut(tx, shouldKickDrawer, kitchenTargets);
+    }
     try {
       const ok = await sendNativeBluetoothDataAsync(bytes);
       if (ok) {
@@ -3377,6 +3761,7 @@ export function openPrinterConfigModal() {
 
   updateLiveReceiptPreview();
   updatePrinterUIStatus();
+  renderPrinterList();
 
   if (modal) modal.classList.remove('hidden');
 }

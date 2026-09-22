@@ -1,11 +1,10 @@
-# Aristotle POS v1.2.98 Release Notes
+# Aristotle POS v1.2.99 Release Notes
 
 **Tanggal Rilis:** 2026-09-22
 
 ### Catatan Pembaruan:
-- Tooltip hanya aktif di perangkat hover (mati total di HP)
-- Warna ikon keranjang emerald + selaras tombol header
-- Teks tombol BAYAR mobile jadi putih (kontras)
+- Printer manager modular: N printer Bluetooth + peran Kasir Dapur Laci
+- Routing struk dan tiket dapur otomatis per peran + migrasi nol-klik
 
 ---
 *Pembaruan ini dapat diunduh dan dipasang langsung dari dalam aplikasi (In-App Auto-Updater).*

@@ -1,11 +1,10 @@
 {
-  "versionCode": 147,
-  "versionName": "1.2.98",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.98/Aristotle-POS.apk",
+  "versionCode": 148,
+  "versionName": "1.2.99",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.99/Aristotle-POS.apk",
   "changelog": [
-    "Tooltip hanya aktif di perangkat hover (mati total di HP)",
-    "Warna ikon keranjang emerald + selaras tombol header",
-    "Teks tombol BAYAR mobile jadi putih (kontras)"
+    "Printer manager modular: N printer Bluetooth + peran Kasir Dapur Laci",
+    "Routing struk dan tiket dapur otomatis per peran + migrasi nol-klik"
   ],
   "releaseDate": "2026-09-22"
 }
