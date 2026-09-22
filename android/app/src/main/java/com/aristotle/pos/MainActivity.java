@@ -18,6 +18,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.pm.Signature;
 import android.net.ConnectivityManager;
 import android.net.LinkAddress;
 import android.net.LinkProperties;
@@ -102,6 +103,15 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String PRODUCTION_URL = "https://miezlearning.github.io/aristotle-pos/";
     private static final String OFFLINE_FALLBACK_URL = "file:///android_asset/index.html";
+
+    // Kepercayaan unduhan update (anti APK jahat): hanya rilis resmi repo ini.
+    private static final String TRUSTED_UPDATE_HOST = "github.com";
+    private static final String TRUSTED_UPDATE_PATH_PREFIX = "/miezlearning/aristotle-pos/releases/download/";
+    private static final String[] TRUSTED_REDIRECT_HOSTS = {
+            "github.com",
+            "objects.githubusercontent.com",
+            "release-assets.githubusercontent.com"
+    };
 
     // Telemetri native: URL webhook TIDAK di-hardcode (pernah bocor & dihapus
     // Discord). Yang disimpan hanya URL PROXY (publik, aman) — rahasia webhook
@@ -660,6 +670,10 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public boolean setTelemetryProxyUrl(String url) {
+            if (!MainActivity.this.isFirstPartyPage()) {
+                Log.w(TAG, "setTelemetryProxyUrl ditolak: bukan halaman first-party.");
+                return false;
+            }
             try {
                 String clean = url != null ? url.trim() : "";
                 if (!clean.startsWith("https://")) {
@@ -706,6 +720,10 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public void downloadAndInstallApk(final String downloadUrl) {
+            if (!MainActivity.this.isFirstPartyPage()) {
+                Log.w(TAG, "downloadAndInstallApk ditolak: bukan halaman first-party.");
+                return;
+            }
             MainActivity.this.startApkDownloadAndInstall(downloadUrl);
         }
 
@@ -734,6 +752,10 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public boolean installDownloadedApk() {
+            if (!MainActivity.this.isFirstPartyPage()) {
+                Log.w(TAG, "installDownloadedApk ditolak: bukan halaman first-party.");
+                return false;
+            }
             return MainActivity.this.installExistingUpdateApk();
         }
 
@@ -1016,11 +1038,19 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public boolean probeLocalHost(String ip, int port, int timeoutMs) {
+            if (!MainActivity.this.isFirstPartyPage()) {
+                Log.w(TAG, "probeLocalHost ditolak: bukan halaman first-party.");
+                return false;
+            }
             return MainActivity.this.probeLocalHost(ip, port, timeoutMs);
         }
 
         @JavascriptInterface
         public String sendLocalHttpRequest(String urlStr, String method, String jsonPayload, String posToken, int timeoutMs) {
+            if (!MainActivity.this.isFirstPartyPage()) {
+                Log.w(TAG, "sendLocalHttpRequest ditolak: bukan halaman first-party.");
+                return "";
+            }
             return MainActivity.this.sendLocalHttpRequest(urlStr, method, jsonPayload, posToken, timeoutMs);
         }
 
@@ -1570,6 +1600,110 @@ public class MainActivity extends AppCompatActivity {
         try { Thread.sleep(50); } catch (InterruptedException ignored) {}
     }
 
+    // Halaman WebView saat ini wajib first-party (anti penyalahgunaan bridge dari konten asing).
+    private boolean isFirstPartyPage() {
+        try {
+            String u = (webView != null && webView.getUrl() != null) ? webView.getUrl() : "";
+            return u.startsWith(PRODUCTION_URL) || u.startsWith(OFFLINE_FALLBACK_URL);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static boolean isTrustedRedirectHost(String host) {
+        if (host == null) return false;
+        for (String t : TRUSTED_REDIRECT_HOSTS) {
+            if (t.equalsIgnoreCase(host)) return true;
+        }
+        return false;
+    }
+
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            sb.append(Character.forDigit((b >> 4) & 0xF, 16));
+            sb.append(Character.forDigit(b & 0xF, 16));
+        }
+        return sb.toString();
+    }
+
+    // Ambil checksum SHA-256 resmi (file .sha256 pendamping di rilis GitHub).
+    // null = tidak ada / tidak tepercaya → unduhan DIBATALKAN.
+    private String fetchExpectedApkSha256(String sidecarUrl) {
+        HttpURLConnection c = null;
+        try {
+            URL url = new URL(sidecarUrl);
+            if (!"https".equalsIgnoreCase(url.getProtocol()) || !isTrustedRedirectHost(url.getHost())) return null;
+            int redirects = 0;
+            while (redirects < 6) {
+                c = (HttpURLConnection) url.openConnection();
+                c.setConnectTimeout(15000);
+                c.setReadTimeout(15000);
+                c.setInstanceFollowRedirects(true);
+                c.connect();
+                int status = c.getResponseCode();
+                if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM
+                        || status == 307 || status == 308) {
+                    String newUrl = c.getHeaderField("Location");
+                    try { c.disconnect(); } catch (Exception ignored) {}
+                    c = null;
+                    if (newUrl == null) return null;
+                    url = new URL(newUrl);
+                    if (!"https".equalsIgnoreCase(url.getProtocol()) || !isTrustedRedirectHost(url.getHost())) return null;
+                    redirects++;
+                } else {
+                    break;
+                }
+            }
+            if (c == null || c.getResponseCode() != HttpURLConnection.HTTP_OK) return null;
+            InputStream in = c.getInputStream();
+            byte[] buf = new byte[256];
+            int n = in.read(buf);
+            try { in.close(); } catch (Exception ignored) {}
+            if (n <= 0) return null;
+            String s = new String(buf, 0, n, "UTF-8").trim().split("\\s+")[0];
+            if (s == null || !s.matches("[0-9a-fA-F]{64}")) return null;
+            return s.toLowerCase();
+        } catch (Exception e) {
+            Log.w(TAG, "Gagal ambil checksum: " + e.getMessage());
+            return null;
+        } finally {
+            if (c != null) { try { c.disconnect(); } catch (Exception ignored) {} }
+        }
+    }
+
+    // APK update wajib ditandatangani signer yang SAMA dengan aplikasi terpasang.
+    private boolean isSameSignerUpdate(File apkFile) {
+        try {
+            PackageManager pm = getPackageManager();
+            Signature[] curSigs;
+            Signature[] newSigs;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                PackageInfo cur = pm.getPackageInfo(getPackageName(), PackageManager.GET_SIGNING_CERTIFICATES);
+                PackageInfo arc = pm.getPackageArchiveInfo(apkFile.getAbsolutePath(), PackageManager.GET_SIGNING_CERTIFICATES);
+                if (cur == null || arc == null || cur.signingInfo == null || arc.signingInfo == null) return false;
+                curSigs = cur.signingInfo.getApkContentsSigners();
+                newSigs = arc.signingInfo.getApkContentsSigners();
+            } else {
+                PackageInfo cur = pm.getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES);
+                PackageInfo arc = pm.getPackageArchiveInfo(apkFile.getAbsolutePath(), PackageManager.GET_SIGNATURES);
+                if (cur == null || arc == null) return false;
+                curSigs = cur.signatures;
+                newSigs = arc.signatures;
+            }
+            if (curSigs == null || newSigs == null) return false;
+            for (Signature a : curSigs) {
+                for (Signature b : newSigs) {
+                    if (a != null && a.equals(b)) return true;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            Log.w(TAG, "Gagal verifikasi signer: " + e.getMessage());
+            return false;
+        }
+    }
+
     public void startApkDownloadAndInstall(final String downloadUrl) {
         new Thread(new Runnable() {
             @Override
@@ -1579,6 +1713,21 @@ public class MainActivity extends AppCompatActivity {
                 HttpURLConnection connection = null;
                 try {
                     URL url = new URL(downloadUrl);
+                    // Tolak sumber di luar rilis resmi (anti APK jahat via URL asing).
+                    if (!"https".equalsIgnoreCase(url.getProtocol())
+                            || !TRUSTED_UPDATE_HOST.equalsIgnoreCase(url.getHost())
+                            || !url.getPath().startsWith(TRUSTED_UPDATE_PATH_PREFIX)
+                            || !url.getPath().endsWith(".apk")) {
+                        notifyUpdateError("Sumber pembaruan tidak dipercaya.");
+                        return;
+                    }
+                    // Checksum resmi wajib ada — tanpa ini unduhan dibatalkan.
+                    final String expectedSha256 = fetchExpectedApkSha256(downloadUrl + ".sha256");
+                    if (expectedSha256 == null) {
+                        notifyUpdateError("Tanda verifikasi pembaruan tidak ditemukan.");
+                        return;
+                    }
+                    final java.security.MessageDigest sha256 = java.security.MessageDigest.getInstance("SHA-256");
                     int redirects = 0;
                     while (redirects < 6) {
                         connection = (HttpURLConnection) url.openConnection();
@@ -1595,6 +1744,10 @@ public class MainActivity extends AppCompatActivity {
                             connection.disconnect();
                             if (newUrl == null) break;
                             url = new URL(newUrl);
+                            if (!"https".equalsIgnoreCase(url.getProtocol()) || !isTrustedRedirectHost(url.getHost())) {
+                                notifyUpdateError("Pengalihan unduhan tidak dipercaya.");
+                                return;
+                            }
                             redirects++;
                         } else {
                             break;
@@ -1624,6 +1777,7 @@ public class MainActivity extends AppCompatActivity {
                     while ((count = input.read(data)) != -1) {
                         total += count;
                         output.write(data, 0, count);
+                        sha256.update(data, 0, count);
 
                         long now = System.currentTimeMillis();
                         if (fileLength > 0 && (now - lastReportTime > 250)) {
@@ -1641,6 +1795,14 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     output.flush();
+
+                    // Verifikasi checksum SEBELUM file dianggap selesai — gagal = hapus + batal.
+                    String actualSha256 = bytesToHex(sha256.digest());
+                    if (!actualSha256.equalsIgnoreCase(expectedSha256)) {
+                        try { apkFile.delete(); } catch (Exception ignored) {}
+                        notifyUpdateError("Berkas pembaruan rusak atau tidak sah.");
+                        return;
+                    }
 
                     runOnUiThread(new Runnable() {
                         @Override
@@ -1690,6 +1852,11 @@ public class MainActivity extends AppCompatActivity {
         try {
             if (!apkFile.exists() || apkFile.length() < 100000) {
                 notifyUpdateError("File APK tidak ditemukan atau belum selesai diunduh.");
+                return;
+            }
+
+            if (!isSameSignerUpdate(apkFile)) {
+                notifyUpdateError("Tanda tangan pembaruan tidak cocok dengan aplikasi ini.");
                 return;
             }
 

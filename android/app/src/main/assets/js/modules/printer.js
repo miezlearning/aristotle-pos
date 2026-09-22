@@ -3511,7 +3511,7 @@ function _renderLiveReceiptPreviewInternal() {
       return `
         <div class="py-0.5 flex flex-col text-[10.5px] leading-tight">
           <div class="flex justify-between items-start gap-1">
-            <span class="font-bold text-stone-900 break-words flex-1 text-left">${it.qty}x ${it.name}</span>
+            <span class="font-bold text-stone-900 break-words flex-1 text-left">${it.qty}x ${escapeHtml(it.name)}</span>
             <span class="font-black text-stone-900 whitespace-nowrap text-right shrink-0">${priceStr}</span>
           </div>
           ${hasDetail ? `<div class="text-[9.5px] text-stone-500 pl-3">@ ${unitPriceStr}</div>` : ''}

@@ -176,6 +176,7 @@ jobs:
       - name: Prepare APK Artifact
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk Aristotle-POS.apk
+          sha256sum Aristotle-POS.apk | awk '{print $1}' > Aristotle-POS.apk.sha256
 
       - name: Upload APK to GitHub Artifacts
         uses: actions/upload-artifact@v4
@@ -191,7 +192,9 @@ jobs:
           tag_name: ${{ steps.version_meta.outputs.tag_name }}
           name: ${{ steps.version_meta.outputs.release_name }}
           body_path: RELEASE_NOTES.md
-          files: Aristotle-POS.apk
+          files: |
+            Aristotle-POS.apk
+            Aristotle-POS.apk.sha256
           prerelease: false
           draft: false
         env:
