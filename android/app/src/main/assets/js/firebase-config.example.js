@@ -1,7 +1,8 @@
 // ==========================================
 // Firebase Configuration Template (Example)
 // ==========================================
-// Salin file ini menjadi 'firebase-config.js' dan isi dengan kredensial Firebase Anda.
+// DEV LOKAL: salin file ini menjadi 'firebase-config.js' dan isi kredensial asli.
+// CI (Pages/APK): file dibuat otomatis dari GitHub Secrets (lihat .github/workflows/ci-cd.yml).
 // File 'firebase-config.js' yang asli diabaikan oleh git (.gitignore) untuk keamanan.
 
 export const firebaseConfig = {

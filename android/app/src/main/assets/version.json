@@ -1,9 +1,12 @@
 {
-  "versionCode": 145,
-  "versionName": "1.2.96",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.96/Aristotle-POS.apk",
+  "versionCode": 146,
+  "versionName": "1.2.97",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.97/Aristotle-POS.apk",
   "changelog": [
-    "Pemilih bulan pindah ke dialog kalender (tombol Sebulan Penuh, hapus dropdown)"
+    "Keamanan updater APK: allowlist sumber + verifikasi SHA-256 + cek signer",
+    "Keamanan lisensi: kunci rules + tutup aktivasi offline palsu",
+    "APK rilis: signing key rahasia, non-debug, backup mati",
+    "Tutup celah XSS pratinjau struk"
   ],
   "releaseDate": "2026-09-22"
 }
