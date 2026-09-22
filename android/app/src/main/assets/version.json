@@ -1,12 +1,11 @@
 {
-  "versionCode": 146,
-  "versionName": "1.2.97",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.97/Aristotle-POS.apk",
+  "versionCode": 147,
+  "versionName": "1.2.98",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.98/Aristotle-POS.apk",
   "changelog": [
-    "Keamanan updater APK: allowlist sumber + verifikasi SHA-256 + cek signer",
-    "Keamanan lisensi: kunci rules + tutup aktivasi offline palsu",
-    "APK rilis: signing key rahasia, non-debug, backup mati",
-    "Tutup celah XSS pratinjau struk"
+    "Tooltip hanya aktif di perangkat hover (mati total di HP)",
+    "Warna ikon keranjang emerald + selaras tombol header",
+    "Teks tombol BAYAR mobile jadi putih (kontras)"
   ],
   "releaseDate": "2026-09-22"
 }

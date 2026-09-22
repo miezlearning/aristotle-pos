@@ -28,6 +28,12 @@ const INITIAL_DELAY_MS = 130;
 const WARM_TIMEOUT_MS = 320;
 const OFFSET_PX = 8;
 
+// Tooltip adalah affordance HOVER. Di layar sentuh tidak ada hover: tiap ketukan
+// memberi fokus sehingga bubble muncul dan menutupi UI. Matikan total bila
+// perangkat tak punya hover presisi (standar: matchMedia hover + pointer).
+const HOVER_TOOLTIP_OK = (typeof window !== 'undefined' && typeof window.matchMedia === 'function')
+  && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
 /**
  * Pemetaan icon standar ke label singkat & jelas (Indonesian standard)
  */
@@ -509,6 +515,7 @@ export function initCustomTooltip() {
 
   // 1. Pointer Move (Mouse hover)
   const handleMove = (e) => {
+    if (!HOVER_TOOLTIP_OK) return;
     if (e.pointerType === 'touch') return;
 
     const data = getTooltipData(e.target);
@@ -541,8 +548,9 @@ export function initCustomTooltip() {
   document.addEventListener('pointerout', handlePointerOut, { passive: true });
   document.addEventListener('mouseout', handlePointerOut, { passive: true });
 
-  // 2. Focus-in (Keyboard navigation accessibility)
+  // 2. Focus-in (Keyboard navigation accessibility, desktop saja)
   document.addEventListener('focusin', (e) => {
+    if (!HOVER_TOOLTIP_OK) return;
     const data = getTooltipData(e.target);
     if (!data) return;
     showTooltip(data.el, data.text, data.placement, data.shortcut);
