@@ -722,6 +722,7 @@ public class MainActivity extends AppCompatActivity {
         public void downloadAndInstallApk(final String downloadUrl) {
             if (!MainActivity.this.isFirstPartyPage()) {
                 Log.w(TAG, "downloadAndInstallApk ditolak: bukan halaman first-party.");
+                MainActivity.this.notifyUpdateError("Halaman pemanggil tidak tepercaya.");
                 return;
             }
             MainActivity.this.startApkDownloadAndInstall(downloadUrl);
@@ -1760,6 +1761,8 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     int fileLength = connection.getContentLength();
+                    // Sinyal mulai: UI langsung bergerak, tak lagi diam di 0%.
+                    emitDownloadProgress(0, 0, fileLength);
                     File cacheDir = getExternalCacheDir() != null ? getExternalCacheDir() : getCacheDir();
                     final File apkFile = new File(cacheDir, "Aristotle-POS-update.apk");
                     if (apkFile.exists()) {
@@ -1780,17 +1783,10 @@ public class MainActivity extends AppCompatActivity {
                         sha256.update(data, 0, count);
 
                         long now = System.currentTimeMillis();
-                        if (fileLength > 0 && (now - lastReportTime > 250)) {
+                        if (now - lastReportTime > 250) {
                             lastReportTime = now;
-                            final int progress = (int) ((total * 100) / fileLength);
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (webView != null) {
-                                        webView.evaluateJavascript("window.KasirApp && window.KasirApp.onUpdateDownloadProgress && window.KasirApp.onUpdateDownloadProgress(" + progress + ");", null);
-                                    }
-                                }
-                            });
+                            final int progress = (fileLength > 0) ? (int) ((total * 100) / fileLength) : -1;
+                            emitDownloadProgress(progress, total, fileLength);
                         }
                     }
 
@@ -1804,12 +1800,10 @@ public class MainActivity extends AppCompatActivity {
                         return;
                     }
 
+                    emitDownloadProgress(100, total, fileLength);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            if (webView != null) {
-                                webView.evaluateJavascript("window.KasirApp && window.KasirApp.onUpdateDownloadProgress && window.KasirApp.onUpdateDownloadProgress(100);", null);
-                            }
                             installDownloadedApk(apkFile);
                         }
                     });
@@ -1824,6 +1818,21 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }).start();
+    }
+
+    // Kemajuan unduhan ke JS: (persen, byteTerunduh, totalByte).
+    // persen = -1 bila total tak diketahui (indeterminate) — UI tetap hidup.
+    private void emitDownloadProgress(final int percent, final long downloaded, final long total) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (webView != null) {
+                    webView.evaluateJavascript(
+                        "window.KasirApp && window.KasirApp.onUpdateDownloadProgress && window.KasirApp.onUpdateDownloadProgress(" + percent + ", " + downloaded + ", " + total + ");",
+                        null);
+                }
+            }
+        });
     }
 
     private void notifyUpdateError(final String msg) {

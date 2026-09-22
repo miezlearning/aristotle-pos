@@ -5253,7 +5253,7 @@ Kopi susu 7k"
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-black tracking-tight" id="updateModalTitle">Pembaruan Aplikasi Tersedia!</h3>
-              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.99</span>
+              <span id="updateModalVersionBadge" class="px-2 py-0.5 rounded-full bg-amber-400 text-stone-900 font-black text-[10px] tracking-wide shadow-sm">v1.2.100</span>
             </div>
             <p id="updateModalCurrentVersion" class="text-emerald-100 text-xs mt-0.5">Versi Anda saat ini: v1.1.3</p>
           </div>
@@ -5266,6 +5266,13 @@ Kopi susu 7k"
 
       <!-- Body -->
       <div class="p-5 flex flex-col gap-4">
+        <!-- Rute versi: lama ke baru -->
+        <div class="flex items-center justify-center gap-2">
+          <span id="updateFromVersion" class="px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-600 font-black text-[11px] tabular-nums">v...</span>
+          <span class="material-symbols-rounded text-base text-emerald-600 font-black">arrow_forward</span>
+          <span id="updateToVersion" class="px-2.5 py-1 rounded-full bg-emerald-600 text-white font-black text-[11px] tabular-nums shadow-sm">v...</span>
+        </div>
+
         <div>
           <span class="text-xs font-black text-stone-800 uppercase tracking-wider block mb-2">Catatan Pembaruan:</span>
           <div class="bg-stone-50 p-3.5 rounded-2xl border border-stone-200 max-h-48 overflow-y-auto">
@@ -5277,12 +5284,14 @@ Kopi susu 7k"
 
         <!-- Download Progress Bar (Hidden by Default) -->
         <div id="updateProgressContainer" class="hidden flex flex-col gap-2 bg-emerald-50/70 p-3.5 rounded-2xl border border-emerald-200">
-          <div class="flex justify-between items-center text-xs font-bold text-emerald-950">
-            <span id="updateProgressStatus">Mengunduh paket pembaruan...</span>
+          <div class="flex justify-between items-center gap-2">
+            <span id="updateProgressStatus" class="text-xs font-bold text-emerald-950">Mengunduh paket pembaruan...</span>
+            <span id="updateProgressPercent" class="text-lg font-black text-emerald-700 tabular-nums shrink-0">0%</span>
           </div>
           <div class="w-full bg-emerald-200/60 rounded-full h-3 overflow-hidden">
-            <div id="updateProgressBar" class="bg-emerald-600 h-full rounded-full transition-all duration-200" style="width: 0%;"></div>
+            <div id="updateProgressBar" class="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-200" style="width: 0%;"></div>
           </div>
+          <p id="updateProgressMeta" class="text-[10px] text-emerald-800 font-bold tabular-nums"></p>
           <p class="text-[10px] text-emerald-800">Harap jangan tutup aplikasi hingga proses unduhan selesai.</p>
         </div>
 
@@ -5413,7 +5422,7 @@ Kopi susu 7k"
     <button id="btnNavPosDesktop"></button>
     <button id="btnNavReportDesktop"></button>
     <button id="btnNavAdminDesktop"></button>
-    <span id="appVersionBadge" class="hidden">v1.2.99</span>
+    <span id="appVersionBadge" class="hidden">v1.2.100</span>
   </div>
 
   <!-- Main JavaScript App Module -->

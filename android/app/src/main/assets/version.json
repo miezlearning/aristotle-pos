@@ -1,10 +1,10 @@
 {
-  "versionCode": 148,
-  "versionName": "1.2.99",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.99/Aristotle-POS.apk",
+  "versionCode": 149,
+  "versionName": "1.2.100",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.100/Aristotle-POS.apk",
   "changelog": [
-    "Printer manager modular: N printer Bluetooth + peran Kasir Dapur Laci",
-    "Routing struk dan tiket dapur otomatis per peran + migrasi nol-klik"
+    "Perbaiki updater stuck 0 persen: sinyal mulai + progres byte + indeterminate",
+    "UI updater baru: rute versi, persen besar, MB dan kecepatan, tahap verifikasi"
   ],
   "releaseDate": "2026-09-22"
 }

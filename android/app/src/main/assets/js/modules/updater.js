@@ -108,6 +108,10 @@ export async function showUpdateModal(newRelease, current) {
   if (currentVersionEl) {
     currentVersionEl.textContent = `Versi Anda saat ini: v${current.name}`;
   }
+  const fromEl = document.getElementById('updateFromVersion');
+  if (fromEl) fromEl.textContent = `v${current.name || '?'}`;
+  const toEl = document.getElementById('updateToVersion');
+  if (toEl) toEl.textContent = `v${newRelease.versionName || 'baru'}`;
 
   if (changelogEl && Array.isArray(newRelease.changelog)) {
     changelogEl.innerHTML = newRelease.changelog.map(item => `
@@ -121,7 +125,11 @@ export async function showUpdateModal(newRelease, current) {
   const installBtn = document.getElementById('updateInstallBtn');
   if (installBtn) installBtn.classList.add('hidden');
   if (progressContainer) progressContainer.classList.add('hidden');
-  if (progressBar) progressBar.style.width = '0%';
+  if (progressBar) {
+    progressBar.classList.remove('update-bar-indeterminate');
+    progressBar.style.width = '0%';
+  }
+  resetUpdateProgressStats();
   if (downloadBtn) {
     downloadBtn.classList.remove('hidden');
     downloadBtn.disabled = false;
@@ -208,6 +216,11 @@ export function startAppUpdate() {
 
   if (installBtn) installBtn.classList.add('hidden');
   if (progressContainer) progressContainer.classList.remove('hidden');
+  resetUpdateProgressStats();
+  const percentEl = document.getElementById('updateProgressPercent');
+  if (percentEl) percentEl.textContent = '0%';
+  const metaEl = document.getElementById('updateProgressMeta');
+  if (metaEl) metaEl.textContent = '';
   if (downloadBtn) {
     downloadBtn.classList.remove('hidden');
     downloadBtn.disabled = true;
@@ -220,7 +233,7 @@ export function startAppUpdate() {
 
   // 1. Jalur Utama Native Android APK (v1.1.3+)
   if (window.AndroidBridge && typeof window.AndroidBridge.downloadAndInstallApk === 'function') {
-    if (statusText) statusText.textContent = 'Mengunduh paket pembaruan... 0%';
+    if (statusText) statusText.textContent = 'Menghubungkan ke server pembaruan...';
     try {
       window.AndroidBridge.downloadAndInstallApk(updateInfo.apkUrl);
     } catch (e) {
@@ -256,33 +269,85 @@ export function startAppUpdate() {
   }
 }
 
+let lastProgAt = 0;
+let lastProgBytes = 0;
+
+const fmtUpdateMB = (b) => `${(Math.max(0, Number(b) || 0) / 1048576).toLocaleString('id-ID', { maximumFractionDigits: 1 })} MB`;
+
+function resetUpdateProgressStats() {
+  lastProgAt = 0;
+  lastProgBytes = 0;
+}
+
 /**
- * Callback dari Java Android saat proses pengunduhan berjalan
+ * Callback dari Java Android saat proses pengunduhan berjalan.
+ * Tanda tangan: (persen, byteTerunduh, totalByte). persen = -1 berarti
+ * total tak diketahui (indeterminate) — bar tetap beranimasi + hitung MB.
  */
-export function onUpdateDownloadProgress(percent) {
+export function onUpdateDownloadProgress(percent = 0, downloaded = 0, total = 0) {
   const progressBar = document.getElementById('updateProgressBar');
   const statusText = document.getElementById('updateProgressStatus');
+  const percentEl = document.getElementById('updateProgressPercent');
+  const metaEl = document.getElementById('updateProgressMeta');
   const downloadBtn = document.getElementById('updateDownloadBtn');
   const installBtn = document.getElementById('updateInstallBtn');
   const cancelBtn = document.getElementById('updateCancelBtn');
 
-  if (progressBar) progressBar.style.width = `${percent}%`;
-  if (statusText) {
-    if (percent >= 100) {
+  const p = Math.max(-1, Number(percent) || 0);
+  const down = Math.max(0, Number(downloaded) || 0);
+  const tot = Math.max(0, Number(total) || 0);
+
+  // Kecepatan unduh sederhana dari 2 laporan terakhir.
+  const now = Date.now();
+  let speedTxt = '';
+  if (lastProgAt > 0 && now > lastProgAt && down >= lastProgBytes) {
+    const bps = (down - lastProgBytes) / ((now - lastProgAt) / 1000);
+    if (bps > 0) speedTxt = ` • ${fmtUpdateMB(bps)}/dtk`;
+  }
+  lastProgAt = now;
+  lastProgBytes = down;
+
+  if (p >= 100) {
+    if (progressBar) {
+      progressBar.classList.remove('update-bar-indeterminate');
+      progressBar.style.width = '100%';
+    }
+    if (percentEl) percentEl.textContent = '100%';
+    if (metaEl) metaEl.textContent = tot > 0 ? `${fmtUpdateMB(down)} dari ${fmtUpdateMB(tot)}` : `${fmtUpdateMB(down)} terunduh`;
+    if (statusText) {
       statusText.innerHTML = `
-        <span class="text-emerald-700 font-bold">Unduhan selesai 100%!</span>
+        <span class="text-emerald-700 font-bold">Memverifikasi keaslian paket...</span>
         <span class="block text-[10px] text-stone-500 font-normal mt-0.5">Jika jendela installer tidak terbuka otomatis, tekan tombol hijau <strong>"Pasang Sekarang"</strong> di bawah.</span>
       `;
-      if (downloadBtn) downloadBtn.classList.add('hidden');
-      if (installBtn) {
-        installBtn.classList.remove('hidden');
-        installBtn.disabled = false;
-      }
-      if (cancelBtn) cancelBtn.disabled = false;
-    } else {
-      statusText.textContent = `Mengunduh paket pembaruan... ${percent}%`;
     }
+    if (downloadBtn) downloadBtn.classList.add('hidden');
+    if (installBtn) {
+      installBtn.classList.remove('hidden');
+      installBtn.disabled = false;
+    }
+    if (cancelBtn) cancelBtn.disabled = false;
+    return;
   }
+
+  if (p < 0 || tot <= 0) {
+    // Indeterminate: total tak diketahui — animasi + hitung MB jalan terus.
+    if (progressBar) {
+      progressBar.classList.add('update-bar-indeterminate');
+      progressBar.style.width = '';
+    }
+    if (percentEl) percentEl.textContent = '•••';
+    if (metaEl) metaEl.textContent = `${fmtUpdateMB(down)} terkumpul${speedTxt}`;
+    if (statusText) statusText.textContent = 'Mengunduh paket pembaruan...';
+    return;
+  }
+
+  if (progressBar) {
+    progressBar.classList.remove('update-bar-indeterminate');
+    progressBar.style.width = `${p}%`;
+  }
+  if (percentEl) percentEl.textContent = `${p}%`;
+  if (metaEl) metaEl.textContent = `${fmtUpdateMB(down)} dari ${fmtUpdateMB(tot)}${speedTxt}`;
+  if (statusText) statusText.textContent = `Mengunduh paket pembaruan... ${p}%`;
 }
 
 /**
