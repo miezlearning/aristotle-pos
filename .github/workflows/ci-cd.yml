@@ -135,6 +135,15 @@ jobs:
             echo "Using consistent repository debug.keystore (signing key preserved)."
           fi
 
+      - name: Setup Release Keystore from Secrets
+        run: |
+          if [ -z "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" ]; then
+            echo "::error::RELEASE_KEYSTORE_BASE64 belum diisi. Tambahkan di repo Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+          echo "Release keystore restored."
+
       - name: Extract Release Version Metadata
         id: version_meta
         run: |
@@ -168,14 +177,14 @@ jobs:
           mkdir -p android/app/src/main/assets/
           cp -r index.html manifest.json icon.svg sw.js version.json css js fonts android/app/src/main/assets/
 
-      - name: Build Android Debug APK
+      - name: Build Android Release APK
         run: |
           cd android
-          ./gradlew assembleDebug -PcustomVersionCode=${{ steps.version_meta.outputs.version_code }} -PcustomVersionName=${{ steps.version_meta.outputs.version_name }} --no-daemon
+          ./gradlew assembleRelease -PcustomVersionCode=${{ steps.version_meta.outputs.version_code }} -PcustomVersionName=${{ steps.version_meta.outputs.version_name }} -PreleaseStorePassword=${{ secrets.RELEASE_KEYSTORE_PASSWORD }} -PreleaseKeyAlias=${{ secrets.RELEASE_KEY_ALIAS }} -PreleaseKeyPassword=${{ secrets.RELEASE_KEY_PASSWORD }} --no-daemon
 
       - name: Prepare APK Artifact
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk Aristotle-POS.apk
+          cp android/app/build/outputs/apk/release/app-release.apk Aristotle-POS.apk
           sha256sum Aristotle-POS.apk | awk '{print $1}' > Aristotle-POS.apk.sha256
 
       - name: Upload APK to GitHub Artifacts

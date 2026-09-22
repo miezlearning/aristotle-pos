@@ -25,18 +25,30 @@ android {
             keyAlias "androiddebugkey"
             keyPassword "android"
         }
+        release {
+            // Kredensial dari CI (-P...=...) atau env. TIDAK PERNAH hardcode.
+            // Build rilis lokal butuh file android/app/release.keystore + props ini.
+            storeFile file("release.keystore")
+            storePassword project.findProperty('releaseStorePassword') ?: System.getenv('RELEASE_STORE_PASSWORD')
+            keyAlias project.findProperty('releaseKeyAlias') ?: System.getenv('RELEASE_KEY_ALIAS') ?: 'aristotle-release'
+            keyPassword project.findProperty('releaseKeyPassword') ?: System.getenv('RELEASE_KEY_PASSWORD')
+        }
     }
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.debug
+            // R8/ProGuard DIMATIKAN sengaja: bridge @JavascriptInterface WebView
+            // dipanggil via refleksi dan rawan ter-strip rename oleh minify.
+            minifyEnabled false
+            shrinkResources false
+            debuggable false
+            signingConfig signingConfigs.release
+            manifestPlaceholders = [allowBackupFlag: "false"]
         }
         debug {
             debuggable true
             signingConfig signingConfigs.debug
+            manifestPlaceholders = [allowBackupFlag: "true"]
         }
     }
 

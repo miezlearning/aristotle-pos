@@ -47,6 +47,10 @@ android/local.properties
 release-key.properties
 # Whitelist persistent debug keystore for consistent in-app update signing
 !android/app/debug.keystore
+# Release keystore + password RAHASIA (JANGAN COMMIT — dari GitHub Secrets saat CI)
+android/app/release.keystore
+android/release-key-info.txt
+android/release-keystore-base64.txt
 
 # Android APK / AAB Binaries (Dibangun otomatis oleh CI/CD)
 android/**/*.apk
