@@ -162,18 +162,6 @@ export function setReportPeriod(period) {
   if (currentReportViewMode === 'visual') renderInsights();
 }
 
-// Rentang berupa sebulan penuh (mis. 2026-08-01 s/d 2026-08-31) → '2026-08', else ''.
-function fullMonthOfRange(range) {
-  if (!range || !range.from || !range.to) return '';
-  const fp = range.from.split('-').map(Number);
-  const tp = range.to.split('-').map(Number);
-  if (fp.length < 3 || tp.length < 3) return '';
-  if (fp[0] !== tp[0] || fp[1] !== tp[1]) return '';
-  if (fp[2] !== 1) return '';
-  if (tp[2] !== new Date(fp[0], fp[1], 0).getDate()) return '';
-  return `${fp[0]}-${String(fp[1]).padStart(2, '0')}`;
-}
-
 export function setReportMonth(ymValue) {
   if (!ymValue || !ymValue.includes('-')) return;
   playClick('switch');
@@ -213,20 +201,6 @@ export function updateReportPeriodUI() {
     const check = btn.querySelector('.seg-check');
     if (check) check.classList.toggle('hidden', !on);
   });
-
-  // Dropdown bulan tertentu: isi 12 bulan terakhir, tandai bila rentang = sebulan penuh.
-  const monthSel = document.getElementById('reportMonthSelect');
-  if (monthSel) {
-    const nowM = new Date();
-    let html = '<option value="">Bulan...</option>';
-    for (let k = 0; k < 12; k++) {
-      const d = new Date(nowM.getFullYear(), nowM.getMonth() - k, 1);
-      const v = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      html += `<option value="${v}">${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}</option>`;
-    }
-    monthSel.innerHTML = html;
-    monthSel.value = (state.currentPeriod === 'range') ? fullMonthOfRange(state.reportRange) : '';
-  }
 
   const rangeBtn = document.getElementById('btnReportDateRange');
   const rangeLabel = document.getElementById('reportRangeBtnLabel');
@@ -1215,6 +1189,7 @@ function ensureM3Cal() {
         <button type="button" data-preset="30days" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 shadow-2xs whitespace-nowrap cursor-pointer">30 Hari</button>
         <button type="button" data-preset="thisMonth" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 shadow-2xs whitespace-nowrap cursor-pointer">Bulan Ini</button>
         <button type="button" data-preset="lastMonth" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 shadow-2xs whitespace-nowrap cursor-pointer">Bulan Lalu</button>
+        <button type="button" data-preset="viewMonth" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-stone-100 text-stone-700 border border-stone-200 shadow-2xs whitespace-nowrap cursor-pointer">Sebulan Penuh</button>
       </div>
 
       <!-- Month Navigation -->
@@ -1375,6 +1350,12 @@ export function applyRangePreset(preset) {
     const last = new Date(now.getFullYear(), now.getMonth(), 0);
     fromStr = fmt(first);
     toStr = fmt(last);
+  } else if (preset === 'viewMonth') {
+    // Sebulan penuh untuk bulan yang sedang ditampilkan di kalender.
+    const vy = (m3Cal && m3Cal.y) ?? now.getFullYear();
+    const vm = (m3Cal && m3Cal.m) ?? now.getMonth();
+    fromStr = fmt(new Date(vy, vm, 1));
+    toStr = fmt(new Date(vy, vm + 1, 0));
   }
 
   if (m3Cal) {

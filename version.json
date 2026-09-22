@@ -1,12 +1,9 @@
 {
-  "versionCode": 144,
-  "versionName": "1.2.95",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.95/Aristotle-POS.apk",
+  "versionCode": 145,
+  "versionName": "1.2.96",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.96/Aristotle-POS.apk",
   "changelog": [
-    "Filter periode laporan: Kemarin, 7 Hari, Bulan Lalu + dropdown bulan tertentu",
-    "KPI laporan: struk, porsi, rata-rata + pajak dan service terkumpul",
-    "Bersih-bersih teks UI: tanpa em-dash, tanpa kalimat berbunga",
-    "Gradien full-card untuk produk bergambar"
+    "Pemilih bulan pindah ke dialog kalender (tombol Sebulan Penuh, hapus dropdown)"
   ],
-  "releaseDate": "2026-09-21"
+  "releaseDate": "2026-09-22"
 }
