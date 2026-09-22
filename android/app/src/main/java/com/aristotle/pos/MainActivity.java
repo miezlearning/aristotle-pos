@@ -1046,6 +1046,40 @@ public class MainActivity extends AppCompatActivity {
             return MainActivity.this.probeLocalHost(ip, port, timeoutMs);
         }
 
+        // Uji sambungan Bluetooth ke 1 alamat (tanpa kirim byte = tanpa buang kertas).
+        // Berjalan di thread background, hasil via callback JS __onNativeProbeResult.
+        @JavascriptInterface
+        public void probeBluetoothPrinterAsync(final String address, final String callbackId) {
+            final String safeId = (callbackId != null) ? callbackId.replace("'", "") : "";
+            if (!MainActivity.this.isFirstPartyPage()) {
+                Log.w(TAG, "probeBluetoothPrinterAsync ditolak: bukan halaman first-party.");
+                runOnUiThread(() -> {
+                    if (webView != null) {
+                        webView.evaluateJavascript(
+                            "window.__onNativeProbeResult && window.__onNativeProbeResult('" + safeId + "', false);",
+                            null);
+                    }
+                });
+                return;
+            }
+            printExecutor.execute(() -> {
+                boolean ok = false;
+                try {
+                    ok = probeBluetoothAddress(address);
+                } catch (Exception e) {
+                    Log.w(TAG, "Probe gagal: " + e.getMessage());
+                }
+                final boolean result = ok;
+                runOnUiThread(() -> {
+                    if (webView != null) {
+                        webView.evaluateJavascript(
+                            "window.__onNativeProbeResult && window.__onNativeProbeResult('" + safeId + "', " + result + ");",
+                            null);
+                    }
+                });
+            });
+        }
+
         @JavascriptInterface
         public String sendLocalHttpRequest(String urlStr, String method, String jsonPayload, String posToken, int timeoutMs) {
             if (!MainActivity.this.isFirstPartyPage()) {
@@ -1833,6 +1867,54 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    // Buka-tutup socket RFCOMM singkat ke perangkat bonded. true = nyala & terjangkau.
+    private boolean probeBluetoothAddress(String address) {
+        if (address == null || address.trim().isEmpty()) return false;
+        if (bluetoothAdapter == null) return false;
+        try {
+            if (!bluetoothAdapter.isEnabled()) return false;
+        } catch (SecurityException se) {
+            return false;
+        }
+        BluetoothDevice target = null;
+        try {
+            Set<BluetoothDevice> paired = bluetoothAdapter.getBondedDevices();
+            if (paired != null) {
+                for (BluetoothDevice d : paired) {
+                    if (d != null && address.equalsIgnoreCase(d.getAddress())) {
+                        target = d;
+                        break;
+                    }
+                }
+            }
+        } catch (SecurityException se) {
+            return false;
+        }
+        if (target == null) return false;
+        synchronized (socketLock) {
+            try {
+                try { if (bluetoothAdapter.isDiscovering()) bluetoothAdapter.cancelDiscovery(); } catch (Exception ignored) {}
+            } catch (SecurityException ignored) {}
+            BluetoothSocket s = null;
+            try {
+                try {
+                    Method m = target.getClass().getMethod("createRfcommSocket", new Class[]{int.class});
+                    s = (BluetoothSocket) m.invoke(target, 1);
+                    s.connect();
+                } catch (Exception e1) {
+                    try { if (s != null) s.close(); } catch (Exception ignored) {}
+                    s = target.createRfcommSocketToServiceRecord(SPP_UUID);
+                    s.connect();
+                }
+                return true;
+            } catch (Exception e) {
+                return false;
+            } finally {
+                if (s != null) { try { s.close(); } catch (Exception ignored) {} }
+            }
+        }
     }
 
     private void notifyUpdateError(final String msg) {

@@ -187,9 +187,10 @@ function setActivePrinterAddress(address) {
 async function sendBytesToPrinterEntry(entry, bytes) {
   if (!entry || !entry.address) return false;
   setActivePrinterAddress(entry.address);
-  try {
-    return await sendNativeBluetoothDataAsync(bytes);
-  } catch (_) { return false; }
+  let ok = false;
+  try { ok = await sendNativeBluetoothDataAsync(bytes); } catch (_) { ok = false; }
+  recordPrintResult(entry.address, ok);
+  return ok;
 }
 
 // Kipas berurutan ke semua printer berperan (BT bergantian, bukan paralel).
@@ -215,6 +216,121 @@ async function fanOutKickToDrawer() {
 
 function samePrinter(a, b) {
   return a && b && (a.address || '').toLowerCase() === (b.address || '').toLowerCase();
+}
+
+function normPrinterAddr(a) { return String(a || '').trim().toLowerCase(); }
+
+function getPrinterStats() {
+  const cfg = state.printerConfig || {};
+  return (cfg.printStats && typeof cfg.printStats === 'object') ? cfg.printStats : {};
+}
+
+// Catat hasil cetak per alamat (kebenaran fisik per HP). Disimpan lokal saja —
+// tanpa sync cloud tiap struk. Otomatis menyegarkan daftar + status laci bila terbuka.
+export function recordPrintResult(address, ok) {
+  try {
+    const key = normPrinterAddr(address);
+    if (!key) return;
+    if (!state.printerConfig) state.printerConfig = {};
+    const stats = getPrinterStats();
+    stats[key] = { ok: Boolean(ok), at: new Date().toISOString() };
+    state.printerConfig.printStats = stats;
+    try { savePrinterConfig(state.printerConfig); } catch (_) {}
+    if (document.getElementById('printerListContainer')
+      && !document.getElementById('printerConfigModal')?.classList.contains('hidden')) {
+      renderPrinterList();
+      renderDrawerStatus();
+    }
+  } catch (_) {}
+}
+
+// Waktu cetak-baik terakhir di antara entri: "14:02" (hari ini) / "22/09 14:02".
+function lastGoodPrintText(entries) {
+  const stats = getPrinterStats();
+  let best = null;
+  (entries || []).forEach(e => {
+    const s = stats[normPrinterAddr(e && e.address)];
+    if (s && s.ok && s.at && (!best || s.at > best)) best = s.at;
+  });
+  if (!best) return null;
+  return fmtPrintTime(best);
+}
+
+function fmtPrintTime(iso) {
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '-';
+    const p = (n) => String(n).padStart(2, '0');
+    const hm = `${p(d.getHours())}:${p(d.getMinutes())}`;
+    return d.toDateString() === new Date().toDateString()
+      ? hm
+      : `${p(d.getDate())}/${p(d.getMonth() + 1)} ${hm}`;
+  } catch (_) { return '-'; }
+}
+
+// ==================== PROBE SAMBUNGAN LIVE ====================
+let probingPrinterId = null;
+
+if (typeof window !== 'undefined' && !window.__onNativeProbeResult) {
+  window.__onNativeProbeResult = (id, ok) => {
+    try {
+      const cb = (window.__nativeProbeCallbacks || {})[id];
+      if (cb) {
+        delete window.__nativeProbeCallbacks[id];
+        cb(ok === true || ok === 'true');
+      }
+    } catch (_) {}
+  };
+}
+
+// Uji 1 alamat via native (tanpa kertas). true/false, null bila tak menjawab.
+function probeAddressOnce(address) {
+  return new Promise((resolve) => {
+    if (!window.AndroidBridge || typeof window.AndroidBridge.probeBluetoothPrinterAsync !== 'function') {
+      resolve(null);
+      return;
+    }
+    const cbId = 'probe_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+    window.__nativeProbeCallbacks = window.__nativeProbeCallbacks || {};
+    const timer = setTimeout(() => {
+      try { delete window.__nativeProbeCallbacks[cbId]; } catch (_) {}
+      resolve(null);
+    }, 20000);
+    window.__nativeProbeCallbacks[cbId] = (r) => {
+      clearTimeout(timer);
+      resolve(r === true);
+    };
+    try {
+      window.AndroidBridge.probeBluetoothPrinterAsync(String(address || ''), cbId);
+    } catch (_) {
+      clearTimeout(timer);
+      try { delete window.__nativeProbeCallbacks[cbId]; } catch (_) {}
+      resolve(false);
+    }
+  });
+}
+
+export async function probePrinterEntry(id) {
+  const entry = getPrinterList().find(p => p.id === id);
+  if (!entry || !entry.address) return;
+  playClick('tap');
+  if (!window.AndroidBridge || typeof window.AndroidBridge.probeBluetoothPrinterAsync !== 'function') {
+    showToast('Periksa sambungan butuh aplikasi Android (APK).', 'warning');
+    return;
+  }
+  probingPrinterId = id;
+  renderPrinterList();
+  const ok = await probeAddressOnce(entry.address);
+  probingPrinterId = null;
+  renderPrinterList();
+  if (ok === null) {
+    showToast(`Periksa ${entry.name || 'printer'}: tidak menjawab (20 dtk).`, 'warning', 3500);
+  } else {
+    showToast(
+      ok ? `${entry.name || 'Printer'}: terhubung.` : `${entry.name || 'Printer'}: tidak terjangkau. Nyalakan printer & dekatkan HP.`,
+      ok ? 'success' : 'error', 3500
+    );
+  }
 }
 
 // ==================== AKHIR PRINTER MANAGER ====================
@@ -950,15 +1066,31 @@ export function renderDrawerStatus() {
   try {
     const printerEl = document.getElementById('drawerPrinterState');
     if (printerEl) {
+      const drawerTargets = getPrintersByRole('drawer');
+      const pool = (drawerTargets.length > 0 ? drawerTargets : getPrinterList())
+        .filter(p => p && p.enabled && p.address);
+      const names = pool.map(p => p.name || 'Printer').filter(Boolean).slice(0, 2).join(', ');
       const ok = isLocalPrinterReady();
-      printerEl.innerText = ok ? `Terhubung (${fmtDrawerTime()})` : `Tidak terhubung (${fmtDrawerTime()})`;
-      printerEl.className = ok ? 'text-emerald-700' : 'text-red-600';
+      const checked = fmtDrawerTime();
+      if (pool.length === 0) {
+        printerEl.innerText = 'Belum ada printer terdaftar';
+        printerEl.className = 'text-stone-500';
+      } else if (ok) {
+        printerEl.innerText = `Terhubung${names ? ` (${names})` : ''} • cek ${checked}`;
+        printerEl.className = 'text-emerald-700';
+      } else {
+        const lastGood = lastGoodPrintText(pool);
+        printerEl.innerText = lastGood
+          ? `Terputus • terakhir baik ${lastGood} • cek ${checked}`
+          : `Terputus • belum pernah tersambung • cek ${checked}`;
+        printerEl.className = 'text-red-600';
+      }
     }
     const drawerEl = document.getElementById('drawerLastTestState');
     if (drawerEl) {
       const rec = state.printerConfig?.drawerLastTest;
       if (!rec || !rec.at) {
-        drawerEl.innerText = 'Belum pernah dites';
+        drawerEl.innerText = 'Belum pernah dites — tekan Tes Buka Laci di bawah';
         drawerEl.className = 'text-stone-500';
       } else if (rec.opened) {
         drawerEl.innerText = `Tes terakhir: terbuka (${fmtDrawerTime(rec.at)})`;
@@ -971,14 +1103,46 @@ export function renderDrawerStatus() {
   } catch (_) {}
 }
 
-export function checkDrawerLinkStatus() {
+export async function checkDrawerLinkStatus() {
   playClick('tap');
+  const drawerTargets = getPrintersByRole('drawer');
+  const pool = (drawerTargets.length > 0 ? drawerTargets : getPrinterList())
+    .filter(p => p && p.enabled && p.address);
+  if (pool.length === 0) {
+    renderDrawerStatus();
+    showToast('Belum ada printer terdaftar.', 'warning');
+    return;
+  }
+  // Tanpa bridge native: baca status soket saja (jujur sesuai kemampuan).
+  if (!window.AndroidBridge || typeof window.AndroidBridge.probeBluetoothPrinterAsync !== 'function') {
+    renderDrawerStatus();
+    const ok = isLocalPrinterReady();
+    showToast(
+      ok ? 'Printer terhubung.' : 'Printer tidak terhubung. Cek Bluetooth/USB dan daya printer.',
+      ok ? 'success' : 'warning',
+      2500
+    );
+    return;
+  }
+  // Probe live berurutan — tanpa kirim byte (tanpa buang kertas).
+  showToast(`Memeriksa ${pool.length} printer...`, 'info', 2000);
+  const results = [];
+  for (const p of pool) {
+    probingPrinterId = p.id;
+    renderPrinterList();
+    const ok = await probeAddressOnce(p.address);
+    results.push({ name: p.name || 'Printer', ok: ok === true });
+  }
+  probingPrinterId = null;
+  renderPrinterList();
   renderDrawerStatus();
-  const ok = isLocalPrinterReady();
+  const okN = results.filter(r => r.ok).length;
   showToast(
-    ok ? 'Printer terhubung.' : 'Printer tidak terhubung. Cek Bluetooth/USB dan daya printer.',
-    ok ? 'success' : 'warning',
-    2500
+    okN === results.length
+      ? `Semua printer terhubung (${okN}/${results.length}).`
+      : `Terhubung ${okN} dari ${results.length} printer (${results.filter(r => !r.ok).map(r => r.name).join(', ')}).`,
+    okN === results.length ? 'success' : 'warning',
+    4000
   );
 }
 
@@ -1399,8 +1563,22 @@ export function renderPrinterList() {
       </div>`;
     return;
   }
+  const stats = getPrinterStats();
   box.innerHTML = list.map(entry => {
     const roles = Array.isArray(entry.roles) ? entry.roles : [];
+    let statusHtml = '';
+    if (probingPrinterId === entry.id) {
+      statusHtml = `<p class="text-[10.5px] text-sky-700 font-bold flex items-center gap-1 mt-0.5"><span class="material-symbols-rounded text-xs animate-spin">sync</span>Memeriksa sambungan...</p>`;
+    } else {
+      const st = stats[normPrinterAddr(entry.address)];
+      if (st && st.at) {
+        statusHtml = st.ok
+          ? `<p class="text-[10.5px] text-emerald-700 font-bold mt-0.5">● Cetak terakhir baik • ${fmtPrintTime(st.at)}</p>`
+          : `<p class="text-[10.5px] text-red-600 font-bold mt-0.5">● Terakhir gagal • ${fmtPrintTime(st.at)}</p>`;
+      } else {
+        statusHtml = `<p class="text-[10.5px] text-stone-400 font-bold mt-0.5">○ Belum pernah cetak</p>`;
+      }
+    }
     const chips = PRINTER_ROLES.map(r => {
       const on = roles.includes(r.id);
       return `
@@ -1419,16 +1597,22 @@ export function renderPrinterList() {
           <div class="min-w-0 flex-1">
             <p class="font-extrabold text-stone-900 text-xs truncate">${escapeHtml(entry.name || 'Printer')}</p>
             <p class="text-[10.5px] text-stone-500 font-mono truncate">${escapeHtml(entry.address || '')}</p>
+            ${statusHtml}
           </div>
           <button type="button" onclick="KasirApp.togglePrinterEnabled('${entry.id}')"
-            title="${entry.enabled ? 'Nonaktifkan' : 'Aktifkan'} printer"
+            title="${entry.enabled ? 'Jeda printer ini (tidak dipakai cetak)' : 'Pakai lagi printer ini'}"
             class="px-2.5 py-1.5 rounded-lg text-[10.5px] font-black border transition active:scale-95 cursor-pointer shrink-0 ${entry.enabled ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-white text-stone-500 border-stone-300'}">
-            ${entry.enabled ? 'Aktif' : 'Mati'}
+            ${entry.enabled ? 'Dipakai' : 'Jeda'}
           </button>
         </div>
         <div class="flex items-center gap-1.5 flex-wrap">
           ${chips}
           <span class="flex-1"></span>
+          <button type="button" onclick="KasirApp.probePrinterEntry('${entry.id}')"
+            title="Periksa sambungan live (tanpa kertas)"
+            class="px-2 py-1 rounded-lg text-[10.5px] font-black bg-white text-stone-600 border border-stone-300 flex items-center gap-1 transition active:scale-95 cursor-pointer">
+            <span class="material-symbols-rounded text-[13px]">sync</span>Cek
+          </button>
           <button type="button" onclick="KasirApp.testPrinterEntry('${entry.id}')"
             title="Tes cetak ke printer ini"
             class="px-2 py-1 rounded-lg text-[10.5px] font-black bg-sky-50 text-sky-800 border border-sky-200 flex items-center gap-1 transition active:scale-95 cursor-pointer">
@@ -2083,6 +2267,7 @@ export async function executeDirectLocalKickDrawer() {
         || (typeof window.AndroidBridge.printBluetooth === 'function');
       if (hasPrintPath) {
         const ok = await sendNativeBluetoothDataAsync(buildOpenDrawerBytes());
+        recordPrintResult(state.printerConfig?.bluetoothAddress, ok);
         if (ok) {
           showToast('Sinyal terkirim. Cek laci.', 'success');
           return true;
@@ -2096,6 +2281,7 @@ export async function executeDirectLocalKickDrawer() {
     }
     try {
       const ok = await sendNativeKickDrawerAsync();
+      recordPrintResult(state.printerConfig?.bluetoothAddress, ok);
       if (ok) {
         showToast('Sinyal terkirim. Cek laci.', 'success');
         return true;
@@ -2240,6 +2426,7 @@ export async function executeDirectLocalPrintReceipt(tx, shouldKickDrawer, force
     try {
       const bytes = await buildEscPosBytes(tx, shouldKickDrawer);
       const ok = await sendNativeBluetoothDataAsync(bytes);
+      recordPrintResult(state.printerConfig?.bluetoothAddress, ok);
       if (ok) {
         showToast('Struk tercetak!', 'success');
         return true;
@@ -2378,6 +2565,7 @@ export async function executeDirectLocalKitchenTicket(tx, shouldKickDrawer = fal
     }
     try {
       const ok = await sendNativeBluetoothDataAsync(bytes);
+      recordPrintResult(state.printerConfig?.bluetoothAddress, ok);
       if (ok) {
         showToast('Tiket dapur tercetak!', 'success');
         return true;

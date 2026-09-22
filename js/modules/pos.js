@@ -1959,15 +1959,18 @@ export function renderCart() {
   const mobileHeaderBtn = document.getElementById('mobileHeaderCartBtn');
   const mobileHeaderTotal = document.getElementById('mobileHeaderCartTotal');
 
+  const mobileHeaderIcon = document.getElementById('mobileHeaderCartIcon');
   if (mobileHeaderBtn) {
     if (hasItems) {
-      mobileHeaderBtn.className = 'relative px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white flex items-center gap-1 active:scale-95 transition shrink-0 shadow-2xs';
+      mobileHeaderBtn.className = 'relative px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white border border-emerald-700 flex items-center gap-1 active:scale-95 transition shrink-0 shadow-2xs';
+      if (mobileHeaderIcon) mobileHeaderIcon.className = 'material-symbols-rounded text-base leading-none text-white';
       if (mobileHeaderTotal) {
         mobileHeaderTotal.className = 'text-xs font-black text-white';
         mobileHeaderTotal.innerText = `${count}`;
       }
     } else {
-      mobileHeaderBtn.className = 'relative px-2.5 py-1.5 rounded-xl bg-stone-100 text-stone-500 border border-stone-200/80 flex items-center gap-1 active:scale-95 transition shrink-0 shadow-2xs';
+      mobileHeaderBtn.className = 'relative px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-500 border border-stone-200/80 flex items-center gap-1 active:scale-95 transition shrink-0 shadow-2xs';
+      if (mobileHeaderIcon) mobileHeaderIcon.className = 'material-symbols-rounded text-base leading-none text-stone-400';
       if (mobileHeaderTotal) {
         mobileHeaderTotal.className = 'text-xs font-bold text-stone-500';
         mobileHeaderTotal.innerText = '0';

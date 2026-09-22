@@ -3177,6 +3177,7 @@ const KasirApp = {
   togglePrinterEnabled: printer.togglePrinterEnabled,
   deletePrinterEntry: printer.deletePrinterEntry,
   testPrinterEntry: printer.testPrinterEntry,
+  probePrinterEntry: printer.probePrinterEntry,
   openDeviceBluetoothSettings: printer.openDeviceBluetoothSettings,
   connectSerialPrinter: printer.connectSerialPrinter,
   autoReconnectSerial: printer.autoReconnectSerial,
