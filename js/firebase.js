@@ -1903,6 +1903,9 @@ export async function superAdminGenerateLicense(licenseData) {
     return { success: true, license: docData };
   } catch (err) {
     console.error('Error in superAdminGenerateLicense:', err);
+    if (err && err.code === 'permission-denied') {
+      return { success: false, message: 'Penerbitan via aplikasi dimatikan (aturan anti-pemalsuan). Terbitkan kunci via Firebase Console: Firestore > licenses > Add document.' };
+    }
     return { success: false, message: err.message || 'Gagal menyimpan lisensi ke cloud' };
   }
 }
@@ -1964,11 +1967,12 @@ export async function verifyAndClaimLicense(licenseKey, storeId, deviceFingerpri
   const cleanId = String(storeId).toLowerCase().replace(/[^a-z0-9_-]/g, '_');
 
   if (!db) {
+    // Aktivasi BARU wajib online — titik ini dulu meloloskan kunci palsu
+    // ber-checksum valid saat offline. Pengguna berlisensi yang sedang offline
+    // tidak terdampak (tetap jalan dari cache + restore fail-open).
     return {
-      success: true,
-      tier: key.includes('-PR') ? 'PRO_LIFETIME' : 'LIFETIME_STANDARD',
-      licenseKey: key,
-      isOfflineValidated: true
+      success: false,
+      message: 'Aktivasi pertama butuh koneksi internet. Hubungkan dulu, lalu aktivasi lagi.'
     };
   }
 
@@ -2097,7 +2101,12 @@ export async function restoreStoreLicenseFromCloud(storeId) {
       let verdictNote = '';
       try {
         const licSnap = await getDoc(doc(db, 'licenses', key));
-        if (licSnap.exists() && licSnap.data()) {
+        // Bacaan SUKSES tapi dokumen tidak ada = kunci tidak terdaftar (vonis,
+        // bukan gangguan). Gagal baca teknis (catch) = fail-open, jangan hukum user.
+        if (!licSnap.exists()) {
+          verdict = 'rejected';
+          verdictNote = 'Kode lisensi tidak terdaftar di sistem pusat. Hubungi developer bila ini lisensi resmi.';
+        } else if (licSnap.data()) {
           const ld = licSnap.data();
           if (ld.status === 'revoked') {
             verdict = 'revoked';

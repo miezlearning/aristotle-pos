@@ -14,17 +14,22 @@ service cloud.firestore {
     }
 
     // 1b. Registry Lisensi (Entitlement SaaS — sumber kebenaran lisensi)
-    // Model keamanan: kode lisensi = capability secret. Read publik agar verifikasi
-    // aktivasi & restore lisensi bisa jalan dari HP kasir tanpa login Firebase.
-    // Write dibatasi validasi field; hapus dilarang (pakai status 'revoked').
-    // TODO hardening: kunci create/update ke Firebase Auth admin saat auth diberlakukan.
+    // Model keamanan: kode lisensi = capability secret. GET 1 dokumen publik agar
+    // aktivasi & restore bisa jalan dari HP kasir tanpa login Firebase.
+    // Anti-pemalsuan (2026): LIST koleksi dilarang (inventaris kunci tak bisa dipanen),
+    // CREATE dilarang dari app (kunci resmi hanya diterbitkan via Firebase Console),
+    // klaim mengikat permanen ke toko pertama, dan revoke tidak bisa dibatalkan
+    // dari app. Tabel/terbit lisensi di UI superadmin ikut mati — kelola via Console.
+    // TODO hardening: kunci update ke Firebase Auth admin saat auth diberlakukan.
     match /licenses/{licenseKey} {
-      allow read: if true;
-      allow create: if request.resource.data.licenseKey == licenseKey
-                    && request.resource.data.status in ['active', 'claimed']
-                    && request.resource.data.tier in ['LIFETIME_STANDARD', 'PRO_LIFETIME', 'DEMO'];
+      allow get: if true;
+      allow list: if false;
+      allow create: if false;
       allow update: if request.resource.data.licenseKey == licenseKey
-                    && request.resource.data.status in ['active', 'claimed', 'revoked'];
+                    && request.resource.data.status in ['active', 'claimed', 'revoked']
+                    && resource.data.status != 'revoked'
+                    && (resource.data.claimedByStoreId == null
+                        || request.resource.data.claimedByStoreId == resource.data.claimedByStoreId);
       allow delete: if false;
     }
     
