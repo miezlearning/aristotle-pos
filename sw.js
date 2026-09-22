@@ -17,6 +17,7 @@ const PRECACHE_ASSETS = [
   './js/customTooltip.js',
   './js/qris.js',
   './js/firebase.js',
+  './js/firebase-config.js',
   './js/modules/license.js',
   './js/modules/fuzzy.js',
   './js/modules/photos.js',

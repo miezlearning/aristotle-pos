@@ -58,3 +58,7 @@ android/**/*.aab
 *.log
 scratch/
 .system_generated/
+
+# Firebase web config asli (di-inject CI dari GitHub Secrets — jangan commit)
+js/firebase-config.js
+android/app/src/main/assets/js/firebase-config.js

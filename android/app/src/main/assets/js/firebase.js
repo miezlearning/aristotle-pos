@@ -36,16 +36,11 @@ import { showToast, hashSha256 } from './utils.js';
 import { getStoreLicenseStatus, setStoreLicenseLocal, getOrCreateDeviceFingerprint } from './modules/license.js';
 import { putProductPhoto, getCachedPhoto } from './modules/photos.js';
 
-// Firebase Configuration (Google Firebase Web Public Project Identifier)
-export const firebaseConfig = {
-  apiKey: "AIzaSyBkSoXy_F41bOdz4U9gldw0zQIaK1FHMNQ",
-  authDomain: "kedai-mami.firebaseapp.com",
-  projectId: "kedai-mami",
-  storageBucket: "kedai-mami.firebasestorage.app",
-  messagingSenderId: "827309609612",
-  appId: "1:827309609612:web:0a37ebf2c49696d0ace1a9",
-  measurementId: "G-QW6CMQMM6P"
-};
+// Konfigurasi Firebase dimuat dari js/firebase-config.js (satu-satunya sumber).
+// File itu TIDAK di-commit: dev lokal menyalin dari firebase-config.example.js,
+// CI meng-inject dari GitHub Secrets. Re-export agar import lama tetap jalan.
+import { firebaseConfig } from './firebase-config.js';
+export { firebaseConfig };
 
 // Store Identification getter
 export function getStoreId() {
