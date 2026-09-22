@@ -1,10 +1,10 @@
-# Aristotle POS v1.2.101 Release Notes
+# Aristotle POS v1.2.102 Release Notes
 
 **Tanggal Rilis:** 2026-09-22
 
 ### Catatan Pembaruan:
-- Ikon keranjang ikut status isi: putih saat ada, abu saat kosong
-- Status printer jujur: probe live, riwayat cetak per printer, bahasa jelas
+- Perbaiki updater ditolak palsu: catat URL di UI thread
+- Penjaga bridge baca catatan halaman, bukan getUrl langsung
 
 ---
 *Pembaruan ini dapat diunduh dan dipasang langsung dari dalam aplikasi (In-App Auto-Updater).*

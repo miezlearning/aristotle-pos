@@ -113,6 +113,11 @@ public class MainActivity extends AppCompatActivity {
             "release-assets.githubusercontent.com"
     };
 
+    // URL halaman aktif (dicatat di UI thread). Dibaca oleh gate bridge yang
+    // jalan di thread background — JANGAN panggil webView.getUrl() dari sana
+    // (bisa null/rancu → penolakan palsu seperti "Halaman tidak tepercaya").
+    private volatile String currentPageUrl = OFFLINE_FALLBACK_URL;
+
     // Telemetri native: URL webhook TIDAK di-hardcode (pernah bocor & dihapus
     // Discord). Yang disimpan hanya URL PROXY (publik, aman) — rahasia webhook
     // tinggal di server proxy. Isi sekali via bridge setTelemetryProxyUrl().
@@ -222,6 +227,14 @@ public class MainActivity extends AppCompatActivity {
         }
 
         webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                if (url != null) {
+                    currentPageUrl = url;
+                }
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 if (request != null && request.getUrl() != null) {
@@ -482,6 +495,7 @@ public class MainActivity extends AppCompatActivity {
         // menjaga konsistensi satu database localStorage, bebas pemblokiran mixed-content LAN printer,
         // dan 100% tahan offline di segala kondisi hotspot/Wi-Fi toko!
         Log.i(TAG, "Memuat UI POS langsung dari aset internal berkecepatan tinggi...");
+        currentPageUrl = OFFLINE_FALLBACK_URL;
         webView.loadUrl(OFFLINE_FALLBACK_URL);
     }
 
@@ -1638,7 +1652,7 @@ public class MainActivity extends AppCompatActivity {
     // Halaman WebView saat ini wajib first-party (anti penyalahgunaan bridge dari konten asing).
     private boolean isFirstPartyPage() {
         try {
-            String u = (webView != null && webView.getUrl() != null) ? webView.getUrl() : "";
+            String u = (currentPageUrl != null) ? currentPageUrl : "";
             return u.startsWith(PRODUCTION_URL) || u.startsWith(OFFLINE_FALLBACK_URL);
         } catch (Exception e) {
             return false;
