@@ -36,10 +36,17 @@ import { showToast, hashSha256 } from './utils.js';
 import { getStoreLicenseStatus, setStoreLicenseLocal, getOrCreateDeviceFingerprint } from './modules/license.js';
 import { putProductPhoto, getCachedPhoto } from './modules/photos.js';
 
-// Konfigurasi Firebase dimuat dari js/firebase-config.js (satu-satunya sumber).
-// File itu TIDAK di-commit: dev lokal menyalin dari firebase-config.example.js,
-// CI meng-inject dari GitHub Secrets. Re-export agar import lama tetap jalan.
-import { firebaseConfig } from './firebase-config.js';
+// Konfigurasi dimuat DINAMIS: file absen (artefak basi / inject gagal) = mode
+// offline, BUKAN mati total. Static import yang gagal membunuh seluruh graf modul
+// (KasirApp undefined, semua tombol error) — itu yang terjadi di live v1.2.97.
+let firebaseConfig = null;
+try {
+  const cfgMod = await import('./firebase-config.js');
+  firebaseConfig = (cfgMod && cfgMod.firebaseConfig) || null;
+  if (!firebaseConfig || !firebaseConfig.apiKey) firebaseConfig = null;
+} catch (_) {
+  firebaseConfig = null;
+}
 export { firebaseConfig };
 
 // Store Identification getter
