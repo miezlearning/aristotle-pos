@@ -1,10 +1,10 @@
 {
-  "versionCode": 152,
-  "versionName": "1.2.103",
-  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.103/Aristotle-POS.apk",
+  "versionCode": 153,
+  "versionName": "1.2.104",
+  "apkUrl": "https://github.com/miezlearning/aristotle-pos/releases/download/v1.2.104/Aristotle-POS.apk",
   "changelog": [
-    "Hapus em-dash status laci",
-    "Kalimat printer pendek ramah lansia"
+    "Perbaikan stabilitas tombol show/hide PIN dan tombol tutup modal login",
+    "Optimasi ink ripple M3 agar tidak menggeser posisi tombol absolute"
   ],
-  "releaseDate": "2026-09-22"
+  "releaseDate": "2026-11-19"
 }
