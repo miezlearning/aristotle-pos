@@ -541,9 +541,9 @@
               data-tooltip="Hapus antrian ini">
               <span class="material-symbols-rounded text-base">delete</span>
             </button>
-            <button onclick="toggleMobileCartDrawer()"
-              data-tooltip="Tutup"
-              class="p-1.5 rounded-full hover:bg-stone-100 text-stone-500 touch-target-large flex items-center justify-center">
+            <button type="button" onclick="toggleMobileCartDrawer()"
+              data-tooltip="Tutup" aria-label="Tutup"
+              class="w-9 h-9 rounded-full hover:bg-stone-100 text-stone-500 flex items-center justify-center transition cursor-pointer active:scale-95">
               <span class="material-symbols-rounded text-2xl">close</span>
             </button>
           </div>
@@ -593,7 +593,7 @@
               <p class="text-xs text-stone-500 font-medium mt-0.5">Pilih Tunai / QRIS, patungan & hitung kembalian</p>
             </div>
           </div>
-          <button onclick="closePaymentModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition">
+          <button type="button" onclick="closePaymentModal()" class="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
             <span class="material-symbols-rounded text-2xl">close</span>
           </button>
         </div>
@@ -883,7 +883,7 @@
               <p class="text-[11px] text-stone-500 font-semibold">Potongan harga untuk pesanan ini</p>
             </div>
           </div>
-          <button onclick="window.KasirApp.closeDiscountModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer">
+          <button type="button" onclick="window.KasirApp.closeDiscountModal()" class="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
             <span class="material-symbols-rounded text-xl">close</span>
           </button>
         </div>
@@ -982,7 +982,7 @@
               <p id="voidTxModalSub" class="text-[11px] text-stone-500 font-semibold truncate">Catatan tetap tersimpan & tidak masuk omzet</p>
             </div>
           </div>
-          <button onclick="window.KasirApp.closeVoidModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer">
+          <button type="button" onclick="window.KasirApp.closeVoidModal()" class="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
             <span class="material-symbols-rounded text-xl">close</span>
           </button>
         </div>
@@ -1032,7 +1032,7 @@
               <p class="text-xs text-stone-500 font-medium">Catat modal kas awal di laci</p>
             </div>
           </div>
-          <button onclick="window.KasirApp.closeStartShiftModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer">
+          <button type="button" onclick="window.KasirApp.closeStartShiftModal()" class="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
             <span class="material-symbols-rounded text-xl">close</span>
           </button>
         </div>
@@ -1096,7 +1096,7 @@
               <p class="text-xs text-stone-500 font-semibold" id="closeShiftTimeRange">Mulai 04/09/2026</p>
             </div>
           </div>
-          <button onclick="window.KasirApp.closeCloseShiftModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer">
+          <button type="button" onclick="window.KasirApp.closeCloseShiftModal()" class="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
             <span class="material-symbols-rounded text-xl">close</span>
           </button>
         </div>
@@ -1300,7 +1300,7 @@
                 <p class="text-[11px] text-stone-500 font-semibold">Salin ke WA atau kirim ke Discord support</p>
               </div>
             </div>
-            <button onclick="window.KasirApp.closeDiagnosticsModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer">
+            <button type="button" onclick="window.KasirApp.closeDiagnosticsModal()" class="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
               <span class="material-symbols-rounded text-xl">close</span>
             </button>
           </div>
@@ -2413,8 +2413,8 @@
             <p class="text-xs text-stone-500 font-medium mt-0.5">Beri nama meja atau nama pelanggan</p>
           </div>
         </div>
-        <button onclick="closeRenameQueueModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition">
-          <span class="material-symbols-rounded text-2xl">close</span>
+        <button type="button" onclick="closeRenameQueueModal()" class="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
+          <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
 
@@ -2468,8 +2468,8 @@
             <p class="text-xs text-stone-500 font-medium mt-0.5">Buat toko baru untuk cabang / klien lain</p>
           </div>
         </div>
-        <button onclick="closeCreateStoreModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition">
-          <span class="material-symbols-rounded text-2xl">close</span>
+        <button type="button" onclick="closeCreateStoreModal()" class="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
+          <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
 
@@ -2508,8 +2508,8 @@
             <p class="text-xs text-stone-500 font-medium mt-0.5">Biaya belanja bahan, gas, operasional</p>
           </div>
         </div>
-        <button onclick="closeExpenseModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition">
-          <span class="material-symbols-rounded text-2xl">close</span>
+        <button type="button" onclick="closeExpenseModal()" class="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
+          <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
 
@@ -2563,8 +2563,8 @@
           </div>
         </div>
         <button type="button" onclick="KasirApp.closeReleaseNotesModal()"
-          class="p-1.5 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition">
-          <span class="material-symbols-rounded text-2xl">close</span>
+          class="w-9 h-9 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition flex items-center justify-center cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
+          <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
 
@@ -2664,8 +2664,8 @@
           </div>
         </div>
         <button type="button" onclick="KasirApp.closeRenameQueueModal()"
-          class="p-1.5 rounded-full hover:bg-stone-200 text-stone-400 hover:text-stone-700 transition">
-          <span class="material-symbols-rounded text-2xl">close</span>
+          class="w-9 h-9 rounded-full hover:bg-stone-200 text-stone-400 hover:text-stone-700 transition flex items-center justify-center cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
+          <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
 
@@ -2923,8 +2923,8 @@
             <p class="text-xs text-stone-500 font-medium mt-0.5">Tabel cepat atau tempel teks</p>
           </div>
         </div>
-        <button type="button" onclick="closeBulkImportModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer" data-tooltip="Tutup">
-          <span class="material-symbols-rounded text-2xl">close</span>
+        <button type="button" onclick="closeBulkImportModal()" class="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
+          <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
 
@@ -3830,7 +3830,7 @@ Kopi susu 7k"
           </div>
         </div>
         <button type="button" onclick="KasirApp.closeRenameQueueModal()"
-          class="p-1.5 rounded-full hover:bg-stone-200 text-stone-400 hover:text-stone-700 transition">
+          class="w-9 h-9 rounded-full hover:bg-stone-200 text-stone-400 hover:text-stone-700 transition flex items-center justify-center cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
           <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
@@ -3893,7 +3893,7 @@ Kopi susu 7k"
           </div>
         </div>
         <button type="button" onclick="KasirApp.closeQtyEditor()"
-          class="p-1.5 rounded-full hover:bg-stone-200 text-stone-400 hover:text-stone-700 transition">
+          class="w-9 h-9 rounded-full hover:bg-stone-200 text-stone-400 hover:text-stone-700 transition flex items-center justify-center cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
           <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
@@ -3951,7 +3951,7 @@ Kopi susu 7k"
           </div>
         </div>
         <button type="button" onclick="KasirApp.closeItemNoteModal()"
-          class="w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition cursor-pointer">
+          class="w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
           <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
@@ -4069,8 +4069,8 @@ Kopi susu 7k"
             <p class="text-xs text-stone-500 font-medium mt-0.5">Langkah aktivasi agar printer terdeteksi</p>
           </div>
         </div>
-        <button onclick="KasirApp.closeBluetoothTroubleshootModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition">
-          <span class="material-symbols-rounded text-2xl">close</span>
+        <button type="button" onclick="KasirApp.closeBluetoothTroubleshootModal()" class="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
+          <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
 
@@ -4133,8 +4133,8 @@ Kopi susu 7k"
             <p id="usbTroubleSubtitle" class="text-xs text-stone-500 font-medium mt-0.5">Informasi koneksi kabel printer</p>
           </div>
         </div>
-        <button onclick="KasirApp.closeUsbTroubleshootModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition">
-          <span class="material-symbols-rounded text-2xl">close</span>
+        <button type="button" onclick="KasirApp.closeUsbTroubleshootModal()" class="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
+          <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
 
@@ -4187,8 +4187,8 @@ Kopi susu 7k"
             <p class="text-xs text-stone-500 font-medium mt-0.5">Upload foto / atur kode QRIS merchant</p>
           </div>
         </div>
-        <button onclick="closeQrisModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition">
-          <span class="material-symbols-rounded text-2xl">close</span>
+        <button type="button" onclick="closeQrisModal()" class="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
+          <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
 
@@ -4425,7 +4425,7 @@ Kopi susu 7k"
           </p>
           <div class="bg-white rounded-2xl border border-stone-200/90 divide-y divide-stone-100 shadow-2xs overflow-hidden">
             <!-- Ganti Toko -->
-            <button type="button" onclick="openUniversalLoginModal('login')"
+            <button type="button" onclick="closeCloudModal(); openUniversalLoginModal('login')"
               class="w-full flex items-center gap-2.5 p-2.5 hover:bg-stone-50 transition text-left cursor-pointer active:bg-stone-100 min-h-[52px]">
               <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 border border-blue-200/60 flex items-center justify-center shrink-0">
                 <span class="material-symbols-rounded text-base">switch_account</span>
@@ -4438,7 +4438,7 @@ Kopi susu 7k"
             </button>
 
             <!-- Buat Toko Baru -->
-            <button type="button" onclick="openUniversalLoginModal('register')"
+            <button type="button" onclick="closeCloudModal(); openUniversalLoginModal('register')"
               class="w-full flex items-center gap-2.5 p-2.5 hover:bg-stone-50 transition text-left cursor-pointer active:bg-stone-100 min-h-[52px]">
               <div class="w-7 h-7 rounded-lg bg-stone-100 text-stone-600 flex items-center justify-center shrink-0 border border-stone-200/60">
                 <span class="material-symbols-rounded text-base">storefront</span>
@@ -4577,7 +4577,7 @@ Kopi susu 7k"
       
       <!-- Modal Top Branding -->
       <div class="bg-gradient-to-br from-emerald-900 to-emerald-950 text-white p-5 text-center relative">
-        <button onclick="closeUniversalLoginModal()" class="absolute top-4 right-4 p-1.5 text-stone-300 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition">
+        <button id="closeUniversalLoginBtn" type="button" onclick="closeUniversalLoginModal()" class="absolute top-4 right-4 w-9 h-9 text-stone-300 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition flex items-center justify-center cursor-pointer active:scale-95 select-none" data-tooltip="Tutup" aria-label="Tutup">
           <span class="material-symbols-rounded text-xl">close</span>
         </button>
 
@@ -5017,7 +5017,7 @@ Kopi susu 7k"
           </div>
         </div>
         <button type="button" onclick="KasirApp.closeSuperAdminAddStoreModal()"
-          class="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition">
+          class="w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
           <span class="material-symbols-rounded text-base">close</span>
         </button>
       </div>
@@ -5108,7 +5108,7 @@ Kopi susu 7k"
           </div>
         </div>
         <button type="button" onclick="KasirApp.closeSuperAdminEditStoreModal()"
-          class="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition">
+          class="w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
           <span class="material-symbols-rounded text-base">close</span>
         </button>
       </div>
@@ -5259,8 +5259,8 @@ Kopi susu 7k"
           </div>
         </div>
         <button type="button" onclick="KasirApp.closeUpdateModal()" id="updateCancelBtnTop"
-          class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition shrink-0 overflow-hidden">
-          <span class="material-symbols-rounded text-sm w-4 h-4 flex items-center justify-center overflow-hidden">close</span>
+          class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition shrink-0 cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
+          <span class="material-symbols-rounded text-base">close</span>
         </button>
       </div>
 
@@ -5333,8 +5333,8 @@ Kopi susu 7k"
             <p class="text-xs text-stone-500 font-medium mt-0.5">Scan kode ini dari HP staf / kru toko</p>
           </div>
         </div>
-        <button onclick="KasirApp.closeHostQrPairingModal()" class="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition">
-          <span class="material-symbols-rounded text-2xl">close</span>
+        <button type="button" onclick="KasirApp.closeHostQrPairingModal()" class="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
+          <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
 
@@ -5379,7 +5379,7 @@ Kopi susu 7k"
           <span class="material-symbols-rounded text-emerald-400 text-xl">qr_code_scanner</span>
           <span class="font-bold text-sm">Scan QR Kasir</span>
         </div>
-        <button onclick="KasirApp.closeQrPairingScannerModal()" class="w-8 h-8 rounded-full bg-stone-900 hover:bg-stone-800 text-stone-400 hover:text-white flex items-center justify-center transition">
+        <button type="button" onclick="KasirApp.closeQrPairingScannerModal()" class="w-9 h-9 rounded-full bg-stone-900 hover:bg-stone-800 text-stone-400 hover:text-white flex items-center justify-center transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
           <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
@@ -5446,7 +5446,7 @@ Kopi susu 7k"
           </div>
         </div>
         <button type="button" onclick="window.KasirApp.closeRoleSwitchModal()"
-          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition" data-tooltip="Tutup">
+          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
           <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
@@ -5544,7 +5544,7 @@ Kopi susu 7k"
           </div>
         </div>
         <button type="button" onclick="window.KasirApp.closeCashierManageModal()"
-          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition" data-tooltip="Tutup">
+          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
           <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
@@ -5618,7 +5618,7 @@ Kopi susu 7k"
           </div>
         </div>
         <button type="button" onclick="window.KasirApp.closeChangeOwnerPinModal()"
-          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition" data-tooltip="Tutup">
+          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
           <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>
@@ -5736,7 +5736,7 @@ Kopi susu 7k"
           </div>
         </div>
         <button type="button" onclick="window.KasirApp.closeChangeCashierPinModal()"
-          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition" data-tooltip="Tutup">
+          class="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition cursor-pointer active:scale-95" data-tooltip="Tutup" aria-label="Tutup">
           <span class="material-symbols-rounded text-xl">close</span>
         </button>
       </div>

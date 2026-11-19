@@ -421,6 +421,15 @@ export function openUniversalLoginModal(defaultTab = 'login') {
   const modal = document.getElementById('universalLoginModal');
   if (!modal) return;
 
+  const closeBtn = document.getElementById('closeUniversalLoginBtn');
+  if (closeBtn) {
+    if (!state.storeId) {
+      closeBtn.classList.add('hidden');
+    } else {
+      closeBtn.classList.remove('hidden');
+    }
+  }
+
   switchAuthTab(defaultTab);
   renderSavedStoresList();
   modal.classList.remove('hidden');
@@ -428,6 +437,10 @@ export function openUniversalLoginModal(defaultTab = 'login') {
 
 export function closeUniversalLoginModal() {
   playClick('pop');
+  if (!state.storeId) {
+    showToast('Pilih atau daftarkan toko terlebih dahulu', 'warning', 3000);
+    return;
+  }
   const modal = document.getElementById('universalLoginModal');
   if (modal) modal.classList.add('hidden');
 }
