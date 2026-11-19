@@ -1715,11 +1715,37 @@ export function togglePasswordVisibility(inputId, btnEl) {
   playClick('tap');
   const input = document.getElementById(inputId);
   if (!input) return;
+
   const isPass = input.type === 'password';
-  input.type = isPass ? 'text' : 'password';
-  const icon = btnEl ? btnEl.querySelector('.material-symbols-rounded') : null;
+  const nextType = isPass ? 'text' : 'password';
+
+  let start = null;
+  let end = null;
+  try {
+    start = input.selectionStart;
+    end = input.selectionEnd;
+  } catch (_) {}
+
+  input.type = nextType;
+
+  // Pertahankan fokus pada input agar kursor tidak hilang dan keyboard tidak lompat
+  try {
+    input.focus({ preventScroll: true });
+    if (start !== null && end !== null) {
+      input.setSelectionRange(start, end);
+    }
+  } catch (_) {}
+
+  const icon = btnEl ? (btnEl.querySelector('.material-symbols-rounded') || btnEl.querySelector('.material-icons') || document.getElementById(`${inputId}EyeIcon`)) : null;
   if (icon) {
     icon.innerText = isPass ? 'visibility_off' : 'visibility';
+  }
+
+  if (btnEl) {
+    const tipText = isPass ? 'Sembunyikan' : 'Lihat';
+    btnEl.setAttribute('data-tooltip', tipText);
+    btnEl.setAttribute('aria-label', tipText);
+    btnEl.setAttribute('title', tipText);
   }
 }
 

@@ -58,17 +58,41 @@ export function openSuperAdminAuthModal() {
 /**
  * Toggle visibilitas passkey (Show / Hide Password)
  */
-export function togglePasskeyVisibility() {
+export function togglePasskeyVisibility(btnEl) {
   playClick('tap');
   const input = document.getElementById('superAdminPasskeyInput');
-  const eyeIcon = document.getElementById('superAdminPasskeyEyeIcon');
+  const btn = btnEl || (typeof event !== 'undefined' && event?.currentTarget) || document.querySelector('#superAdminPasskeyInput ~ button');
+  const eyeIcon = document.getElementById('superAdminPasskeyEyeIcon') || (btn ? btn.querySelector('.material-symbols-rounded') : null);
   if (!input) return;
-  if (input.type === 'password') {
-    input.type = 'text';
-    if (eyeIcon) eyeIcon.innerText = 'visibility_off';
-  } else {
-    input.type = 'password';
-    if (eyeIcon) eyeIcon.innerText = 'visibility';
+
+  const isPass = input.type === 'password';
+  const nextType = isPass ? 'text' : 'password';
+
+  let start = null;
+  let end = null;
+  try {
+    start = input.selectionStart;
+    end = input.selectionEnd;
+  } catch (_) {}
+
+  input.type = nextType;
+
+  try {
+    input.focus({ preventScroll: true });
+    if (start !== null && end !== null) {
+      input.setSelectionRange(start, end);
+    }
+  } catch (_) {}
+
+  if (eyeIcon) {
+    eyeIcon.innerText = isPass ? 'visibility_off' : 'visibility';
+  }
+
+  if (btn) {
+    const tipText = isPass ? 'Sembunyikan Passkey' : 'Lihat Passkey';
+    btn.setAttribute('data-tooltip', tipText);
+    btn.setAttribute('aria-label', tipText);
+    btn.setAttribute('title', tipText);
   }
 }
 
