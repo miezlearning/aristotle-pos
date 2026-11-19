@@ -66,33 +66,16 @@ export function togglePasskeyVisibility(btnEl) {
   if (!input) return;
 
   const isPass = input.type === 'password';
-  const nextType = isPass ? 'text' : 'password';
-
-  let start = null;
-  let end = null;
-  try {
-    start = input.selectionStart;
-    end = input.selectionEnd;
-  } catch (_) {}
-
-  input.type = nextType;
-
-  try {
-    input.focus({ preventScroll: true });
-    if (start !== null && end !== null) {
-      input.setSelectionRange(start, end);
-    }
-  } catch (_) {}
+  input.type = isPass ? 'text' : 'password';
 
   if (eyeIcon) {
-    eyeIcon.innerText = isPass ? 'visibility_off' : 'visibility';
+    eyeIcon.textContent = isPass ? 'visibility_off' : 'visibility';
   }
 
   if (btn) {
     const tipText = isPass ? 'Sembunyikan Passkey' : 'Lihat Passkey';
     btn.setAttribute('data-tooltip', tipText);
     btn.setAttribute('aria-label', tipText);
-    btn.setAttribute('title', tipText);
   }
 }
 

@@ -445,6 +445,18 @@ export function closeUniversalLoginModal() {
   if (modal) modal.classList.add('hidden');
 }
 
+export function closeCreateStoreModal() {
+  playClick('pop');
+  const modal = document.getElementById('createStoreModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+export function saveNewStoreCreation(e) {
+  if (e) e.preventDefault();
+  closeCreateStoreModal();
+  openUniversalLoginModal('register');
+}
+
 export function switchAuthTab(tab) {
   playClick('pop');
   const tabLogin = document.getElementById('authTabLogin');
@@ -1730,35 +1742,18 @@ export function togglePasswordVisibility(inputId, btnEl) {
   if (!input) return;
 
   const isPass = input.type === 'password';
-  const nextType = isPass ? 'text' : 'password';
+  input.type = isPass ? 'text' : 'password';
 
-  let start = null;
-  let end = null;
-  try {
-    start = input.selectionStart;
-    end = input.selectionEnd;
-  } catch (_) {}
-
-  input.type = nextType;
-
-  // Pertahankan fokus pada input agar kursor tidak hilang dan keyboard tidak lompat
-  try {
-    input.focus({ preventScroll: true });
-    if (start !== null && end !== null) {
-      input.setSelectionRange(start, end);
-    }
-  } catch (_) {}
-
-  const icon = btnEl ? (btnEl.querySelector('.material-symbols-rounded') || btnEl.querySelector('.material-icons') || document.getElementById(`${inputId}EyeIcon`)) : null;
+  const icon = (btnEl && (btnEl.querySelector('.material-symbols-rounded') || btnEl.querySelector('.material-icons')))
+    || document.getElementById(`${inputId}EyeIcon`);
   if (icon) {
-    icon.innerText = isPass ? 'visibility_off' : 'visibility';
+    icon.textContent = isPass ? 'visibility_off' : 'visibility';
   }
 
   if (btnEl) {
     const tipText = isPass ? 'Sembunyikan' : 'Lihat';
     btnEl.setAttribute('data-tooltip', tipText);
     btnEl.setAttribute('aria-label', tipText);
-    btnEl.setAttribute('title', tipText);
   }
 }
 
@@ -2901,6 +2896,7 @@ const MODAL_CLOSE_DISPATCHER = {
   'hostQrPairingModal': () => printer.closeHostQrPairingModal(),
   'qrPairingScannerModal': () => printer.closeQrPairingScannerModal(),
   'cloudModal': () => closeCloudModal(),
+  'createStoreModal': () => closeCreateStoreModal(),
   'releaseNotesModal': () => closeReleaseNotesModal(),
   'updateAppModal': () => updater.closeUpdateModal(),
   'pinSecurityModal': () => closePinSecurityModal(),
@@ -3051,6 +3047,8 @@ const KasirApp = {
   deleteSavedStoreCard,
   openUniversalLoginModal,
   closeUniversalLoginModal,
+  closeCreateStoreModal,
+  saveNewStoreCreation,
   switchAuthTab,
   renderSavedStoresList,
   handleStoreLoginSubmit,

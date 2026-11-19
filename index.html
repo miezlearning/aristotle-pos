@@ -4643,7 +4643,7 @@ Kopi susu 7k"
             <div class="relative">
               <input type="password" id="loginPinInput" placeholder="Ketik PIN / Sandi Toko" maxlength="32" required
                 class="w-full pl-3.5 pr-12 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-emerald-600 font-mono font-bold text-stone-900 text-center tracking-wider text-base outline-none">
-              <button type="button" onmousedown="event.preventDefault()" onclick="window.KasirApp.togglePasswordVisibility('loginPinInput', this)"
+              <button type="button" onclick="window.KasirApp.togglePasswordVisibility('loginPinInput', this)"
                 class="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 active:scale-95 flex items-center justify-center transition cursor-pointer select-none"
                 data-tooltip="Lihat PIN" aria-label="Lihat PIN">
                 <span class="material-symbols-rounded text-lg">visibility</span>
@@ -4725,7 +4725,7 @@ Kopi susu 7k"
             <div class="relative">
               <input type="password" id="regPin" maxlength="32" value="123456" required placeholder="Minimal 6 karakter"
                 class="w-full pl-3.5 pr-12 py-2.5 rounded-xl bg-stone-50 border border-stone-300 focus:bg-white focus:border-emerald-600 font-mono font-bold text-stone-900 text-center tracking-wider text-base outline-none">
-              <button type="button" onmousedown="event.preventDefault()" onclick="window.KasirApp.togglePasswordVisibility('regPin', this)"
+              <button type="button" onclick="window.KasirApp.togglePasswordVisibility('regPin', this)"
                 class="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 active:scale-95 flex items-center justify-center transition cursor-pointer select-none"
                 data-tooltip="Lihat PIN" aria-label="Lihat PIN">
                 <span class="material-symbols-rounded text-lg">visibility</span>
@@ -4879,7 +4879,7 @@ Kopi susu 7k"
         <div class="relative">
           <input type="password" id="pinSecurityInput" autofocus placeholder="Ketik PIN / Sandi..." maxlength="32"
             class="w-full pl-3 pr-12 py-2.5 rounded-xl bg-stone-100 border border-stone-300 focus:bg-white focus:border-emerald-600 font-mono font-bold text-stone-900 text-center tracking-wider text-base outline-none">
-          <button type="button" onmousedown="event.preventDefault()" onclick="window.KasirApp.togglePasswordVisibility('pinSecurityInput', this)"
+          <button type="button" onclick="window.KasirApp.togglePasswordVisibility('pinSecurityInput', this)"
             class="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 active:scale-95 flex items-center justify-center transition cursor-pointer select-none"
             data-tooltip="Lihat PIN" aria-label="Lihat PIN">
             <span class="material-symbols-rounded text-lg">visibility</span>
@@ -4918,7 +4918,7 @@ Kopi susu 7k"
         <div class="relative">
           <input type="password" id="superAdminPasskeyInput" autofocus placeholder="Masukkan Passkey..." required
             class="w-full pl-4 pr-12 py-3 rounded-2xl bg-stone-100 border-2 border-stone-200 focus:bg-white focus:border-amber-600 font-mono font-bold text-stone-900 text-center tracking-wider text-base outline-none transition">
-          <button type="button" onmousedown="event.preventDefault()" onclick="window.KasirApp.togglePasskeyVisibility(this)"
+          <button type="button" onclick="window.KasirApp.togglePasskeyVisibility(this)"
             class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 active:scale-95 flex items-center justify-center transition cursor-pointer select-none"
             data-tooltip="Lihat Passkey" aria-label="Lihat Passkey">
             <span id="superAdminPasskeyEyeIcon" class="material-symbols-rounded text-xl">visibility</span>
@@ -5491,7 +5491,7 @@ Kopi susu 7k"
             <input type="password" id="roleSwitchPinInput" maxlength="32"
               placeholder="Ketik PIN / sandi..." autocomplete="off"
               class="w-full pl-4 pr-12 py-3 rounded-xl border-2 border-stone-300 focus:border-emerald-600 focus:outline-none text-center text-base sm:text-lg tracking-wider font-bold text-stone-900 bg-stone-50">
-            <button type="button" onmousedown="event.preventDefault()" onclick="window.KasirApp.togglePasswordVisibility('roleSwitchPinInput', this)"
+            <button type="button" onclick="window.KasirApp.togglePasswordVisibility('roleSwitchPinInput', this)"
               class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 active:scale-95 flex items-center justify-center transition cursor-pointer select-none"
               data-tooltip="Lihat PIN" aria-label="Lihat PIN">
               <span class="material-symbols-rounded text-lg">visibility</span>
@@ -5565,8 +5565,15 @@ Kopi susu 7k"
             </div>
             <div>
               <label class="block text-[11px] font-bold text-stone-600 mb-1">PIN Kasir (6 Digit Angka) *</label>
-              <input type="password" id="newCashierPin" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" placeholder="6 digit angka" required
-                class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold text-stone-900 focus:outline-none focus:border-emerald-600 bg-white">
+              <div class="relative">
+                <input type="password" id="newCashierPin" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" placeholder="6 digit angka" required
+                  class="w-full px-3 py-2 pr-10 rounded-xl border border-stone-300 text-xs font-bold text-stone-900 focus:outline-none focus:border-emerald-600 bg-white">
+                <button type="button" onclick="window.KasirApp.togglePasswordVisibility('newCashierPin', this)"
+                  class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 active:scale-95 flex items-center justify-center transition cursor-pointer select-none"
+                  data-tooltip="Lihat PIN" aria-label="Lihat PIN">
+                  <span class="material-symbols-rounded text-base">visibility</span>
+                </button>
+              </div>
             </div>
           </div>
           <div class="flex justify-end pt-1">
@@ -5635,7 +5642,7 @@ Kopi susu 7k"
           <div class="relative">
             <input type="password" id="ownerCurrentPinInput" maxlength="32" placeholder="Ketik PIN lama..." required autocomplete="current-password"
               class="w-full px-3.5 py-2.5 pr-12 rounded-xl border border-stone-300 font-bold text-stone-900 text-sm focus:outline-none focus:border-emerald-600 bg-stone-50">
-            <button type="button" onmousedown="event.preventDefault()" onclick="window.KasirApp.togglePasswordVisibility('ownerCurrentPinInput', this)"
+            <button type="button" onclick="window.KasirApp.togglePasswordVisibility('ownerCurrentPinInput', this)"
               class="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 active:scale-95 flex items-center justify-center transition cursor-pointer select-none"
               data-tooltip="Lihat PIN" aria-label="Lihat PIN">
               <span class="material-symbols-rounded text-lg">visibility</span>
@@ -5653,7 +5660,7 @@ Kopi susu 7k"
             <input type="password" id="ownerNewPinInput" maxlength="32" placeholder="Ketik PIN / sandi baru..." required autocomplete="new-password"
               oninput="window.KasirApp.evaluateNewOwnerPinStrength(this.value)"
               class="w-full px-3.5 py-2.5 pr-12 rounded-xl border border-stone-300 font-bold text-stone-900 text-sm focus:outline-none focus:border-emerald-600 bg-stone-50">
-            <button type="button" onmousedown="event.preventDefault()" onclick="window.KasirApp.togglePasswordVisibility('ownerNewPinInput', this)"
+            <button type="button" onclick="window.KasirApp.togglePasswordVisibility('ownerNewPinInput', this)"
               class="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 active:scale-95 flex items-center justify-center transition cursor-pointer select-none"
               data-tooltip="Lihat PIN" aria-label="Lihat PIN">
               <span class="material-symbols-rounded text-lg">visibility</span>
@@ -5695,7 +5702,7 @@ Kopi susu 7k"
             <input type="password" id="ownerConfirmPinInput" maxlength="32" placeholder="Ulangi PIN baru..." required autocomplete="new-password"
               oninput="window.KasirApp.checkOwnerPinMatch()"
               class="w-full px-3.5 py-2.5 pr-12 rounded-xl border border-stone-300 font-bold text-stone-900 text-sm focus:outline-none focus:border-emerald-600 bg-stone-50">
-            <button type="button" onmousedown="event.preventDefault()" onclick="window.KasirApp.togglePasswordVisibility('ownerConfirmPinInput', this)"
+            <button type="button" onclick="window.KasirApp.togglePasswordVisibility('ownerConfirmPinInput', this)"
               class="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 active:scale-95 flex items-center justify-center transition cursor-pointer select-none"
               data-tooltip="Lihat PIN" aria-label="Lihat PIN">
               <span class="material-symbols-rounded text-lg">visibility</span>
@@ -5763,7 +5770,12 @@ Kopi susu 7k"
           <div class="relative">
             <input type="password" id="newCashierPinInput" maxlength="6" inputmode="numeric" pattern="[0-9]{6}"
               placeholder="••••••" required autocomplete="off"
-              class="w-full px-4 py-3 rounded-xl border-2 border-stone-300 focus:border-emerald-600 focus:outline-none text-center text-2xl tracking-[0.5em] font-black text-stone-900 bg-stone-50">
+              class="w-full px-4 py-3 pr-12 rounded-xl border-2 border-stone-300 focus:border-emerald-600 focus:outline-none text-center text-2xl tracking-[0.5em] font-black text-stone-900 bg-stone-50">
+            <button type="button" onclick="window.KasirApp.togglePasswordVisibility('newCashierPinInput', this)"
+              class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 active:scale-95 flex items-center justify-center transition cursor-pointer select-none"
+              data-tooltip="Lihat PIN" aria-label="Lihat PIN">
+              <span class="material-symbols-rounded text-lg">visibility</span>
+            </button>
           </div>
           <p class="text-[10.5px] text-stone-400">Gunakan angka acak yang mudah diingat kasir (hindari 123456 / 111111).</p>
         </div>
