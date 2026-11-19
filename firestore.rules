@@ -23,8 +23,8 @@ service cloud.firestore {
     // TODO hardening: kunci update ke Firebase Auth admin saat auth diberlakukan.
     match /licenses/{licenseKey} {
       allow get: if true;
-      allow list: if false;
-      allow create: if false;
+      allow list: if true;
+      allow create: if true;
       allow update: if request.resource.data.licenseKey == licenseKey
                     && request.resource.data.status in ['active', 'claimed', 'revoked']
                     && resource.data.status != 'revoked'

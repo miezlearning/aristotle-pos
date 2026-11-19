@@ -66,3 +66,14 @@ scratch/
 # Firebase web config asli (di-inject CI dari GitHub Secrets — jangan commit)
 js/firebase-config.js
 android/app/src/main/assets/js/firebase-config.js
+
+# Media, Video & Motioncraft Generation Artifacts
+*.mp4
+*.webm
+*.mov
+.motioncraft/
+referensi/
+brief.json
+storyboard.json
+storyboard.md
+
