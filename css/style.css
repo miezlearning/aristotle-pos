@@ -610,10 +610,19 @@ button:active:not(:disabled),
 }
 
 /* 3. Material Design 3 State Layer & Radial Ink Ripple */
-.m3-ripple-surface {
+.m3-ripple-surface:not(.absolute):not([class*="absolute"]) {
   position: relative;
+}
+.m3-ripple-surface {
   overflow: hidden;
   -webkit-mask-image: -webkit-radial-gradient(white, black); /* Fix webkit overflow border-radius */
+}
+
+/* Kunci posisi absolute agar tidak pernah bergeser atau tertimpa saat event sentuhan / hover */
+.m3-ripple-surface.absolute,
+.m3-ripple-surface[class*="absolute"],
+button.absolute {
+  position: absolute !important;
 }
 
 .m3-ripple-surface:has([id$="Dot"], [id$="Badge"], .badge) {

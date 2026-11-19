@@ -458,6 +458,12 @@ export function initM3RippleSystem() {
     const target = e.target.closest('button, [role="button"], .m3-ripple-surface, .active-queue-tab-wrapper');
     if (!target || target.disabled || target.getAttribute('aria-disabled') === 'true') return;
 
+    // Jangan pasang gelombang ripple pada tombol absolute atau tombol icon dalam input agar posisi tidak bergeser/tertimpa
+    if (target.classList.contains('absolute') || target.matches('.absolute, [class*="absolute"], input ~ button') || target.hasAttribute('data-no-ripple')) {
+      triggerHaptic('light');
+      return;
+    }
+
     // Pill filter kategori Menu = segmented control: pada mouse desktop,
     // gelombang ripple yang menumpuk dengan press-scale + ganti warna
     // membuat tombol terasa bergetar. Cukup umpan balik warna status.
